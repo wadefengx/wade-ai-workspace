@@ -20,6 +20,25 @@
   margin-bottom: 24px;
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.brandMark {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.brandLabel {
+  color: var(--primary);
+  font-size: 18px;
+  font-weight: 700;
+}
+
 .title {
   margin-bottom: 8px !important;
 }

@@ -1,3 +1,4 @@
+import { ForbiddenException } from "@nestjs/common";
 import { UserRole } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 
@@ -12,4 +13,12 @@ export async function isGlobalAdmin(prisma: PrismaService, userId: string) {
   });
 
   return hasGlobalAdminRole(user?.role);
+}
+
+export async function ensureGlobalAdmin(prisma: PrismaService, userId: string) {
+  if (await isGlobalAdmin(prisma, userId)) {
+    return;
+  }
+
+  throw new ForbiddenException("仅全局管理员可执行该操作");
 }

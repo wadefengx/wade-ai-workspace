@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards
 } from "@nestjs/common";
@@ -14,6 +16,8 @@ import { AuthenticatedUser } from "../common/types/authenticated-user";
 import { CreateChannelDto } from "./dto/create-channel.dto";
 import { CreateMemberDto } from "./dto/create-member.dto";
 import { CreateWorkspaceDto } from "./dto/create-workspace.dto";
+import { TransferWorkspaceDto } from "./dto/transfer-workspace.dto";
+import { UpdateWorkspaceDto } from "./dto/update-workspace.dto";
 import { WorkspaceService } from "./workspace.service";
 
 @ApiTags("workspaces")
@@ -34,6 +38,35 @@ export class WorkspaceController {
   @ApiBearerAuth()
   create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateWorkspaceDto) {
     return this.workspaceService.createWorkspace(user.id, dto);
+  }
+
+  @Patch(":workspaceId")
+  @ApiOperation({ summary: "更新工作区信息" })
+  @ApiBearerAuth()
+  updateWorkspace(
+    @Param("workspaceId") workspaceId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateWorkspaceDto
+  ) {
+    return this.workspaceService.updateWorkspace(workspaceId, user.id, dto);
+  }
+
+  @Post(":workspaceId/transfer")
+  @ApiOperation({ summary: "转交工作区 OWNER" })
+  @ApiBearerAuth()
+  transferOwnership(
+    @Param("workspaceId") workspaceId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: TransferWorkspaceDto
+  ) {
+    return this.workspaceService.transferOwnership(workspaceId, user.id, dto);
+  }
+
+  @Delete(":workspaceId")
+  @ApiOperation({ summary: "删除工作区" })
+  @ApiBearerAuth()
+  deleteWorkspace(@Param("workspaceId") workspaceId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.workspaceService.deleteWorkspace(workspaceId, user.id);
   }
 
   @Get(":workspaceId/members")

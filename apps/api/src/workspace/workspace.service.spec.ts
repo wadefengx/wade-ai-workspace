@@ -13,7 +13,9 @@ describe("WorkspaceService", () => {
   const prisma = {
     workspace: {
       findMany: jest.fn(),
-      findUnique: jest.fn()
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn()
     },
     user: {
       findUnique: jest.fn()
@@ -28,7 +30,24 @@ describe("WorkspaceService", () => {
     },
     channel: {
       findMany: jest.fn(),
-      create: jest.fn()
+      create: jest.fn(),
+      deleteMany: jest.fn()
+    },
+    message: {
+      deleteMany: jest.fn()
+    },
+    knowledgeDocument: {
+      findMany: jest.fn(),
+      deleteMany: jest.fn()
+    },
+    knowledgeChunk: {
+      deleteMany: jest.fn()
+    },
+    memory: {
+      deleteMany: jest.fn()
+    },
+    agent: {
+      deleteMany: jest.fn()
     },
     $transaction: jest.fn()
   };
@@ -275,6 +294,99 @@ describe("WorkspaceService", () => {
     const service = await createService();
 
     await expect(service.removeMember("member-1", "member-1")).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it("transfers ownership in one transaction", async () => {
+    const tx = {
+      workspaceMember: {
+        update: jest.fn().mockResolvedValue(undefined)
+      },
+      workspace: {
+        update: jest.fn().mockResolvedValue(undefined)
+      }
+    };
+    prisma.workspace.findUnique.mockResolvedValue({ id: "workspace-1" });
+    prisma.workspaceMember.findFirst
+      .mockResolvedValueOnce({ role: WorkspaceRole.OWNER })
+      .mockResolvedValueOnce({ id: "owner-member", userId: "owner-1" })
+      .mockResolvedValueOnce({ id: "target-member", userId: "user-2", role: WorkspaceRole.ADMIN });
+    prisma.$transaction.mockImplementation(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx));
+    const service = await createService();
+
+    await expect(service.transferOwnership("workspace-1", "owner-1", {
+      toUserId: "user-2"
+    })).resolves.toEqual({
+      id: "workspace-1"
+    });
+    expect(tx.workspaceMember.update).toHaveBeenNthCalledWith(1, {
+      where: { id: "owner-member" },
+      data: { role: WorkspaceRole.ADMIN }
+    });
+    expect(tx.workspaceMember.update).toHaveBeenNthCalledWith(2, {
+      where: { id: "target-member" },
+      data: { role: WorkspaceRole.OWNER }
+    });
+    expect(tx.workspace.update).toHaveBeenCalledWith({
+      where: { id: "workspace-1" },
+      data: { createdById: "user-2" }
+    });
+  });
+
+  it("rejects transferring ownership to a non-member", async () => {
+    prisma.workspace.findUnique.mockResolvedValue({ id: "workspace-1" });
+    prisma.workspaceMember.findFirst
+      .mockResolvedValueOnce({ role: WorkspaceRole.OWNER })
+      .mockResolvedValueOnce({ id: "owner-member", userId: "owner-1" })
+      .mockResolvedValueOnce(null);
+    const service = await createService();
+
+    await expect(service.transferOwnership("workspace-1", "owner-1", {
+      toUserId: "user-2"
+    })).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("deletes workspace resources in one transaction", async () => {
+    const tx = {
+      message: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 2 })
+      },
+      channel: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 1 })
+      },
+      workspaceMember: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 2 })
+      },
+      knowledgeChunk: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 3 })
+      },
+      knowledgeDocument: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 1 })
+      },
+      memory: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 1 })
+      },
+      agent: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 1 })
+      },
+      workspace: {
+        delete: jest.fn().mockResolvedValue(undefined)
+      }
+    };
+    prisma.workspace.findUnique.mockResolvedValue({ id: "workspace-1" });
+    prisma.workspaceMember.findFirst.mockResolvedValue({ role: WorkspaceRole.OWNER });
+    prisma.knowledgeDocument.findMany.mockResolvedValue([]);
+    prisma.$transaction.mockImplementation(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx));
+    const service = await createService();
+
+    await expect(service.deleteWorkspace("workspace-1", "owner-1")).resolves.toEqual({
+      id: "workspace-1"
+    });
+    expect(tx.message.deleteMany).toHaveBeenCalledWith({
+      where: { workspaceId: "workspace-1" }
+    });
+    expect(tx.workspace.delete).toHaveBeenCalledWith({
+      where: { id: "workspace-1" }
+    });
   });
 
   async function createService() {

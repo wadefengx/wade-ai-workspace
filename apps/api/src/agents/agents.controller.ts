@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { WorkspaceMemberGuard } from "../common/guards/workspace-member.guard";
 import { AuthenticatedUser } from "../common/types/authenticated-user";
+import { CreateAgentDto } from "./dto/create-agent.dto";
 import { UpdateAgentDto } from "./dto/update-agent.dto";
 import { AgentsService } from "./agents.service";
 
@@ -21,6 +22,18 @@ export class AgentsController {
     return this.agentsService.listWorkspaceAgents(workspaceId);
   }
 
+  @Post("workspaces/:workspaceId/agents")
+  @UseGuards(WorkspaceMemberGuard)
+  @ApiOperation({ summary: "创建工作区 Agent" })
+  @ApiBearerAuth()
+  createAgent(
+    @Param("workspaceId") workspaceId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CreateAgentDto
+  ) {
+    return this.agentsService.createAgent(workspaceId, user.id, dto);
+  }
+
   @Patch("agents/:agentId")
   @ApiOperation({ summary: "更新 Agent 配置" })
   @ApiBearerAuth()
@@ -30,5 +43,12 @@ export class AgentsController {
     @Body() dto: UpdateAgentDto
   ) {
     return this.agentsService.updateAgent(agentId, user.id, dto);
+  }
+
+  @Delete("agents/:agentId")
+  @ApiOperation({ summary: "删除 Agent" })
+  @ApiBearerAuth()
+  deleteAgent(@Param("agentId") agentId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.agentsService.deleteAgent(agentId, user.id);
   }
 }

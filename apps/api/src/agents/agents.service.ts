@@ -1,4 +1,5 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { AgentType, WorkspaceRole } from "@prisma/client";
 import { isGlobalAdmin } from "../common/auth/global-admin";
 import { PrismaService } from "../prisma/prisma.service";
 import {
@@ -7,6 +8,7 @@ import {
   serializeAgentProviderConfig,
   summarizeAgentProviderConfig
 } from "./agent-provider-config";
+import { CreateAgentDto } from "./dto/create-agent.dto";
 import { UpdateAgentDto } from "./dto/update-agent.dto";
 
 @Injectable()
@@ -20,6 +22,7 @@ export class AgentsService {
       select: {
         id: true,
         name: true,
+        type: true,
         engineType: true,
         isDefault: true,
         providerConfigRef: true
@@ -29,6 +32,30 @@ export class AgentsService {
     return agents.map((agent) => this.toResponse(agent));
   }
 
+  async createAgent(workspaceId: string, userId: string, dto: CreateAgentDto) {
+    await this.ensureWorkspaceManager(workspaceId, userId);
+
+    const createdAgent = await this.prisma.agent.create({
+      data: {
+        workspaceId,
+        name: dto.name,
+        type: dto.type,
+        engineType: "default-chat",
+        providerConfigRef: serializeAgentProviderConfig(dto.providerConfig ?? {})
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        engineType: true,
+        isDefault: true,
+        providerConfigRef: true
+      }
+    });
+
+    return this.toResponse(createdAgent);
+  }
+
   async updateAgent(agentId: string, userId: string, dto: UpdateAgentDto) {
     const agent = await this.prisma.agent.findUnique({
       where: { id: agentId },
@@ -36,6 +63,7 @@ export class AgentsService {
         id: true,
         workspaceId: true,
         name: true,
+        type: true,
         engineType: true,
         isDefault: true,
         providerConfigRef: true
@@ -64,6 +92,7 @@ export class AgentsService {
       select: {
         id: true,
         name: true,
+        type: true,
         engineType: true,
         isDefault: true,
         providerConfigRef: true
@@ -71,6 +100,33 @@ export class AgentsService {
     });
 
     return this.toResponse(updatedAgent);
+  }
+
+  async deleteAgent(agentId: string, userId: string) {
+    const agent = await this.prisma.agent.findUnique({
+      where: { id: agentId },
+      select: {
+        id: true,
+        workspaceId: true,
+        isDefault: true
+      }
+    });
+
+    if (!agent) {
+      throw new NotFoundException("Agent 不存在");
+    }
+
+    await this.ensureWorkspaceManager(agent.workspaceId, userId);
+
+    if (agent.isDefault) {
+      throw new BadRequestException("默认 Agent 不可删除");
+    }
+
+    await this.prisma.agent.delete({
+      where: { id: agentId }
+    });
+
+    return { id: agentId };
   }
 
   private mergeProviderConfig(providerConfigRef: string | null, patch?: UpdateAgentDto["providerConfig"]) {
@@ -114,9 +170,31 @@ export class AgentsService {
     }
   }
 
+  private async ensureWorkspaceManager(workspaceId: string, userId: string) {
+    const membership = await this.prisma.workspaceMember.findFirst({
+      where: { workspaceId, userId },
+      select: { role: true }
+    });
+
+    if (membership && membership.role !== WorkspaceRole.MEMBER) {
+      return;
+    }
+
+    if (await isGlobalAdmin(this.prisma, userId)) {
+      return;
+    }
+
+    if (!membership) {
+      throw new ForbiddenException("无权访问该工作区");
+    }
+
+    throw new ForbiddenException("仅 OWNER 或 ADMIN 可执行该操作");
+  }
+
   private toResponse(agent: {
     id: string;
     name: string;
+    type: AgentType;
     engineType: string;
     isDefault: boolean;
     providerConfigRef: string | null;
@@ -124,6 +202,7 @@ export class AgentsService {
     return {
       id: agent.id,
       name: agent.name,
+      type: agent.type,
       engineType: agent.engineType,
       isDefault: agent.isDefault,
       providerConfig: summarizeAgentProviderConfig(parseAgentProviderConfigRef(agent.providerConfigRef))

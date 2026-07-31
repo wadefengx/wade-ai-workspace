@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { Agent, MessageStatus, MessageSenderType } from "@prisma/client";
+import { Agent, AgentType, MessageStatus, MessageSenderType } from "@prisma/client";
 import { AGENT_ENGINE, AgentEngine } from "../ai/engines/agent-engine";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateMessageDto } from "./dto/create-message.dto";
@@ -198,6 +198,7 @@ export class ChatService {
       data: {
         workspaceId,
         name: "Workspace AI",
+        type: AgentType.OLLAMA,
         engineType: "default-chat",
         isDefault: true
       }

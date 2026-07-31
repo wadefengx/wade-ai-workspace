@@ -40,7 +40,7 @@ const contentByMode: Record<
   }
 > = {
   login: {
-    title: "登录 Wade AI Workspace",
+    title: "登录 Zone AI",
     subtitle: "进入你的团队 AI Workspace。",
     submitLabel: "登录",
     alternateLabel: "还没有账号？",
@@ -50,7 +50,7 @@ const contentByMode: Record<
     endpoint: "/auth/login"
   },
   register: {
-    title: "创建账号",
+    title: "创建 Zone AI 账号",
     subtitle: "注册后即可创建或加入 Workspace。",
     submitLabel: "注册",
     alternateLabel: "已经有账号？",
@@ -60,6 +60,33 @@ const contentByMode: Record<
     endpoint: "/auth/register"
   }
 };
+
+function BrandMark() {
+  return (
+    <svg
+      className={styles.brandMark}
+      viewBox="0 0 64 64"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="auth-zone-ai-gradient" x1="10" y1="8" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#024AD8" />
+          <stop offset="1" stopColor="#6A8DFF" />
+        </linearGradient>
+      </defs>
+      <rect x="4" y="4" width="56" height="56" rx="18" fill="url(#auth-zone-ai-gradient)" />
+      <path
+        d="M18 19H46L26.5 45H46"
+        stroke="white"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="7"
+      />
+    </svg>
+  );
+}
 
 export function AuthPage({ mode }: { mode: AuthMode }) {
   const router = useRouter();
@@ -109,6 +136,10 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     <div className={styles.page}>
       <Card className={styles.card}>
         <div className={styles.header}>
+          <div className={styles.brand}>
+            <BrandMark />
+            <span className={styles.brandLabel}>Zone AI</span>
+          </div>
           <Typography.Title level={2} className={styles.title}>
             {content.title}
           </Typography.Title>

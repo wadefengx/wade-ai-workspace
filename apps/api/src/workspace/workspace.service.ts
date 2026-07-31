@@ -6,12 +6,18 @@ import {
   NotFoundException
 } from "@nestjs/common";
 import { Prisma, WorkspaceRole } from "@prisma/client";
+import { unlink } from "node:fs/promises";
+import { join } from "node:path";
 import { isGlobalAdmin } from "../common/auth/global-admin";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateChannelDto } from "./dto/create-channel.dto";
 import { CreateMemberDto } from "./dto/create-member.dto";
 import { CreateWorkspaceDto } from "./dto/create-workspace.dto";
+import { TransferWorkspaceDto } from "./dto/transfer-workspace.dto";
 import { UpdateMemberRoleDto } from "./dto/update-member-role.dto";
+import { UpdateWorkspaceDto } from "./dto/update-workspace.dto";
+
+const DEFAULT_UPLOAD_DIR = "/app/uploads";
 
 @Injectable()
 export class WorkspaceService {
@@ -60,6 +66,119 @@ export class WorkspaceService {
 
       return workspace;
     });
+  }
+
+  async updateWorkspace(workspaceId: string, userId: string, dto: UpdateWorkspaceDto) {
+    await this.ensureOwnerOrGlobalAdmin(workspaceId, userId);
+
+    return this.prisma.workspace.update({
+      where: { id: workspaceId },
+      data: { name: dto.name },
+      select: {
+        id: true,
+        name: true,
+        createdById: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+  }
+
+  async transferOwnership(workspaceId: string, userId: string, dto: TransferWorkspaceDto) {
+    await this.ensureOwnerOrGlobalAdmin(workspaceId, userId);
+
+    const [currentOwner, targetMembership] = await Promise.all([
+      this.prisma.workspaceMember.findFirst({
+        where: {
+          workspaceId,
+          role: WorkspaceRole.OWNER
+        },
+        select: {
+          id: true,
+          userId: true
+        }
+      }),
+      this.prisma.workspaceMember.findFirst({
+        where: {
+          workspaceId,
+          userId: dto.toUserId
+        },
+        select: {
+          id: true,
+          userId: true,
+          role: true
+        }
+      })
+    ]);
+
+    if (!currentOwner) {
+      throw new NotFoundException("工作区 OWNER 不存在");
+    }
+
+    if (!targetMembership) {
+      throw new BadRequestException("目标用户不是工作区成员");
+    }
+
+    if (targetMembership.userId === currentOwner.userId) {
+      throw new BadRequestException("不能转交给当前 OWNER");
+    }
+
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.workspaceMember.update({
+        where: { id: currentOwner.id },
+        data: { role: WorkspaceRole.ADMIN }
+      });
+      await tx.workspaceMember.update({
+        where: { id: targetMembership.id },
+        data: { role: WorkspaceRole.OWNER }
+      });
+      await tx.workspace.update({
+        where: { id: workspaceId },
+        data: { createdById: targetMembership.userId }
+      });
+    });
+
+    return { id: workspaceId };
+  }
+
+  async deleteWorkspace(workspaceId: string, userId: string) {
+    await this.ensureOwnerOrGlobalAdmin(workspaceId, userId);
+
+    const documents = await this.prisma.knowledgeDocument.findMany({
+      where: { workspaceId },
+      select: { storageKey: true }
+    });
+
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.message.deleteMany({
+        where: { workspaceId }
+      });
+      await tx.channel.deleteMany({
+        where: { workspaceId }
+      });
+      await tx.workspaceMember.deleteMany({
+        where: { workspaceId }
+      });
+      await tx.knowledgeChunk.deleteMany({
+        where: { workspaceId }
+      });
+      await tx.knowledgeDocument.deleteMany({
+        where: { workspaceId }
+      });
+      await tx.memory.deleteMany({
+        where: { workspaceId }
+      });
+      await tx.agent.deleteMany({
+        where: { workspaceId }
+      });
+      await tx.workspace.delete({
+        where: { id: workspaceId }
+      });
+    });
+
+    await Promise.all(documents.map((document) => this.deleteStoredFile(document.storageKey)));
+
+    return { id: workspaceId };
   }
 
   async listMembers(workspaceId: string, userId: string) {
@@ -208,6 +327,29 @@ export class WorkspaceService {
     }
   }
 
+  private async ensureOwnerOrGlobalAdmin(workspaceId: string, userId: string) {
+    await this.ensureWorkspaceExists(workspaceId);
+
+    const membership = await this.prisma.workspaceMember.findFirst({
+      where: { workspaceId, userId },
+      select: { role: true }
+    });
+
+    if (membership?.role === WorkspaceRole.OWNER) {
+      return;
+    }
+
+    if (await isGlobalAdmin(this.prisma, userId)) {
+      return;
+    }
+
+    if (!membership) {
+      throw new ForbiddenException("无权访问该工作区");
+    }
+
+    throw new ForbiddenException("仅 OWNER 可执行该操作");
+  }
+
   async listChannels(workspaceId: string, userId: string) {
     await this.ensureWorkspaceMember(workspaceId, userId);
 
@@ -253,6 +395,16 @@ export class WorkspaceService {
 
     if (!workspace) {
       throw new NotFoundException("工作区不存在");
+    }
+  }
+
+  private async deleteStoredFile(storageKey: string) {
+    try {
+      await unlink(join(process.env.UPLOAD_DIR ?? DEFAULT_UPLOAD_DIR, storageKey));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        throw error;
+      }
     }
   }
 }

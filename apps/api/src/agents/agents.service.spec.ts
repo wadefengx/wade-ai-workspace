@@ -1,5 +1,5 @@
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
-import { UserRole } from "@prisma/client";
+import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
+import { AgentType, UserRole, WorkspaceRole } from "@prisma/client";
 import { Test } from "@nestjs/testing";
 import { PrismaService } from "../prisma/prisma.service";
 import { AgentsService } from "./agents.service";
@@ -9,7 +9,9 @@ describe("AgentsService", () => {
     agent: {
       findMany: jest.fn(),
       findUnique: jest.fn(),
-      update: jest.fn()
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn()
     },
     user: {
       findUnique: jest.fn()
@@ -24,10 +26,11 @@ describe("AgentsService", () => {
     prisma.user.findUnique.mockResolvedValue(null);
   });
 
-  it("maps provider config to baseUrl, model, and hasApiKey in list responses", async () => {
+  it("maps type and provider config in list responses", async () => {
     prisma.agent.findMany.mockResolvedValue([{
       id: "agent-1",
       name: "Workspace AI",
+      type: AgentType.OPENAI_COMPATIBLE,
       engineType: "default-chat",
       isDefault: true,
       providerConfigRef: JSON.stringify({
@@ -41,6 +44,7 @@ describe("AgentsService", () => {
     await expect(service.listWorkspaceAgents("workspace-1")).resolves.toEqual([{
       id: "agent-1",
       name: "Workspace AI",
+      type: AgentType.OPENAI_COMPATIBLE,
       engineType: "default-chat",
       isDefault: true,
       providerConfig: {
@@ -51,11 +55,47 @@ describe("AgentsService", () => {
     }]);
   });
 
+  it("creates typed agents for workspace managers", async () => {
+    prisma.workspaceMember.findFirst.mockResolvedValue({ role: WorkspaceRole.ADMIN });
+    prisma.agent.create.mockResolvedValue({
+      id: "agent-2",
+      name: "Claude Agent",
+      type: AgentType.ANTHROPIC,
+      engineType: "default-chat",
+      isDefault: false,
+      providerConfigRef: JSON.stringify({
+        model: "claude-3-5-sonnet-latest",
+        apiKey: "secret"
+      })
+    });
+    const service = await createService();
+
+    await expect(service.createAgent("workspace-1", "admin-1", {
+      name: "Claude Agent",
+      type: AgentType.ANTHROPIC,
+      providerConfig: {
+        model: "claude-3-5-sonnet-latest",
+        apiKey: "secret"
+      }
+    })).resolves.toEqual({
+      id: "agent-2",
+      name: "Claude Agent",
+      type: AgentType.ANTHROPIC,
+      engineType: "default-chat",
+      isDefault: false,
+      providerConfig: {
+        model: "claude-3-5-sonnet-latest",
+        hasApiKey: true
+      }
+    });
+  });
+
   it("merges provider config updates without overwriting apiKey with an empty value", async () => {
     prisma.agent.findUnique.mockResolvedValue({
       id: "agent-1",
       workspaceId: "workspace-1",
       name: "Workspace AI",
+      type: AgentType.OPENAI_COMPATIBLE,
       engineType: "default-chat",
       isDefault: true,
       providerConfigRef: JSON.stringify({
@@ -68,6 +108,7 @@ describe("AgentsService", () => {
     prisma.agent.update.mockResolvedValue({
       id: "agent-1",
       name: "Workspace AI Plus",
+      type: AgentType.OPENAI_COMPATIBLE,
       engineType: "default-chat",
       isDefault: true,
       providerConfigRef: JSON.stringify({
@@ -87,30 +128,13 @@ describe("AgentsService", () => {
     })).resolves.toEqual({
       id: "agent-1",
       name: "Workspace AI Plus",
+      type: AgentType.OPENAI_COMPATIBLE,
       engineType: "default-chat",
       isDefault: true,
       providerConfig: {
         baseUrl: "http://provider.old/v1",
         model: "qwen3:8b",
         hasApiKey: true
-      }
-    });
-    expect(prisma.agent.update).toHaveBeenCalledWith({
-      where: { id: "agent-1" },
-      data: {
-        name: "Workspace AI Plus",
-        providerConfigRef: JSON.stringify({
-          baseUrl: "http://provider.old/v1",
-          apiKey: "saved-key",
-          model: "qwen3:8b"
-        })
-      },
-      select: {
-        id: true,
-        name: true,
-        engineType: true,
-        isDefault: true,
-        providerConfigRef: true
       }
     });
   });
@@ -120,6 +144,7 @@ describe("AgentsService", () => {
       id: "agent-1",
       workspaceId: "workspace-1",
       name: "Workspace AI",
+      type: AgentType.OLLAMA,
       engineType: "default-chat",
       isDefault: true,
       providerConfigRef: null
@@ -135,6 +160,7 @@ describe("AgentsService", () => {
       id: "agent-1",
       workspaceId: "workspace-1",
       name: "Workspace AI",
+      type: AgentType.OLLAMA,
       engineType: "default-chat",
       isDefault: true,
       providerConfigRef: null
@@ -144,6 +170,7 @@ describe("AgentsService", () => {
     prisma.agent.update.mockResolvedValue({
       id: "agent-1",
       name: "Workspace AI Admin",
+      type: AgentType.OLLAMA,
       engineType: "default-chat",
       isDefault: true,
       providerConfigRef: null
@@ -155,11 +182,42 @@ describe("AgentsService", () => {
     })).resolves.toEqual({
       id: "agent-1",
       name: "Workspace AI Admin",
+      type: AgentType.OLLAMA,
       engineType: "default-chat",
       isDefault: true,
       providerConfig: {
         hasApiKey: false
       }
+    });
+  });
+
+  it("rejects deleting the default agent", async () => {
+    prisma.agent.findUnique.mockResolvedValue({
+      id: "agent-1",
+      workspaceId: "workspace-1",
+      isDefault: true
+    });
+    prisma.workspaceMember.findFirst.mockResolvedValue({ role: WorkspaceRole.OWNER });
+    const service = await createService();
+
+    await expect(service.deleteAgent("agent-1", "owner-1")).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("deletes non-default agents for workspace managers", async () => {
+    prisma.agent.findUnique.mockResolvedValue({
+      id: "agent-2",
+      workspaceId: "workspace-1",
+      isDefault: false
+    });
+    prisma.workspaceMember.findFirst.mockResolvedValue({ role: WorkspaceRole.ADMIN });
+    prisma.agent.delete.mockResolvedValue(undefined);
+    const service = await createService();
+
+    await expect(service.deleteAgent("agent-2", "admin-1")).resolves.toEqual({
+      id: "agent-2"
+    });
+    expect(prisma.agent.delete).toHaveBeenCalledWith({
+      where: { id: "agent-2" }
     });
   });
 

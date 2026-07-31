@@ -10,7 +10,8 @@ describe("AuthService", () => {
   const prisma = {
     user: {
       findUnique: jest.fn(),
-      create: jest.fn()
+      create: jest.fn(),
+      update: jest.fn()
     }
   };
   const jwtService = {
@@ -173,5 +174,44 @@ describe("AuthService", () => {
       email: "wade@example.com",
       password: "password123"
     })).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it("changes password after verifying the current password", async () => {
+    const module = await Test.createTestingModule({
+      providers: [{
+        provide: PrismaService,
+        useValue: prisma
+      }, {
+        provide: JwtService,
+        useValue: jwtService
+      }, AuthService]
+    }).compile();
+    const service = module.get(AuthService);
+    const currentPasswordHash = await hash("password123", 10);
+
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      name: "Wade",
+      email: "wade@example.com",
+      passwordHash: currentPasswordHash,
+      role: UserRole.USER,
+      avatarUrl: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    prisma.user.update.mockResolvedValue(undefined);
+
+    await expect(service.changePassword("user-1", {
+      currentPassword: "password123",
+      newPassword: "new-password"
+    })).resolves.toEqual({
+      ok: true
+    });
+
+    const updateCall = prisma.user.update.mock.calls[0][0] as {
+      data: { passwordHash: string };
+    };
+
+    await expect(compare("new-password", updateCall.data.passwordHash)).resolves.toBe(true);
   });
 });

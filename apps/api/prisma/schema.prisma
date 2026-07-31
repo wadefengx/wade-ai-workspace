@@ -18,6 +18,14 @@ enum UserRole {
   ADMIN
 }
 
+enum AgentType {
+  OLLAMA
+  OPENAI_COMPATIBLE
+  ANTHROPIC
+  OPENCLAW
+  HERMES
+}
+
 enum MessageSenderType {
   USER
   AGENT
@@ -118,6 +126,7 @@ model Agent {
   id                String    @id @default(auto()) @map("_id") @db.ObjectId
   workspaceId       String    @db.ObjectId
   name              String
+  type              AgentType @default(OPENAI_COMPATIBLE)
   engineType        String
   providerConfigRef String?
   capabilitiesJson  Json?

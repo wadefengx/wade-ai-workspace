@@ -1,12 +1,14 @@
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException
 } from "@nestjs/common";
 import { Prisma, User, UserRole } from "@prisma/client";
 import { compare, hash } from "bcryptjs";
 import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../prisma/prisma.service";
+import { ChangePasswordDto } from "./dto/change-password.dto";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import {
@@ -68,6 +70,31 @@ export class AuthService {
     }
 
     return this.buildAuthResponse(user);
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      throw new NotFoundException("用户不存在");
+    }
+
+    const passwordMatched = await compare(dto.currentPassword, user.passwordHash);
+
+    if (!passwordMatched) {
+      throw new UnauthorizedException("当前密码错误");
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash: await hash(dto.newPassword, 10)
+      }
+    });
+
+    return { ok: true };
   }
 
   private async buildAuthResponse(user: User) {

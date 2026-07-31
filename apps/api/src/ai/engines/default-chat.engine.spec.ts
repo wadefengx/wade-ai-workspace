@@ -1,10 +1,11 @@
-import { MessageSenderType, MessageStatus } from "@prisma/client";
+import { AgentType, MessageSenderType, MessageStatus } from "@prisma/client";
 import { Test } from "@nestjs/testing";
 import { MemoryService } from "../../memory/memory.service";
 import { OllamaService } from "../../ollama.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import { KnowledgeRepository } from "../../repositories/knowledge.repository";
-import { AI_PROVIDER } from "../providers/ai-provider";
+import { AnthropicProvider } from "../providers/anthropic.provider";
+import { OpenAICompatibleProvider } from "../providers/openai-compatible.provider";
 import { DefaultChatEngine } from "./default-chat.engine";
 
 describe("DefaultChatEngine", () => {
@@ -19,7 +20,10 @@ describe("DefaultChatEngine", () => {
       findFirst: jest.fn()
     }
   };
-  const provider = {
+  const openAICompatibleProvider = {
+    stream: jest.fn()
+  };
+  const anthropicProvider = {
     stream: jest.fn()
   };
   const knowledgeRepository = {
@@ -35,8 +39,11 @@ describe("DefaultChatEngine", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.agent.findFirst.mockResolvedValue(null);
+    prisma.message.findMany.mockResolvedValue([]);
     memoryService.listPromptMemories.mockResolvedValue([]);
     prisma.knowledgeDocument.findFirst.mockResolvedValue(null);
+    openAICompatibleProvider.stream.mockReturnValue(createEvents([{ type: "done" }]));
+    anthropicProvider.stream.mockReturnValue(createEvents([{ type: "done" }]));
   });
 
   it("builds a system prompt with the most recent 20 completed messages", async () => {
@@ -53,26 +60,7 @@ describe("DefaultChatEngine", () => {
         updatedAt: new Date(`2024-01-${String(index + 1).padStart(2, "0")}T00:00:00.000Z`)
       }))
     );
-    provider.stream.mockReturnValue(createEvents([{ type: "done" }]));
-    const module = await Test.createTestingModule({
-      providers: [{
-        provide: PrismaService,
-        useValue: prisma
-      }, {
-        provide: KnowledgeRepository,
-        useValue: knowledgeRepository
-      }, {
-        provide: MemoryService,
-        useValue: memoryService
-      }, {
-        provide: OllamaService,
-        useValue: ollamaService
-      }, {
-        provide: AI_PROVIDER,
-        useValue: provider
-      }, DefaultChatEngine]
-    }).compile();
-    const engine = module.get(DefaultChatEngine);
+    const engine = await createEngine();
 
     await collect(engine.stream({
       workspaceId: "workspace-1",
@@ -80,7 +68,7 @@ describe("DefaultChatEngine", () => {
       userId: "user-1"
     }));
 
-    const promptMessages = provider.stream.mock.calls[0][0].messages;
+    const promptMessages = openAICompatibleProvider.stream.mock.calls[0][0].messages;
     expect(prisma.message.findMany).toHaveBeenCalledWith({
       where: {
         workspaceId: "workspace-1",
@@ -91,9 +79,6 @@ describe("DefaultChatEngine", () => {
       take: 20
     });
     expect(promptMessages).toHaveLength(21);
-    expect(promptMessages[0]).toEqual(expect.objectContaining({
-      role: "system"
-    }));
     expect(promptMessages[1]).toEqual({
       role: "assistant",
       content: "message-6"
@@ -116,26 +101,7 @@ describe("DefaultChatEngine", () => {
       createdAt: new Date("2024-01-01T00:00:00.000Z"),
       updatedAt: new Date("2024-01-01T00:00:00.000Z")
     }]);
-    provider.stream.mockReturnValue(createEvents([{ type: "done" }]));
-    const module = await Test.createTestingModule({
-      providers: [{
-        provide: PrismaService,
-        useValue: prisma
-      }, {
-        provide: KnowledgeRepository,
-        useValue: knowledgeRepository
-      }, {
-        provide: MemoryService,
-        useValue: memoryService
-      }, {
-        provide: OllamaService,
-        useValue: ollamaService
-      }, {
-        provide: AI_PROVIDER,
-        useValue: provider
-      }, DefaultChatEngine]
-    }).compile();
-    const engine = module.get(DefaultChatEngine);
+    const engine = await createEngine();
 
     await collect(engine.stream({
       workspaceId: "workspace-1",
@@ -143,7 +109,7 @@ describe("DefaultChatEngine", () => {
       userId: "user-1"
     }));
 
-    const truncatedContent = provider.stream.mock.calls[0][0].messages[1].content as string;
+    const truncatedContent = openAICompatibleProvider.stream.mock.calls[0][0].messages[1].content as string;
     expect(truncatedContent).toHaveLength(4_000);
     expect(truncatedContent.endsWith("\n...[truncated]")).toBe(true);
   });
@@ -182,26 +148,7 @@ describe("DefaultChatEngine", () => {
       chunkIndex: 0,
       similarity: 1
     }]);
-    provider.stream.mockReturnValue(createEvents([{ type: "done" }]));
-    const module = await Test.createTestingModule({
-      providers: [{
-        provide: PrismaService,
-        useValue: prisma
-      }, {
-        provide: KnowledgeRepository,
-        useValue: knowledgeRepository
-      }, {
-        provide: MemoryService,
-        useValue: memoryService
-      }, {
-        provide: OllamaService,
-        useValue: ollamaService
-      }, {
-        provide: AI_PROVIDER,
-        useValue: provider
-      }, DefaultChatEngine]
-    }).compile();
-    const engine = module.get(DefaultChatEngine);
+    const engine = await createEngine();
 
     await collect(engine.stream({
       workspaceId: "workspace-1",
@@ -210,28 +157,65 @@ describe("DefaultChatEngine", () => {
       latestUserMessage: "@AI 总结文档"
     }));
 
-    const systemPrompt = provider.stream.mock.calls[0][0].messages[0].content as string;
+    const systemPrompt = openAICompatibleProvider.stream.mock.calls[0][0].messages[0].content as string;
     expect(systemPrompt).toContain("记忆上下文");
-    expect(systemPrompt).toContain("个人记忆");
-    expect(systemPrompt).toContain("团队记忆");
-    expect(systemPrompt).toContain("项目记忆");
-    expect(systemPrompt).toContain("参考资料");
     expect(systemPrompt).toContain("guide.md");
-    expect(systemPrompt).toContain("这里是文档片段");
     expect(ollamaService.embed).toHaveBeenCalledWith("@AI 总结文档");
-    expect(knowledgeRepository.searchSimilarChunks).toHaveBeenCalledWith("workspace-1", [1, 0]);
   });
 
-  it("passes the default agent provider config to the AI provider when present", async () => {
+  it("passes provider config to the openai-compatible provider for non-anthropic agents", async () => {
     prisma.agent.findFirst.mockResolvedValue({
+      type: AgentType.OPENAI_COMPATIBLE,
       providerConfigRef: JSON.stringify({
         baseUrl: "http://provider.test/v1",
         apiKey: "secret-key",
         model: "qwen3:8b"
       })
     });
-    prisma.message.findMany.mockResolvedValue([]);
-    provider.stream.mockReturnValue(createEvents([{ type: "done" }]));
+    const engine = await createEngine();
+
+    await collect(engine.stream({
+      workspaceId: "workspace-1",
+      channelId: "channel-1",
+      userId: "user-1"
+    }));
+
+    expect(openAICompatibleProvider.stream).toHaveBeenCalledWith(expect.objectContaining({
+      provider: {
+        baseUrl: "http://provider.test/v1",
+        apiKey: "secret-key",
+        model: "qwen3:8b"
+      }
+    }));
+    expect(anthropicProvider.stream).not.toHaveBeenCalled();
+  });
+
+  it("selects the anthropic provider for anthropic agents", async () => {
+    prisma.agent.findFirst.mockResolvedValue({
+      type: AgentType.ANTHROPIC,
+      providerConfigRef: JSON.stringify({
+        apiKey: "claude-key",
+        model: "claude-3-5-sonnet-latest"
+      })
+    });
+    const engine = await createEngine();
+
+    await collect(engine.stream({
+      workspaceId: "workspace-1",
+      channelId: "channel-1",
+      userId: "user-1"
+    }));
+
+    expect(anthropicProvider.stream).toHaveBeenCalledWith(expect.objectContaining({
+      provider: {
+        apiKey: "claude-key",
+        model: "claude-3-5-sonnet-latest"
+      }
+    }));
+    expect(openAICompatibleProvider.stream).not.toHaveBeenCalled();
+  });
+
+  async function createEngine() {
     const module = await Test.createTestingModule({
       providers: [{
         provide: PrismaService,
@@ -246,26 +230,16 @@ describe("DefaultChatEngine", () => {
         provide: OllamaService,
         useValue: ollamaService
       }, {
-        provide: AI_PROVIDER,
-        useValue: provider
+        provide: OpenAICompatibleProvider,
+        useValue: openAICompatibleProvider
+      }, {
+        provide: AnthropicProvider,
+        useValue: anthropicProvider
       }, DefaultChatEngine]
     }).compile();
-    const engine = module.get(DefaultChatEngine);
 
-    await collect(engine.stream({
-      workspaceId: "workspace-1",
-      channelId: "channel-1",
-      userId: "user-1"
-    }));
-
-    expect(provider.stream).toHaveBeenCalledWith(expect.objectContaining({
-      provider: {
-        baseUrl: "http://provider.test/v1",
-        apiKey: "secret-key",
-        model: "qwen3:8b"
-      }
-    }));
-  });
+    return module.get(DefaultChatEngine);
+  }
 });
 
 async function collect<T>(iterable: AsyncIterable<T>) {

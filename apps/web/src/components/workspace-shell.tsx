@@ -8,7 +8,7 @@ import {
   UserOutlined
 } from "@ant-design/icons";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { App, Avatar, Button, Dropdown, Popover, Spin, Tooltip, Typography } from "antd";
+import { App, Avatar, Button, Dropdown, Popover, Spin, Tag, Tooltip, Typography } from "antd";
 import type { MenuProps } from "antd";
 import { Sender, Suggestion } from "@ant-design/x";
 import { useRouter } from "next/navigation";
@@ -172,6 +172,24 @@ function createLocalMessage(partial: Omit<LocalChatMessage, "id"> & { idPrefix: 
     ...message,
     id
   } satisfies LocalChatMessage;
+}
+
+function renderMessageContent(content: string) {
+  return content.split(/(@All)/g).map((part, index) => {
+    if (part !== "@All") {
+      return <span key={`${part}-${index}`}>{part}</span>;
+    }
+
+    return (
+      <Tag
+        key={`mention-${index}`}
+        color="purple"
+        style={{ marginInline: 0, paddingInline: 8, borderRadius: 999 }}
+      >
+        @All
+      </Tag>
+    );
+  });
 }
 
 export function WorkspaceShell() {
@@ -584,6 +602,7 @@ export function WorkspaceShell() {
 
   const mentionItems = useMemo(
     () => [
+      { label: "All members", value: "@All", icon: <TeamOutlined /> },
       { label: "AI Agent", value: "@AI", icon: <RobotOutlined /> },
       ...members.map((member) => ({
         label: member.name,
@@ -743,7 +762,7 @@ export function WorkspaceShell() {
                                       ) : null}
                                     </div>
                                   ) : (
-                                    <div className={styles.messageText}>{chatMessage.content}</div>
+                                    <div className={styles.messageText}>{renderMessageContent(chatMessage.content)}</div>
                                   )}
 
                                   {isFailed ? (

@@ -1,4 +1,4 @@
-import { MessageStatus, MessageSenderType } from "@prisma/client";
+import { AgentType, MessageStatus, MessageSenderType } from "@prisma/client";
 import { Test } from "@nestjs/testing";
 import { AGENT_ENGINE } from "../ai/engines/agent-engine";
 import { PrismaService } from "../prisma/prisma.service";
@@ -31,6 +31,7 @@ describe("ChatService", () => {
       id: "agent-1",
       workspaceId: "workspace-1",
       name: "Workspace AI",
+      type: AgentType.OLLAMA,
       engineType: "default-chat",
       providerConfigRef: null,
       capabilitiesJson: null,
@@ -133,6 +134,7 @@ describe("ChatService", () => {
       id: "agent-1",
       workspaceId: "workspace-1",
       name: "Workspace AI",
+      type: AgentType.OLLAMA,
       engineType: "default-chat",
       providerConfigRef: null,
       capabilitiesJson: null,
@@ -203,6 +205,7 @@ describe("ChatService", () => {
       id: "agent-1",
       workspaceId: "workspace-1",
       name: "Workspace AI",
+      type: AgentType.OLLAMA,
       engineType: "default-chat",
       providerConfigRef: null,
       capabilitiesJson: null,

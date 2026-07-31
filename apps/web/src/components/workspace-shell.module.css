@@ -10,7 +10,7 @@
   width: 280px;
   padding: 20px 16px;
   border-right: 1px solid var(--line);
-  background: #fbfcfe;
+  background: var(--surface-subtle);
 }
 
 .brand {
@@ -21,6 +21,12 @@
   color: var(--primary);
   font-size: 18px;
   font-weight: 700;
+}
+
+.brandMark {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
 }
 
 .workspaceControls {
@@ -64,7 +70,7 @@
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #172033;
+  color: var(--text);
   font-size: 14px;
   font-weight: 500;
 }
@@ -72,7 +78,7 @@
 .channelButtonActive,
 .navButton:hover,
 .channelButton:hover {
-  background: #edf3ff;
+  background: var(--primary-surface);
   color: var(--primary);
 }
 
@@ -139,7 +145,7 @@
   flex: 1;
   border: 1px solid var(--line);
   border-radius: 20px;
-  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  background: linear-gradient(180deg, var(--surface-gradient-start) 0%, var(--surface-gradient-end) 100%);
   box-shadow: 0 14px 32px rgb(15 23 42 / 5%);
 }
 
@@ -177,16 +183,16 @@
 }
 
 .messageBubbleUser {
-  border-color: #bfd2ff;
-  background: linear-gradient(180deg, #eaf2ff 0%, #dbe8ff 100%);
+  border-color: var(--primary-border);
+  background: linear-gradient(180deg, var(--primary-surface) 0%, var(--primary-surface-strong) 100%);
 }
 
 .messageBubbleAgent {
-  background: #fff;
+  background: var(--surface);
 }
 
 .messageBubbleFailed {
-  border-color: #ffb5b5;
+  border-color: var(--danger-border);
   box-shadow: 0 0 0 1px rgb(255 77 79 / 10%);
 }
 
@@ -249,8 +255,8 @@
 .markdown code {
   padding: 0.12em 0.4em;
   border-radius: 6px;
-  background: #eef3ff;
-  color: #17376b;
+  background: var(--primary-tint);
+  color: var(--primary-tint-text);
   font-family: "SFMono-Regular", ui-monospace, monospace;
   font-size: 0.92em;
 }
@@ -258,7 +264,7 @@
 .markdown pre {
   overflow-x: auto;
   padding: 12px 14px;
-  border: 1px solid #dce7ff;
+  border: 1px solid var(--primary-border);
   border-radius: 12px;
   background: #0f172a;
   color: #e5efff;
@@ -272,7 +278,7 @@
 
 .markdown blockquote {
   padding-left: 12px;
-  border-left: 3px solid #cbd9ff;
+  border-left: 3px solid var(--primary-blockquote);
   color: var(--muted);
 }
 
@@ -281,13 +287,13 @@
   align-items: center;
   gap: 8px;
   margin-top: 12px;
-  color: #cf1322;
+  color: var(--danger);
   font-size: 12px;
 }
 
 .retryButton {
   padding-inline: 0 !important;
-  color: #cf1322 !important;
+  color: var(--danger) !important;
 }
 
 .historyHint {
@@ -316,7 +322,7 @@
   padding: 32px;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: #fcfdff;
+  background: var(--surface-soft);
   box-shadow: 0 14px 32px rgb(15 23 42 / 5%);
   text-align: center;
 }
@@ -386,7 +392,67 @@
   width: 320px;
   padding: 24px;
   border-left: 1px solid var(--line);
-  background: #fcfdff;
+  background: var(--surface-soft);
+}
+
+.accountTriggerProxy {
+  position: fixed;
+  pointer-events: none;
+}
+
+.accountMenuHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+  padding: 4px 0;
+}
+
+.accountMenuMeta {
+  display: grid;
+  gap: 2px;
+}
+
+.accountMenuName {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.accountMenuEmail {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.accountProfile {
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+  padding-top: 8px;
+}
+
+.accountProfileMeta {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+
+.accountProfileRow {
+  display: grid;
+  gap: 4px;
+}
+
+.accountProfileLabel {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.accountProfileValue {
+  color: var(--text);
+  font-size: 14px;
+  word-break: break-word;
 }
 
 .contextStack {

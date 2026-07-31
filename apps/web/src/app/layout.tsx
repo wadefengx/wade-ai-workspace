@@ -3,8 +3,8 @@ import { Providers } from "./providers";
 import "../styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "Wade AI Workspace",
-  description: "Human, AI, knowledge, and memory in one workspace."
+  title: "Zone AI",
+  description: "Zone AI brings team chat, knowledge, and memory into one workspace."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

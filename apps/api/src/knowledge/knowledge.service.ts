@@ -6,6 +6,7 @@ import { PDFParse } from "pdf-parse";
 import { OllamaService } from "../ollama.service";
 import { isGlobalAdmin } from "../common/auth/global-admin";
 import { PrismaService } from "../prisma/prisma.service";
+import { UpdateKnowledgeDocumentDto } from "./dto/update-knowledge-document.dto";
 
 export const KNOWLEDGE_CHUNK_SIZE = 1_000;
 export const KNOWLEDGE_CHUNK_OVERLAP = 100;
@@ -72,6 +73,21 @@ export class KnowledgeService {
     return this.prisma.knowledgeDocument.findMany({
       where: { workspaceId },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: documentSummarySelect
+    });
+  }
+
+  async updateName(documentId: string, userId: string, dto: UpdateKnowledgeDocumentDto) {
+    const document = await this.ensureDocumentAccess(documentId, userId);
+    const filename = dto.name.trim();
+
+    if (basename(filename) !== filename || INVALID_FILENAME_PATTERN.test(filename)) {
+      throw new BadRequestException("文档名称不合法");
+    }
+
+    return this.prisma.knowledgeDocument.update({
+      where: { id: document.id },
+      data: { filename },
       select: documentSummarySelect
     });
   }

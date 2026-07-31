@@ -1,11 +1,13 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { ExtractionStatus, MemoryType, MessageSenderType, MessageStatus } from "@prisma/client";
+import { Injectable } from "@nestjs/common";
+import { AgentType, ExtractionStatus, MemoryType, MessageSenderType, MessageStatus } from "@prisma/client";
 import { MemoryService } from "../../memory/memory.service";
 import { OllamaService } from "../../ollama.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import { KnowledgeRepository } from "../../repositories/knowledge.repository";
 import { hasAgentProviderConfig, parseAgentProviderConfigRef } from "../../agents/agent-provider-config";
-import { AI_PROVIDER, AIProvider, ChatCompletionMessage, ChatStreamEvent } from "../providers/ai-provider";
+import { AIProvider, ChatCompletionMessage, ChatStreamEvent } from "../providers/ai-provider";
+import { AnthropicProvider } from "../providers/anthropic.provider";
+import { OpenAICompatibleProvider } from "../providers/openai-compatible.provider";
 import { AgentCapability, AgentEngine, AgentExecutionInput } from "./agent-engine";
 
 const MAX_CONTEXT_MESSAGES = 20;
@@ -24,7 +26,8 @@ export class DefaultChatEngine implements AgentEngine {
     private readonly knowledgeRepository: KnowledgeRepository,
     private readonly memoryService: MemoryService,
     private readonly ollamaService: OllamaService,
-    @Inject(AI_PROVIDER) private readonly provider: AIProvider
+    private readonly openAICompatibleProvider: OpenAICompatibleProvider,
+    private readonly anthropicProvider: AnthropicProvider
   ) {}
 
   async *stream(input: AgentExecutionInput): AsyncIterable<ChatStreamEvent> {
@@ -36,6 +39,7 @@ export class DefaultChatEngine implements AgentEngine {
           isDefault: true
         },
         select: {
+          type: true,
           providerConfigRef: true
         }
       })
@@ -43,8 +47,9 @@ export class DefaultChatEngine implements AgentEngine {
     const providerConfig = defaultAgent?.providerConfigRef
       ? parseAgentProviderConfigRef(defaultAgent.providerConfigRef)
       : undefined;
+    const provider = this.resolveProvider(defaultAgent?.type);
 
-    for await (const event of this.provider.stream({
+    for await (const event of provider.stream({
       messages,
       abortSignal: input.abortSignal,
       ...(hasAgentProviderConfig(providerConfig) ? { provider: providerConfig } : {})
@@ -58,6 +63,14 @@ export class DefaultChatEngine implements AgentEngine {
       name: "channel-chat",
       description: "Answering channel questions with recent workspace conversation context."
     }];
+  }
+
+  private resolveProvider(type?: AgentType | null): AIProvider {
+    if (type === AgentType.ANTHROPIC) {
+      return this.anthropicProvider;
+    }
+
+    return this.openAICompatibleProvider;
   }
 
   private async buildPromptMessages(input: AgentExecutionInput) {

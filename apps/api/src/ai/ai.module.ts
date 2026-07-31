@@ -6,6 +6,7 @@ import { PrismaModule } from "../prisma/prisma.module";
 import { DefaultChatEngine } from "./engines/default-chat.engine";
 import { AGENT_ENGINE } from "./engines/agent-engine";
 import { AI_PROVIDER } from "./providers/ai-provider";
+import { AnthropicProvider } from "./providers/anthropic.provider";
 import { OpenAICompatibleProvider } from "./providers/openai-compatible.provider";
 
 @Module({
@@ -13,6 +14,7 @@ import { OpenAICompatibleProvider } from "./providers/openai-compatible.provider
   providers: [
     OllamaService,
     OpenAICompatibleProvider,
+    AnthropicProvider,
     DefaultChatEngine,
     {
       provide: AI_PROVIDER,
