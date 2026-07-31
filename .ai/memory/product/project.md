@@ -14,6 +14,7 @@
 | Repo shape | Monorepo with `apps/web` and `apps/api` |
 | Validation baseline | Existing lint, typecheck, and test commands |
 | Delivery model | Spec-driven phases with parallel lanes |
+| Phase 11 backend dashboard contract | API now exposes message feedback toggles plus resilient organization/feedback stats for dashboard consumption |
 
 ## Pending memory slots
 

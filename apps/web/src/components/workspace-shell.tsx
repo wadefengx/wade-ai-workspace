@@ -1,18 +1,22 @@
 "use client";
 
 import {
+  CopyOutlined,
+  DislikeOutlined,
   LoadingOutlined,
   MessageOutlined,
   PlusOutlined,
+  RedoOutlined,
   RobotOutlined,
   SmileOutlined,
+  LikeOutlined,
   TeamOutlined,
   UserOutlined
 } from "@ant-design/icons";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { App, Avatar, Button, Dropdown, Grid, Popover, Tag, Tooltip, Typography } from "antd";
 import type { MenuProps } from "antd";
-import { Sender, Suggestion } from "@ant-design/x";
+import { Bubble, Sender, Suggestion } from "@ant-design/x";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import {
@@ -35,6 +39,7 @@ import { EmptyState, LoadingState } from "./ui-state";
 
 type MessageSenderType = "USER" | "AGENT";
 type MessageStatus = "PENDING" | "STREAMING" | "COMPLETED" | "FAILED";
+type MessageFeedback = "like" | "dislike" | null;
 
 type ChatMessage = {
   id: string;
@@ -44,6 +49,7 @@ type ChatMessage = {
   content: string;
   status: MessageStatus;
   createdAt: string;
+  feedback?: MessageFeedback;
 };
 
 type LocalChatMessage = ChatMessage & {
@@ -51,6 +57,9 @@ type LocalChatMessage = ChatMessage & {
   optimistic?: boolean;
   persistedId?: string;
   requestContent?: string;
+  thinkingContent?: string;
+  agentName?: string | null;
+  modelName?: string | null;
 };
 
 type ChannelMessagesResponse = {
@@ -58,19 +67,32 @@ type ChannelMessagesResponse = {
   nextCursor: string | null;
 };
 
-type StreamEventPayload =
-  | {
-      type: "token";
-      content: string;
-    }
-  | {
-      type: "done";
-      messageId: string;
-    }
-  | {
-      type: "error";
-      message: string;
-    };
+type StreamEventPayload = {
+  type: "token" | "done" | "error" | "reasoning" | "thinking" | string;
+  content?: string;
+  messageId?: string;
+  message?: string;
+  reasoning?: string;
+  reasoning_content?: string;
+  thinking?: string;
+  agent?: string;
+  agentName?: string;
+  model?: string;
+};
+
+type StreamStatusState = {
+  channelId: string;
+  agentName: string;
+  modelName: string | null;
+};
+
+type FeedbackMutationVariables = {
+  channelId: string;
+  messageId: string;
+  requestedType: Exclude<MessageFeedback, null>;
+  nextFeedback: MessageFeedback;
+  previousFeedback: MessageFeedback;
+};
 
 const PAGE_SIZE = 20;
 const RETRY_DUPLICATE_WINDOW_MS = 60_000;
@@ -123,6 +145,18 @@ function isChatMessage(value: unknown): value is ChatMessage {
 
 function formatMessageTime(createdAt: string) {
   return formatDateTime(createdAt);
+}
+
+function isNearBottom(element: HTMLDivElement, threshold = 100) {
+  return element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
+}
+
+function appendStreamText(current: string | undefined, next: string) {
+  return current ? `${current}${next}` : next;
+}
+
+function pickFirstString(...values: Array<string | undefined>) {
+  return values.find((value) => typeof value === "string" && value.trim().length > 0) ?? null;
 }
 
 function getStatusLabel(message: Pick<ChatMessage, "senderType" | "status">) {
@@ -207,12 +241,16 @@ export function WorkspaceShell() {
   const [isSending, setIsSending] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [localMessages, setLocalMessages] = useState<LocalChatMessage[]>([]);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [streamStatus, setStreamStatus] = useState<StreamStatusState | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<ComponentRef<typeof Sender> | null>(null);
   const suggestionOpenRef = useRef(false);
   const scrollRestoreRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(null);
   const autoScrolledChannelRef = useRef<string | null>(null);
   const activeStreamAbortRef = useRef<AbortController | null>(null);
+  const shouldAutoFollowRef = useRef(true);
+  const copiedTooltipTimeoutRef = useRef<number | null>(null);
   const draft = draftState.channelId === selectedChannelId ? draftState.value : "";
 
   const messagesQuery = useInfiniteQuery({
@@ -277,10 +315,18 @@ export function WorkspaceShell() {
 
     requestAnimationFrame(() => {
       if (messagesContainerRef.current) {
-        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        messagesContainerRef.current.scrollTo({ top: messagesContainerRef.current.scrollHeight });
       }
     });
   }, []);
+
+  const scrollToBottomIfNeeded = useCallback((force = false) => {
+    if (!messagesContainerRef.current || (!force && !shouldAutoFollowRef.current)) {
+      return;
+    }
+
+    scrollToBottom();
+  }, [scrollToBottom]);
 
   const removeLocalMessage = useCallback((messageId: string) => {
     setLocalMessages((current) => current.filter((item) => item.id !== messageId));
@@ -289,6 +335,32 @@ export function WorkspaceShell() {
   const patchLocalMessage = useCallback((messageId: string, updater: (message: LocalChatMessage) => LocalChatMessage) => {
     setLocalMessages((current) => current.map((item) => (item.id === messageId ? updater(item) : item)));
   }, []);
+
+  const patchPersistedMessage = useCallback(
+    (
+      channelId: string,
+      messageId: string,
+      updater: (message: ChatMessage) => ChatMessage
+    ) => {
+      queryClient.setQueryData<{
+        pages: ChannelMessagesResponse[];
+        pageParams: Array<string | null>;
+      }>(chatKeys.messages(channelId), (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          pages: current.pages.map((page) => ({
+            ...page,
+            items: page.items.map((item) => (item.id === messageId ? updater(item) : item))
+          }))
+        };
+      });
+    },
+    [queryClient]
+  );
 
   const refetchCurrentMessages = useCallback(async () => {
     if (!selectedChannelId) {
@@ -299,6 +371,29 @@ export function WorkspaceShell() {
     await messagesQuery.refetch();
   }, [messagesQuery, queryClient, selectedChannelId]);
 
+  const feedbackMutation = useMutation({
+    mutationFn: ({ channelId, messageId, requestedType }: FeedbackMutationVariables) =>
+      apiFetch(`/channels/${channelId}/messages/${messageId}/feedback`, {
+        method: "PATCH",
+        body: { type: requestedType }
+      }),
+    onMutate: ({ channelId, messageId, nextFeedback, previousFeedback }) => {
+      patchPersistedMessage(channelId, messageId, (current) => ({
+        ...current,
+        feedback: nextFeedback
+      }));
+
+      return { previousFeedback };
+    },
+    onError: (error, variables, context) => {
+      patchPersistedMessage(variables.channelId, variables.messageId, (current) => ({
+        ...current,
+        feedback: context?.previousFeedback ?? variables.previousFeedback
+      }));
+      message.error(error instanceof ApiError ? error.message : "反馈提交失败");
+    }
+  });
+
   const streamAgentReply = useCallback(
     async (channelId: string, content: string, localAgentMessageId: string) => {
       if (!accessToken) {
@@ -308,8 +403,9 @@ export function WorkspaceShell() {
       const abortController = new AbortController();
       activeStreamAbortRef.current?.abort();
       activeStreamAbortRef.current = abortController;
-      let doneMessageId: string | null = null;
+      let streamCompleted = false;
       let streamErrorMessage: string | null = null;
+      setStreamStatus({ channelId, agentName: "AI Agent", modelName: null });
 
       try {
         await streamSse({
@@ -325,38 +421,76 @@ export function WorkspaceShell() {
             }
 
             const payload = JSON.parse(data) as StreamEventPayload;
+            const reasoningContent = pickFirstString(payload.reasoning, payload.reasoning_content, payload.thinking);
+            const agentName = pickFirstString(payload.agentName, payload.agent) ?? "AI Agent";
+            const modelName = pickFirstString(payload.model);
 
-            if (payload.type === "token") {
+            setStreamStatus((current) => {
+              const next = {
+                channelId,
+                agentName,
+                modelName
+              } satisfies StreamStatusState;
+
+              if (
+                current?.channelId === next.channelId &&
+                current.agentName === next.agentName &&
+                current.modelName === next.modelName
+              ) {
+                return current;
+              }
+
+              return next;
+            });
+
+            if (reasoningContent) {
               patchLocalMessage(localAgentMessageId, (current) => ({
                 ...current,
+                agentName,
+                modelName: modelName ?? current.modelName,
+                thinkingContent: appendStreamText(current.thinkingContent, reasoningContent),
+                status: "STREAMING"
+              }));
+              scrollToBottomIfNeeded();
+            }
+
+            if (payload.type === "token" && payload.content) {
+              patchLocalMessage(localAgentMessageId, (current) => ({
+                ...current,
+                agentName,
+                modelName: modelName ?? current.modelName,
                 content: `${current.content}${payload.content}`,
                 status: "STREAMING"
               }));
-              scrollToBottom();
+              scrollToBottomIfNeeded();
               return;
             }
 
             if (payload.type === "done") {
-              doneMessageId = payload.messageId;
+              streamCompleted = true;
               patchLocalMessage(localAgentMessageId, (current) => ({
                 ...current,
-                persistedId: payload.messageId,
+                agentName,
+                modelName: modelName ?? current.modelName,
+                persistedId: payload.messageId ?? current.persistedId,
                 status: "COMPLETED"
               }));
               return;
             }
 
-            streamErrorMessage = payload.message;
-            patchLocalMessage(localAgentMessageId, (current) => ({
-              ...current,
-              errorMessage: payload.message,
-              status: "FAILED"
-            }));
-            throw new Error(payload.message);
+            if (payload.type === "error") {
+              streamErrorMessage = payload.message ?? "AI 回复失败";
+              patchLocalMessage(localAgentMessageId, (current) => ({
+                ...current,
+                errorMessage: streamErrorMessage ?? "AI 回复失败",
+                status: "FAILED"
+              }));
+              throw new Error(streamErrorMessage);
+            }
           }
         });
 
-        if (doneMessageId) {
+        if (streamCompleted) {
           await refetchCurrentMessages();
         }
       } catch (error) {
@@ -379,9 +513,10 @@ export function WorkspaceShell() {
         if (activeStreamAbortRef.current === abortController) {
           activeStreamAbortRef.current = null;
         }
+        setStreamStatus((current) => (current?.channelId === channelId ? null : current));
       }
     },
-    [accessToken, patchLocalMessage, refetchCurrentMessages, removeLocalMessage, scrollToBottom]
+    [accessToken, patchLocalMessage, refetchCurrentMessages, removeLocalMessage, scrollToBottomIfNeeded]
   );
 
   const sendMessage = useCallback(
@@ -446,7 +581,7 @@ export function WorkspaceShell() {
         });
       }
 
-      scrollToBottom();
+      scrollToBottomIfNeeded(true);
 
       try {
         if (!options?.streamOnly) {
@@ -473,7 +608,11 @@ export function WorkspaceShell() {
             content: "",
             status: "STREAMING",
             createdAt: new Date().toISOString(),
-            requestContent: content
+            requestContent: content,
+            feedback: null,
+            thinkingContent: "",
+            agentName: "AI Agent",
+            modelName: null
           });
 
           setLocalMessages((current) => {
@@ -482,7 +621,7 @@ export function WorkspaceShell() {
               : current;
             return [...next, localAgentMessage];
           });
-          scrollToBottom();
+          scrollToBottomIfNeeded(true);
           await streamAgentReply(selectedChannelId, content, localAgentMessage.id);
         } else {
           await refetchCurrentMessages();
@@ -518,7 +657,7 @@ export function WorkspaceShell() {
       message,
       patchLocalMessage,
       refetchCurrentMessages,
-      scrollToBottom,
+      scrollToBottomIfNeeded,
       selectedChannelId,
       streamAgentReply,
       user
@@ -547,11 +686,15 @@ export function WorkspaceShell() {
   useEffect(() => {
     autoScrolledChannelRef.current = null;
     activeStreamAbortRef.current?.abort();
+    shouldAutoFollowRef.current = true;
   }, [selectedChannelId]);
 
   useEffect(
     () => () => {
       activeStreamAbortRef.current?.abort();
+      if (copiedTooltipTimeoutRef.current) {
+        window.clearTimeout(copiedTooltipTimeoutRef.current);
+      }
     },
     []
   );
@@ -577,15 +720,17 @@ export function WorkspaceShell() {
     }
 
     autoScrolledChannelRef.current = selectedChannelId;
-    scrollToBottom();
-  }, [channelMessages.length, messagesQuery.isLoading, scrollToBottom, selectedChannelId]);
+    scrollToBottomIfNeeded(true);
+  }, [channelMessages.length, messagesQuery.isLoading, scrollToBottomIfNeeded, selectedChannelId]);
 
   const handleMessagesScroll = useCallback(() => {
-    if (!messagesContainerRef.current || !messagesQuery.hasNextPage || messagesQuery.isFetchingNextPage) {
+    if (!messagesContainerRef.current) {
       return;
     }
 
-    if (messagesContainerRef.current.scrollTop > 48) {
+    shouldAutoFollowRef.current = isNearBottom(messagesContainerRef.current);
+
+    if (!messagesQuery.hasNextPage || messagesQuery.isFetchingNextPage || messagesContainerRef.current.scrollTop > 48) {
       return;
     }
 
@@ -644,6 +789,75 @@ export function WorkspaceShell() {
       });
     },
     [draft, selectedChannelId]
+  );
+
+  const handleCopyMessage = useCallback(
+    async (messageId: string, content: string) => {
+      try {
+        await navigator.clipboard.writeText(content);
+        if (copiedTooltipTimeoutRef.current) {
+          window.clearTimeout(copiedTooltipTimeoutRef.current);
+        }
+        setCopiedMessageId(messageId);
+        copiedTooltipTimeoutRef.current = window.setTimeout(() => {
+          setCopiedMessageId((current) => (current === messageId ? null : current));
+          copiedTooltipTimeoutRef.current = null;
+        }, 1200);
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : "复制失败");
+      }
+    },
+    [message]
+  );
+
+  const handleFeedback = useCallback(
+    (chatMessage: LocalChatMessage, requestedType: Exclude<MessageFeedback, null>) => {
+      if (!selectedChannelId) {
+        return;
+      }
+
+      const messageId = chatMessage.persistedId ?? (chatMessage.id.startsWith("local-") ? null : chatMessage.id);
+
+      if (!messageId) {
+        return;
+      }
+
+      const previousFeedback = chatMessage.feedback ?? null;
+      const nextFeedback = previousFeedback === requestedType ? null : requestedType;
+
+      feedbackMutation.mutate({
+        channelId: selectedChannelId,
+        messageId,
+        requestedType,
+        nextFeedback,
+        previousFeedback
+      });
+    },
+    [feedbackMutation, selectedChannelId]
+  );
+
+  const regenerateMessage = useCallback(
+    async (targetMessage: LocalChatMessage) => {
+      const targetIndex = channelMessages.findIndex((item) => item.id === targetMessage.id);
+
+      if (targetIndex <= 0) {
+        message.error("未找到可重新生成的上一条用户消息");
+        return;
+      }
+
+      const sourceMessage = channelMessages
+        .slice(0, targetIndex)
+        .reverse()
+        .find((item) => item.senderType === "USER" && item.content.trim());
+
+      if (!sourceMessage) {
+        message.error("未找到可重新生成的上一条用户消息");
+        return;
+      }
+
+      await sendMessage(sourceMessage.content, { streamOnly: true });
+    },
+    [channelMessages, message, sendMessage]
   );
 
   if (!user) {
@@ -739,6 +953,10 @@ export function WorkspaceShell() {
                             const statusLabel = getStatusLabel(chatMessage);
                             const isUserMessage = chatMessage.senderType === "USER";
                             const isFailed = chatMessage.status === "FAILED";
+                            const effectiveMessageId =
+                              chatMessage.persistedId ?? (chatMessage.id.startsWith("local-") ? null : chatMessage.id);
+                            const hasThinking = !!chatMessage.thinkingContent?.trim();
+                            const feedback = chatMessage.feedback ?? null;
 
                             return (
                               <div
@@ -753,18 +971,38 @@ export function WorkspaceShell() {
                                   } ${isFailed ? styles.messageBubbleFailed : ""}`}
                                 >
                                   <div className={styles.messageMeta}>
-                                    <span className={styles.messageAuthor}>{isUserMessage ? user.name || "You" : "AI Agent"}</span>
+                                    <span className={styles.messageAuthor}>
+                                      {isUserMessage ? user.name || "You" : chatMessage.agentName || "AI Agent"}
+                                    </span>
                                     <span className={styles.messageTimestamp}>{formatMessageTime(chatMessage.createdAt)}</span>
                                     {statusLabel ? <span className={styles.messageStatus}>{statusLabel}</span> : null}
                                   </div>
 
                                   {chatMessage.senderType === "AGENT" ? (
-                                    <div className={styles.markdown}>
-                                      <ReactMarkdown>{chatMessage.content || " "}</ReactMarkdown>
-                                      {chatMessage.status === "STREAMING" ? (
-                                        <span className={styles.streamCursor} aria-hidden="true" />
+                                    <>
+                                      {hasThinking ? (
+                                        <details className={styles.thinkingBlock} open={chatMessage.status === "STREAMING"}>
+                                          <summary className={styles.thinkingSummary}>思考过程</summary>
+                                          <div className={styles.thinkingContent}>{chatMessage.thinkingContent}</div>
+                                        </details>
+                                      ) : chatMessage.status === "STREAMING" ? (
+                                        <div className={styles.thinkingIndicator}>
+                                          <Bubble
+                                            content="正在思考…"
+                                            loading
+                                            variant="outlined"
+                                            rootClassName={styles.thinkingBubble}
+                                          />
+                                        </div>
                                       ) : null}
-                                    </div>
+
+                                      <div className={styles.markdown}>
+                                        <ReactMarkdown>{chatMessage.content || " "}</ReactMarkdown>
+                                        {chatMessage.status === "STREAMING" ? (
+                                          <span className={styles.streamCursor} aria-hidden="true" />
+                                        ) : null}
+                                      </div>
+                                    </>
                                   ) : (
                                     <div className={styles.messageText}>{renderMessageContent(chatMessage.content)}</div>
                                   )}
@@ -785,6 +1023,60 @@ export function WorkspaceShell() {
                                       ) : null}
                                     </div>
                                   ) : null}
+
+                                  <div className={styles.messageActions}>
+                                    {isUserMessage ? null : (
+                                      <>
+                                        <Tooltip title={feedback === "like" ? "取消喜欢" : "喜欢"}>
+                                          <Button
+                                            type="text"
+                                            size="small"
+                                            aria-label={feedback === "like" ? "取消喜欢" : "喜欢这条回复"}
+                                            className={`${styles.messageActionButton} ${
+                                              feedback === "like" ? styles.messageActionButtonActive : ""
+                                            }`}
+                                            disabled={!effectiveMessageId || feedbackMutation.isPending}
+                                            icon={<LikeOutlined />}
+                                            onClick={() => handleFeedback(chatMessage, "like")}
+                                          />
+                                        </Tooltip>
+                                        <Tooltip title={feedback === "dislike" ? "取消不喜欢" : "不喜欢"}>
+                                          <Button
+                                            type="text"
+                                            size="small"
+                                            aria-label={feedback === "dislike" ? "取消不喜欢" : "不喜欢这条回复"}
+                                            className={`${styles.messageActionButton} ${
+                                              feedback === "dislike" ? styles.messageActionButtonActive : ""
+                                            }`}
+                                            disabled={!effectiveMessageId || feedbackMutation.isPending}
+                                            icon={<DislikeOutlined />}
+                                            onClick={() => handleFeedback(chatMessage, "dislike")}
+                                          />
+                                        </Tooltip>
+                                        <Tooltip title="重新生成">
+                                          <Button
+                                            type="text"
+                                            size="small"
+                                            aria-label="重新生成回复"
+                                            className={styles.messageActionButton}
+                                            disabled={isSending}
+                                            icon={<RedoOutlined />}
+                                            onClick={() => void regenerateMessage(chatMessage)}
+                                          />
+                                        </Tooltip>
+                                      </>
+                                    )}
+                                    <Tooltip title="已复制" open={copiedMessageId === chatMessage.id ? true : undefined}>
+                                      <Button
+                                        type="text"
+                                        size="small"
+                                        aria-label="复制消息"
+                                        className={styles.messageActionButton}
+                                        icon={<CopyOutlined />}
+                                        onClick={() => void handleCopyMessage(chatMessage.id, chatMessage.content)}
+                                      />
+                                    </Tooltip>
+                                  </div>
                                 </div>
                               </div>
                             );
@@ -794,7 +1086,7 @@ export function WorkspaceShell() {
                         <div className={styles.emptyState}>
                           <EmptyState
                             icon={<RobotOutlined />}
-                            title="频道已就绪，等待首条消息"
+                            title="开始新的对话"
                             description={
                               <>
                                 发送普通消息开始协作，或输入 <strong>@AI</strong> 触发流式回答。
@@ -812,7 +1104,7 @@ export function WorkspaceShell() {
                         description="创建一个频道后，团队消息和 AI 对话都会在这里沉淀。"
                         action={
                           <Button icon={<PlusOutlined />} onClick={() => window.dispatchEvent(new CustomEvent("zone-ai:create-channel"))}>
-                            新建频道
+                            新建 Chat
                           </Button>
                         }
                       />
@@ -822,6 +1114,15 @@ export function WorkspaceShell() {
               </div>
 
               <div className={styles.composer}>
+                {streamStatus?.channelId === selectedChannelId ? (
+                  <div className={styles.composerStatus}>
+                    <Bubble
+                      content={`${streamStatus.agentName}${streamStatus.modelName ? ` · ${streamStatus.modelName}` : ""} 正在思考…`}
+                      loading
+                      variant="outlined"
+                    />
+                  </div>
+                ) : null}
                 <div className={styles.composerInput}>
                   <Suggestion
                     items={(info?: { query?: string }) => {
@@ -839,6 +1140,7 @@ export function WorkspaceShell() {
                           ref={composerRef}
                           aria-label="频道消息"
                           autoSize={{ minRows: 2, maxRows: 6 }}
+                          loading={isSending}
                           value={draft}
                           disabled={!selectedChannel || isSending}
                           placeholder={
@@ -867,35 +1169,38 @@ export function WorkspaceShell() {
                           onKeyDown={(event) => {
                             onKeyDown?.(event);
                           }}
-                          suffix={
-                            <Popover
-                              open={emojiOpen}
-                              onOpenChange={setEmojiOpen}
-                              trigger="click"
-                              placement="topRight"
-                              content={
-                                <div className={styles.emojiGrid}>
-                                  {EMOJIS.map((emoji) => (
-                                    <button
-                                      key={emoji}
-                                      type="button"
-                                      className={styles.emojiItem}
-                                      onClick={() => insertEmoji(emoji)}
-                                    >
-                                      {emoji}
-                                    </button>
-                                  ))}
-                                </div>
-                              }
-                            >
-                              <Button
-                                type="text"
-                                aria-label="插入表情"
-                                icon={<SmileOutlined />}
-                                onClick={() => setEmojiOpen((prev) => !prev)}
-                              />
-                            </Popover>
-                          }
+                          suffix={(defaultActions) => (
+                            <>
+                              {defaultActions}
+                              <Popover
+                                open={emojiOpen}
+                                onOpenChange={setEmojiOpen}
+                                trigger="click"
+                                placement="topRight"
+                                content={
+                                  <div className={styles.emojiGrid}>
+                                    {EMOJIS.map((emoji) => (
+                                      <button
+                                        key={emoji}
+                                        type="button"
+                                        className={styles.emojiItem}
+                                        onClick={() => insertEmoji(emoji)}
+                                      >
+                                        {emoji}
+                                      </button>
+                                    ))}
+                                  </div>
+                                }
+                              >
+                                <Button
+                                  type="text"
+                                  aria-label="插入表情"
+                                  icon={<SmileOutlined />}
+                                  onClick={() => setEmojiOpen((prev) => !prev)}
+                                />
+                              </Popover>
+                            </>
+                          )}
                         />
                       );
                     }}
@@ -904,14 +1209,6 @@ export function WorkspaceShell() {
                     输入 <strong>@</strong> 提及 AI 或成员，<strong>@AI</strong> 触发流式回答，Shift + Enter 换行。
                   </Typography.Text>
                 </div>
-                <Button
-                  type="primary"
-                  loading={isSending}
-                  disabled={!selectedChannel || !draft.trim() || isSending}
-                  onClick={handleSubmit}
-                >
-                  发送
-                </Button>
               </div>
             </>
           ) : (
@@ -930,34 +1227,6 @@ export function WorkspaceShell() {
           )}
         </main>
       </div>
-
-      {screens.lg ? (
-        <aside className={styles.contextPanel}>
-          <div className={styles.contextStack}>
-            <div className={styles.contextCard}>
-              <Typography.Title level={5}>AI Context</Typography.Title>
-              <div className={styles.contextItem}>
-                <RobotOutlined />
-                Default Chat Agent
-              </div>
-              <Typography.Paragraph type="secondary">
-                当前支持频道内 <strong>@AI</strong> 流式回答；Memory、Knowledge 与模型配置页留给后续 Phase。
-              </Typography.Paragraph>
-            </div>
-
-            <div className={styles.contextCard}>
-              <Typography.Title level={5}>Workspace Members</Typography.Title>
-              <div className={styles.contextItem}>
-                <TeamOutlined />
-                {selectedWorkspace ? `${members.length} 位成员` : "等待 Workspace 创建"}
-              </div>
-              <Typography.Paragraph type="secondary">
-                右侧面板继续保留工作台布局骨架，后续再接入更多上下文细节。
-              </Typography.Paragraph>
-            </div>
-          </div>
-        </aside>
-      ) : null}
     </div>
   );
 }

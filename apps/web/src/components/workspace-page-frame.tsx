@@ -19,6 +19,7 @@ type WorkspacePageFrameProps = {
   contextTitle: string;
   contextDescription: string;
   children: ReactNode;
+  scrollableContent?: boolean;
 };
 
 export function WorkspacePageFrame({
@@ -26,7 +27,8 @@ export function WorkspacePageFrame({
   description,
   contextTitle,
   contextDescription,
-  children
+  children,
+  scrollableContent = false
 }: WorkspacePageFrameProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -100,17 +102,33 @@ export function WorkspacePageFrame({
 
         <main className={shellStyles.conversation}>
           {selectedWorkspace ? (
-            <div className={pageStyles.pageStack}>
-              <div className={pageStyles.pageHeader}>
-                <div>
-                  <Typography.Title level={3} className={shellStyles.channelTitle}>
-                    {title}
-                  </Typography.Title>
-                  <Typography.Text type="secondary">{description}</Typography.Text>
+            scrollableContent ? (
+              <div className={pageStyles.pageScrollBody}>
+                <div className={pageStyles.pageStack}>
+                  <div className={pageStyles.pageHeader}>
+                    <div>
+                      <Typography.Title level={3} className={shellStyles.channelTitle}>
+                        {title}
+                      </Typography.Title>
+                      <Typography.Text type="secondary">{description}</Typography.Text>
+                    </div>
+                  </div>
+                  {children}
                 </div>
               </div>
-              {children}
-            </div>
+            ) : (
+              <div className={pageStyles.pageStack}>
+                <div className={pageStyles.pageHeader}>
+                  <div>
+                    <Typography.Title level={3} className={shellStyles.channelTitle}>
+                      {title}
+                    </Typography.Title>
+                    <Typography.Text type="secondary">{description}</Typography.Text>
+                  </div>
+                </div>
+                {children}
+              </div>
+            )
           ) : (
             <EmptyState
               className={shellStyles.workspaceEmpty}

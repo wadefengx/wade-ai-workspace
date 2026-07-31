@@ -114,7 +114,7 @@ function WorkspaceLayoutContent({ children }: Readonly<{ children: ReactNode }>)
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          style={{ flex: 1, minWidth: 0, display: "flex" }}
+          style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", overflow: "hidden" }}
         >
           {children}
         </motion.div>

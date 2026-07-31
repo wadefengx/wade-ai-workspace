@@ -2,17 +2,23 @@
   display: flex;
   /* antd Layout 默认 column,覆盖为左右布局 */
   flex-direction: row;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: var(--surface);
 }
 
 .sidebar {
   --sidebar-width: 280px;
+  display: flex;
+  min-height: 0;
   width: var(--sidebar-width);
   flex: 0 0 var(--sidebar-width);
+  flex-direction: column;
   padding: var(--space-lg, 24px) var(--space-md, 16px);
   border-right: 1px solid var(--line);
   background: var(--surface-subtle);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   transition:
     width 0.2s ease,
     flex-basis 0.2s ease,
@@ -279,6 +285,7 @@
 
 .main {
   display: flex;
+  min-height: 0;
   min-width: 0;
   flex: 1;
   overflow: hidden;
@@ -286,13 +293,16 @@
 
 .center {
   display: flex;
+  min-height: 0;
   min-width: 0;
   flex: 1;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .topbar {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-md, 16px);
@@ -324,10 +334,12 @@
   flex-direction: column;
   gap: var(--space-md, 16px);
   padding: var(--space-lg, 24px);
+  overflow: hidden;
 }
 
 .channelCard {
   display: flex;
+  flex: 0 0 auto;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
@@ -346,12 +358,16 @@
   border-radius: var(--radius-lg, 16px);
   background: linear-gradient(180deg, var(--surface-gradient-start) 0%, var(--surface-gradient-end) 100%);
   box-shadow: 0 14px 32px rgb(15 23 42 / 5%);
+  overflow: hidden;
 }
 
 .messageScrollArea {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--space-lg, 24px);
 }
 
@@ -374,8 +390,9 @@
 }
 
 .messageBubble {
+  position: relative;
   width: min(720px, 100%);
-  padding: 14px 16px;
+  padding: 14px 16px 48px;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg, 16px);
   box-shadow: 0 10px 24px rgb(15 23 42 / 4%);
@@ -530,6 +547,42 @@
   color: var(--muted);
 }
 
+.thinkingBlock {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgb(2 74 216 / 10%);
+  border-radius: 12px;
+  background: rgb(2 74 216 / 4%);
+}
+
+.thinkingSummary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: var(--font-size-sm, 13px);
+  font-weight: 600;
+  list-style: none;
+}
+
+.thinkingSummary::-webkit-details-marker {
+  display: none;
+}
+
+.thinkingContent {
+  margin-top: 10px;
+  white-space: pre-wrap;
+  color: var(--text);
+  font-size: var(--font-size-sm, 13px);
+  line-height: 1.6;
+}
+
+.thinkingIndicator {
+  margin-bottom: 12px;
+}
+
+.thinkingBubble {
+  display: block;
+}
+
 .messageErrorRow {
   display: flex;
   align-items: center;
@@ -542,6 +595,53 @@
 .retryButton {
   padding-inline: 0 !important;
   color: var(--danger) !important;
+}
+
+.messageActions {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 12px;
+  background: rgb(15 23 42 / 42%);
+  backdrop-filter: blur(16px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.messageBubble:hover .messageActions,
+.messageBubble:focus-within .messageActions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.messageActionButton {
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  color: rgb(255 255 255 / 82%) !important;
+}
+
+.messageActionButton:hover,
+.messageActionButton:focus-visible {
+  background: rgb(255 255 255 / 12%) !important;
+  color: #fff !important;
+}
+
+.messageActionButtonActive {
+  background: rgb(2 74 216 / 20%) !important;
+  color: var(--primary) !important;
 }
 
 .historyHint {
@@ -588,8 +688,9 @@
 
 .composer {
   display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
   gap: var(--space-sm, 8px);
-  align-items: flex-end;
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg, 16px);
@@ -597,9 +698,15 @@
   box-shadow: 0 8px 24px rgb(15 23 42 / 5%);
 }
 
+.composerStatus {
+  width: 100%;
+}
+
 .composerInput {
+  display: grid;
+  gap: 8px;
   min-width: 0;
-  flex: 1;
+  width: 100%;
 }
 
 /* @ant-design/x Sender 宽度占满 */
@@ -632,7 +739,6 @@
 
 .composerHint {
   display: block;
-  margin-top: 8px;
   font-size: var(--font-size-sm, 13px);
 }
 

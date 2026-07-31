@@ -126,6 +126,7 @@ model Message {
   senderId         String
   content          String
   status           MessageStatus     @default(COMPLETED)
+  feedback         String?
   replyToMessageId String?           @db.ObjectId
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt

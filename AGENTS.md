@@ -74,7 +74,10 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 
 ## Change Log
 
+- 2026-08-01 Phase 11 Lane B: refactored chat shell scrolling isolation, removed the chat right panel, switched Chats to one-click `对话 N` creation, added AI hover actions/thinking/loading states with `@ant-design/x`, added Memory isolated scrolling, and inserted the Dashboard nav entry.
+- 2026-08-01 Phase 11 Lane A: added Message.feedback persistence/toggle API, organization/feedback stats endpoints with resilient `.ai`+git fallbacks, and backend unit coverage for feedback/stats behavior.
 - 2026-08-01 Phase 10 Lane A: added backend Workspace icon support in Prisma/schema, seed backfill/default demo data, workspace create/update DTO handling, and API tests for icon persistence/validation.
+- 2026-08-01 Phase 11:聊天体验重构 + 双 Dashboard。滚动隔离(100vh shell + 内容区独立滚动,chat/memory)、移除右侧 AI Context 面板、ChatGPT 式一键新建对话、AI 消息 thinking/操作条(like/dislike/regenerate/copy + feedback API)、Sender loading + 状态条(antdx 组件;修复 suffix 覆盖 submit 按钮 bug)、AI Organization Dashboard + Feedback Dashboard(stats API:assets/lanes/pipeline/improvements/feedback 聚合)。
 - 2026-08-01 Phase 10 自我进化(全角色):PM/Architect 落地运行机制(planner/lane-states/confidence/dependency-graph/backlog/review-workflow/memory-to-skill + ADR-006);UX/UI/FE 响应式/a11y/空状态统一/微交互/视觉一致;BE/QA e2e 迁入 `.ai/harness/regression/`(phase6 30 + phase9 19 + phase10 13 全绿)+ 3 高价值单测;修复折叠态 icon 参差(统一 40×40)。
 - 2026-08-01 Phase 10:UX/UI 重构 + AIOS 增强(zustand/动画/dayjs/workspace icon/mermaid/登录页 Apple 化 + registry/pipeline/topology)。
 - 2026-08-01 Phase 9 Lane C: added AIOS `.ai/` organization/runtime/workflow/memory/knowledge/architecture/harness structure, copied specs and skills into `.ai`, and rewrote `AGENTS.md` as the runtime entrypoint.

@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Param,
   Post,
   Query,
@@ -23,6 +24,7 @@ import { AuthenticatedUser } from "../common/types/authenticated-user";
 import { ChatService, ChatSseEvent } from "./chat.service";
 import { CreateMessageDto } from "./dto/create-message.dto";
 import { ListChannelMessagesQueryDto } from "./dto/list-channel-messages-query.dto";
+import { UpdateMessageFeedbackDto } from "./dto/update-message-feedback.dto";
 
 type RequestEventName = "aborted" | "close";
 
@@ -71,6 +73,25 @@ export class ChatController {
     const channelAccess = requireChannelAccess(request);
 
     return this.chatService.createMessage(channelAccess.workspaceId, channelId, user.id, dto);
+  }
+
+  @Patch(":channelId/messages/:messageId/feedback")
+  @ApiOperation({ summary: "更新消息反馈" })
+  @ApiBearerAuth()
+  updateMessageFeedback(
+    @Req() request: ChannelAccessRequest,
+    @Param("channelId") channelId: string,
+    @Param("messageId") messageId: string,
+    @Body() dto: UpdateMessageFeedbackDto
+  ) {
+    const channelAccess = requireChannelAccess(request);
+
+    return this.chatService.updateMessageFeedback(
+      channelAccess.workspaceId,
+      channelId,
+      messageId,
+      dto
+    );
   }
 
   @Post(":channelId/ai/stream")

@@ -8,6 +8,7 @@ import { HealthController } from "./health.controller";
 import { KnowledgeModule } from "./knowledge/knowledge.module";
 import { MemoryModule } from "./memory/memory.module";
 import { PrismaModule } from "./prisma/prisma.module";
+import { StatsModule } from "./stats/stats.module";
 import { UsersModule } from "./users/users.module";
 import { WorkspaceModule } from "./workspace/workspace.module";
 
@@ -22,7 +23,8 @@ import { WorkspaceModule } from "./workspace/workspace.module";
     ChatModule,
     DocsModule,
     KnowledgeModule,
-    MemoryModule
+    MemoryModule,
+    StatsModule
   ],
   controllers: [HealthController]
 })

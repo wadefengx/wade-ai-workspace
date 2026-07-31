@@ -3,6 +3,13 @@
   gap: var(--space-md, 16px);
 }
 
+.pageScrollBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
 .pageHeader {
   display: flex;
   align-items: flex-start;

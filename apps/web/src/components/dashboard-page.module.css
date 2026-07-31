@@ -1,0 +1,556 @@
+.page {
+  display: grid;
+  gap: var(--space-md, 16px);
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-md, 16px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.card,
+.cardShell {
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-lg, 24px);
+  border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+  border-radius: var(--radius-lg, 16px);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-gradient-start) 92%, #fff 8%) 0%, color-mix(in srgb, var(--surface-gradient-end) 94%, transparent) 100%),
+    rgb(255 255 255 / 62%);
+  box-shadow:
+    0 18px 40px rgb(15 23 42 / 8%),
+    inset 0 1px 0 rgb(255 255 255 / 32%);
+  backdrop-filter: blur(18px);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.card:hover,
+.cardShell:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 24px 48px rgb(15 23 42 / 12%),
+    inset 0 1px 0 rgb(255 255 255 / 36%);
+  border-color: color-mix(in srgb, var(--primary-border) 70%, var(--line));
+}
+
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .cardShell {
+  background:
+    linear-gradient(180deg, rgb(22 28 43 / 88%) 0%, rgb(27 35 54 / 94%) 100%),
+    rgb(22 28 43 / 68%);
+  box-shadow:
+    0 20px 44px rgb(0 0 0 / 24%),
+    inset 0 1px 0 rgb(255 255 255 / 4%);
+}
+
+.heroCard {
+  min-height: 156px;
+}
+
+.heroGlow {
+  position: absolute;
+  inset: auto -72px -88px auto;
+  width: 240px;
+  height: 240px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgb(2 74 216 / 20%) 0%, transparent 68%);
+  pointer-events: none;
+}
+
+.heroHeader {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md, 16px);
+}
+
+.heroTitle {
+  margin: 0 !important;
+}
+
+.heroDescription {
+  max-width: 680px;
+  margin-top: 8px !important;
+  margin-bottom: 0 !important;
+}
+
+.heroActions {
+  justify-content: flex-end;
+}
+
+.updatedAt {
+  display: grid;
+  gap: 2px;
+  min-width: 144px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+}
+
+.updatedLabel {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md, 16px);
+  margin-bottom: var(--space-md, 16px);
+}
+
+.sectionHeader :global(.ant-typography) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.spanTwo {
+  grid-column: span 2;
+}
+
+.spanThree {
+  grid-column: 1 / -1;
+}
+
+.agentGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.agentItem {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+}
+
+.agentMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.onlineDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #52c41a;
+  box-shadow: 0 0 0 6px rgb(82 196 26 / 12%);
+}
+
+.pipelineList {
+  display: grid;
+  gap: 12px;
+}
+
+.pipelineItem {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.pipelineRail {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.pipelineDot {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.pipelineDotDone {
+  color: #52c41a;
+  background: rgb(82 196 26 / 14%);
+}
+
+.pipelineDotRunning {
+  color: #faad14;
+  background: rgb(250 173 20 / 14%);
+}
+
+.pipelineDotPending {
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface-soft) 92%, transparent);
+}
+
+.pipelineDotInner {
+  line-height: 1;
+}
+
+.pipelineLine {
+  position: absolute;
+  top: 24px;
+  bottom: -12px;
+  left: 50%;
+  width: 1px;
+  background: color-mix(in srgb, var(--line) 78%, transparent);
+  transform: translateX(-50%);
+}
+
+.pipelineCopy {
+  display: grid;
+  gap: 4px;
+  padding-top: 1px;
+}
+
+.laneList {
+  display: grid;
+  gap: 14px;
+}
+
+.laneItem {
+  display: grid;
+  gap: 10px;
+}
+
+.laneHeader,
+.laneTitleGroup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.laneTitleGroup {
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.statusTag {
+  margin-inline-end: 0 !important;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-surface) 86%, transparent) !important;
+  color: var(--primary) !important;
+}
+
+.confidenceTag {
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 78%, transparent);
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4c8dff 0%, #7ab1ff 100%);
+  transition: width 0.4s ease;
+}
+
+.assetGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.assetCard {
+  display: grid;
+  gap: 8px;
+  padding: 18px 16px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 95%, transparent) 0%, color-mix(in srgb, var(--primary-surface) 34%, transparent) 100%);
+}
+
+.metricIcon {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--primary-surface) 92%, transparent);
+  color: var(--primary);
+  font-size: 18px;
+}
+
+.metricValue {
+  font-size: clamp(28px, 4vw, 34px);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.improvementList {
+  display: grid;
+  gap: 12px;
+}
+
+.improvementItem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+}
+
+.improvementMeta {
+  display: grid;
+  gap: 2px;
+}
+
+.improvementDelta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #52c41a;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.zeroState {
+  display: grid;
+  min-height: 228px;
+  place-items: center;
+  border: 1px dashed color-mix(in srgb, var(--line) 86%, transparent);
+  border-radius: 16px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface-soft) 64%, transparent);
+}
+
+.feedbackGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 260px minmax(0, 1fr) minmax(0, 1.1fr);
+}
+
+.feedbackSummary,
+.chartCard,
+.channelCard {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+}
+
+.feedbackSummary {
+  justify-items: center;
+  align-content: start;
+}
+
+.circleWrap {
+  display: grid;
+  place-items: center;
+}
+
+.feedbackTotals {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.totalBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary-surface) 88%, transparent);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dayChart {
+  display: grid;
+  align-items: end;
+  gap: 12px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  min-height: 220px;
+}
+
+.dayColumn {
+  display: grid;
+  justify-items: center;
+  align-items: end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dayColumnToday .dayLabel,
+.dayColumnToday .dayCount {
+  color: var(--primary) !important;
+  font-weight: 700;
+}
+
+.dayBarFrame {
+  display: flex;
+  width: 100%;
+  min-height: 150px;
+  align-items: end;
+  justify-content: center;
+}
+
+.dayBarTotal {
+  display: flex;
+  width: min(36px, 100%);
+  min-height: 12px;
+  align-items: flex-end;
+  justify-content: center;
+  border-radius: 14px 14px 10px 10px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary-surface-strong) 88%, transparent) 0%, color-mix(in srgb, var(--primary-surface) 62%, transparent) 100%);
+  transition: height 0.4s ease;
+}
+
+.dayBarLike {
+  width: 100%;
+  min-height: 8px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #95de64 0%, #52c41a 100%);
+  transition: height 0.4s ease;
+}
+
+.dayCount,
+.dayLabel {
+  font-size: 12px;
+}
+
+.channelList {
+  display: grid;
+  gap: 14px;
+}
+
+.channelItem {
+  display: grid;
+  gap: 8px;
+}
+
+.channelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.channelProgress {
+  flex: 1;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 78%, transparent);
+}
+
+.channelProgressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #95de64 0%, #52c41a 100%);
+}
+
+.channelRatio {
+  min-width: 72px;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+}
+
+@media (max-width: 1280px) {
+  .assetGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .feedbackGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .spanThree {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 840px) {
+  .heroHeader,
+  .sectionHeader,
+  .laneHeader,
+  .channelRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .heroActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .updatedAt {
+    width: 100%;
+  }
+
+  .agentGrid,
+  .assetGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .spanTwo {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .grid,
+  .agentGrid,
+  .assetGrid,
+  .feedbackGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .card,
+  .cardShell {
+    padding: var(--space-md, 16px);
+  }
+
+  .dayChart {
+    gap: 8px;
+  }
+
+  .dayBarTotal {
+    width: min(28px, 100%);
+  }
+}

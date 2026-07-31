@@ -9,6 +9,8 @@
 | Roles | OWNER > ADMIN > MEMBER inside a workspace |
 | Theme color | Primary brand color stays `#024AD8` |
 | Documentation | Specs and skills remain readable from both new and legacy paths during migration |
+| Workspace shell scrolling | Workspace shell stays `100vh` with `overflow: hidden`; sidebar and content own their scroll containers so header/sidebar stay fixed while chat and memory content scroll |
+| Default chat naming | Sidebar "新建 Chat" creates channels directly as `对话 N` using the current max sequence instead of opening a modal |
 
 ## Pending entries
 

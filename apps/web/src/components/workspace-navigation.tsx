@@ -3,6 +3,7 @@
 import {
   BookOutlined,
   BulbOutlined,
+  DashboardOutlined,
   DatabaseOutlined,
   DownOutlined,
   FileTextOutlined,
@@ -27,6 +28,7 @@ import { buildWorkspaceHref } from "../lib/workspace-navigation";
 import { useAuthStore } from "../stores/auth";
 import { type ThemeMode, useThemeStore } from "../theme/store";
 import {
+  createChannel as requestCreateChannel,
   fetchChannels,
   fetchWorkspaces,
   useWorkspaceContext,
@@ -40,7 +42,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 type NavItem = {
-  key: "knowledge" | "memory" | "members" | "agents" | "settings" | "specs" | "skills";
+  key: "dashboard" | "knowledge" | "memory" | "members" | "agents" | "settings" | "specs" | "skills";
   label: string;
   icon: ReactNode;
   href?: string;
@@ -48,6 +50,7 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
+  { key: "dashboard", label: "Dashboard", icon: <DashboardOutlined />, href: "/dashboard" },
   { key: "knowledge", label: "Knowledge", icon: <BookOutlined />, href: "/knowledge" },
   { key: "memory", label: "Memory", icon: <DatabaseOutlined />, href: "/memory" },
   { key: "members", label: "Members", icon: <TeamOutlined />, href: "/members" },
@@ -91,6 +94,10 @@ const useSidebarStore = create<SidebarState>()(
 );
 
 function resolveActiveNavKey(pathname: string) {
+  if (pathname === "/dashboard") {
+    return "dashboard";
+  }
+
   if (pathname === "/knowledge") {
     return "knowledge";
   }
@@ -125,6 +132,10 @@ function resolveActiveNavKey(pathname: string) {
 function resolveDocumentTitle(pathname: string) {
   if (pathname === "/") {
     return "Zone AI · Workspace";
+  }
+
+  if (pathname === "/dashboard") {
+    return "Zone AI · Dashboard";
   }
 
   if (pathname === "/knowledge") {
@@ -272,6 +283,15 @@ function resolveThemeLabel(themeMode: ThemeMode, resolvedTheme: "light" | "dark"
   return resolvedTheme === "dark" ? "深色" : "浅色";
 }
 
+function resolveNextChatName(channels: Channel[]) {
+  const maxIndex = channels.reduce((currentMax, channel) => {
+    const match = channel.name.match(/^对话\s+(\d+)$/);
+    return match ? Math.max(currentMax, Number(match[1])) : currentMax;
+  }, 0);
+
+  return `对话 ${maxIndex + 1}`;
+}
+
 function BrandMark() {
   return (
     <svg className={styles.brandMark} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -315,7 +335,6 @@ export function WorkspaceNavigation() {
     members
   } = useWorkspaceContext();
   const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false);
-  const [channelModalOpen, setChannelModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [collapsedChannelGroups, setCollapsedChannelGroups] = useState<Record<string, boolean>>({});
@@ -331,7 +350,6 @@ export function WorkspaceNavigation() {
   } | null>(null);
   const [workspaceForm] = Form.useForm<WorkspaceFormValues>();
   const selectedWorkspaceIcon = Form.useWatch("icon", workspaceForm);
-  const [channelForm] = Form.useForm<{ name: string }>();
   const activeNavKey = useMemo(() => resolveActiveNavKey(pathname), [pathname]);
   const resolvedTheme = useMemo<"light" | "dark">(
     () => (themeMode === "system" ? (systemPrefersDark ? "dark" : "light") : themeMode),
@@ -440,38 +458,28 @@ export function WorkspaceNavigation() {
   });
 
   const createChannelMutation = useMutation({
-    mutationFn: (values: { name: string }) => {
+    mutationFn: () => {
       if (!workspaceId) {
         throw new Error("缺少 Workspace");
       }
 
-      return apiFetch<Channel>(`/workspaces/${workspaceId}/channels`, {
-        method: "POST",
-        body: values
-      });
+      return requestCreateChannel(workspaceId, { name: resolveNextChatName(channels) });
     },
-    onSuccess: async (channel, values) => {
+    onSuccess: async (channel) => {
       if (!workspaceId) {
         return;
       }
 
       await queryClient.invalidateQueries({ queryKey: workspaceKeys.channels(workspaceId) });
-      const refreshed = await queryClient.fetchQuery({
+      await queryClient.fetchQuery({
         queryKey: workspaceKeys.channels(workspaceId),
         queryFn: () => fetchChannels(workspaceId)
       });
-      const nextChannel =
-        refreshed.find((item) => item.id === channel?.id) ??
-        refreshed.find((item) => item.name === values.name) ??
-        refreshed.at(-1);
-
-      setChannelModalOpen(false);
-      channelForm.resetFields();
-      message.success("频道已创建");
-      router.push(buildWorkspaceHref("/", workspaceId, { channelId: nextChannel?.id ?? null }));
+      message.success("对话已创建");
+      router.push(buildWorkspaceHref("/", workspaceId, { channelId: channel.id }));
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "创建频道失败");
+      message.error(error instanceof ApiError ? error.message : "创建对话失败");
     }
   });
   const logoutMutation = useMutation({
@@ -581,8 +589,8 @@ export function WorkspaceNavigation() {
 
   useEffect(() => {
     const handleCreateChannel = () => {
-      if (workspaceId) {
-        setChannelModalOpen(true);
+      if (workspaceId && !createChannelMutation.isPending) {
+        createChannelMutation.mutate();
       }
     };
 
@@ -591,7 +599,7 @@ export function WorkspaceNavigation() {
     return () => {
       window.removeEventListener("zone-ai:create-channel", handleCreateChannel);
     };
-  }, [workspaceId]);
+  }, [createChannelMutation, workspaceId]);
 
   return (
     <>
@@ -732,8 +740,9 @@ export function WorkspaceNavigation() {
                 size="small"
                 type="text"
                 aria-label="新建 Chat"
-                disabled={!workspaceId}
-                onClick={() => setChannelModalOpen(true)}
+                disabled={!workspaceId || createChannelMutation.isPending}
+                loading={createChannelMutation.isPending}
+                onClick={() => createChannelMutation.mutate()}
               />
             </Tooltip>
           </div>
@@ -826,7 +835,12 @@ export function WorkspaceNavigation() {
                   description={workspaceId ? "先创建一个 Chat 频道，消息与 AI 对话就会开始沉淀。" : "创建 Workspace 后，这里会自动出现频道列表。"}
                   action={
                     workspaceId ? (
-                      <Button size="small" icon={<PlusOutlined />} onClick={() => setChannelModalOpen(true)}>
+                    <Button
+                       size="small"
+                       icon={<PlusOutlined />}
+                       loading={createChannelMutation.isPending}
+                       onClick={() => createChannelMutation.mutate()}
+                    >
                         新建 Chat
                       </Button>
                     ) : undefined
@@ -958,31 +972,6 @@ export function WorkspaceNavigation() {
                 );
               })}
             </div>
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      <Modal
-        destroyOnHidden
-        open={channelModalOpen}
-        title="创建频道"
-        okText="创建"
-        confirmLoading={createChannelMutation.isPending}
-        onCancel={() => setChannelModalOpen(false)}
-        onOk={() => channelForm.submit()}
-      >
-        <Form
-          form={channelForm}
-          layout="vertical"
-          requiredMark={false}
-          onFinish={(values) => createChannelMutation.mutate(values)}
-        >
-          <Form.Item
-            label="频道名称"
-            name="name"
-            rules={[{ required: true, message: "请输入频道名称" }]}
-          >
-            <Input placeholder="例如：product-updates" />
           </Form.Item>
         </Form>
       </Modal>

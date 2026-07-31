@@ -4,6 +4,7 @@ import { AGENT_ENGINE, AgentEngine } from "../ai/engines/agent-engine";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateMessageDto } from "./dto/create-message.dto";
 import { ListChannelMessagesQueryDto } from "./dto/list-channel-messages-query.dto";
+import { UpdateMessageFeedbackDto } from "./dto/update-message-feedback.dto";
 
 export type ChatSseEvent =
   | {
@@ -63,6 +64,34 @@ export class ChatService {
         senderId: userId,
         content: dto.content,
         status: MessageStatus.COMPLETED
+      }
+    });
+  }
+
+  async updateMessageFeedback(
+    workspaceId: string,
+    channelId: string,
+    messageId: string,
+    dto: UpdateMessageFeedbackDto
+  ) {
+    const message = await this.prisma.message.findFirst({
+      where: {
+        id: messageId,
+        workspaceId,
+        channelId
+      }
+    });
+
+    if (!message) {
+      throw new NotFoundException("消息不存在");
+    }
+
+    const nextFeedback = message.feedback === dto.type ? null : dto.type;
+
+    return this.prisma.message.update({
+      where: { id: message.id },
+      data: {
+        feedback: nextFeedback
       }
     });
   }

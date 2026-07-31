@@ -276,6 +276,90 @@ describe("ChatService", () => {
       }
     });
   });
+
+  it("clears feedback when submitting the same type again", async () => {
+    prisma.message.findFirst.mockResolvedValue({
+      id: "message-1",
+      workspaceId: "workspace-1",
+      channelId: "channel-1",
+      senderType: MessageSenderType.AGENT,
+      senderId: "agent-1",
+      content: "Hello",
+      status: MessageStatus.COMPLETED,
+      feedback: "like",
+      createdAt: new Date("2024-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2024-01-01T00:00:00.000Z")
+    });
+    prisma.message.update.mockResolvedValue({
+      id: "message-1",
+      feedback: null
+    });
+    const module = await Test.createTestingModule({
+      providers: [{
+        provide: PrismaService,
+        useValue: prisma
+      }, {
+        provide: AGENT_ENGINE,
+        useValue: agentEngine
+      }, ChatService]
+    }).compile();
+    const service = module.get(ChatService);
+
+    await expect(service.updateMessageFeedback("workspace-1", "channel-1", "message-1", {
+      type: "like"
+    })).resolves.toEqual({
+      id: "message-1",
+      feedback: null
+    });
+    expect(prisma.message.update).toHaveBeenCalledWith({
+      where: { id: "message-1" },
+      data: {
+        feedback: null
+      }
+    });
+  });
+
+  it("switches feedback when submitting a different type", async () => {
+    prisma.message.findFirst.mockResolvedValue({
+      id: "message-1",
+      workspaceId: "workspace-1",
+      channelId: "channel-1",
+      senderType: MessageSenderType.AGENT,
+      senderId: "agent-1",
+      content: "Hello",
+      status: MessageStatus.COMPLETED,
+      feedback: "like",
+      createdAt: new Date("2024-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2024-01-01T00:00:00.000Z")
+    });
+    prisma.message.update.mockResolvedValue({
+      id: "message-1",
+      feedback: "dislike"
+    });
+    const module = await Test.createTestingModule({
+      providers: [{
+        provide: PrismaService,
+        useValue: prisma
+      }, {
+        provide: AGENT_ENGINE,
+        useValue: agentEngine
+      }, ChatService]
+    }).compile();
+    const service = module.get(ChatService);
+
+    await expect(service.updateMessageFeedback("workspace-1", "channel-1", "message-1", {
+      type: "dislike"
+    })).resolves.toEqual({
+      id: "message-1",
+      feedback: "dislike"
+    });
+    expect(prisma.message.update).toHaveBeenCalledWith({
+      where: { id: "message-1" },
+      data: {
+        feedback: "dislike"
+      }
+    });
+  });
 });
 
 async function collect<T>(iterable: AsyncIterable<T>) {
