@@ -5,14 +5,17 @@ type ApiErrorPayload = {
 
 type ApiFetchOptions = Omit<RequestInit, "body"> & {
   auth?: boolean;
+  autoRefresh?: boolean;
   body?: BodyInit | Record<string, unknown> | null;
 };
 
 const DEFAULT_API_BASE_URL = "http://localhost:3001/api";
-const AUTH_ROUTES = new Set(["/login", "/register"]);
+const REFRESH_EXCLUDED_PATHS = new Set(["/auth/login", "/auth/refresh"]);
 
 let getAccessToken = () => null as string | null;
+let refreshSession = async () => false;
 let handleUnauthorized = () => {};
+let refreshPromise: Promise<boolean> | null = null;
 
 export class ApiError extends Error {
   constructor(
@@ -54,9 +57,11 @@ export function setUnauthorizedHandler(handler: () => void) {
   handleUnauthorized = handler;
 }
 
-export async function apiFetch<T = void>(path: string, options: ApiFetchOptions = {}) {
-  const { auth = true, body, headers, ...init } = options;
-  const token = auth ? getAccessToken() : null;
+export function setSessionRefreshHandler(handler: () => Promise<boolean>) {
+  refreshSession = handler;
+}
+
+function buildRequestHeaders(headers: HeadersInit | undefined, body: ApiFetchOptions["body"], token: string | null) {
   const resolvedBody = resolveBody(body);
   const nextHeaders = new Headers(headers);
 
@@ -68,32 +73,86 @@ export async function apiFetch<T = void>(path: string, options: ApiFetchOptions 
     nextHeaders.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(resolveApiUrl(path), {
+  return { headers: nextHeaders, body: resolvedBody };
+}
+
+async function executeRequest(path: string, options: ApiFetchOptions, tokenOverride?: string | null) {
+  const { body, headers, ...init } = options;
+  const { headers: nextHeaders, body: resolvedBody } = buildRequestHeaders(headers, body, tokenOverride ?? null);
+
+  return fetch(resolveApiUrl(path), {
     ...init,
     body: resolvedBody,
     cache: "no-store",
     headers: nextHeaders
   });
+}
+
+function redirectToLogin() {
+  if (typeof window === "undefined" || window.location.pathname === "/login") {
+    return;
+  }
+
+  window.location.replace("/login");
+}
+
+function handleSessionExpired() {
+  handleUnauthorized();
+  redirectToLogin();
+}
+
+async function waitForRefreshSession() {
+  if (!refreshPromise) {
+    refreshPromise = refreshSession().finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
+}
+
+async function toApiError(response: Response) {
+  const fallbackMessage = response.statusText || "请求失败";
+  let payload: ApiErrorPayload | null = null;
+
+  try {
+    payload = (await response.json()) as ApiErrorPayload;
+  } catch {
+    payload = null;
+  }
+
+  return new ApiError(payload?.statusCode ?? response.status, payload?.message ?? fallbackMessage);
+}
+
+export async function apiFetch<T = void>(path: string, options: ApiFetchOptions = {}) {
+  const { auth = true, autoRefresh = true } = options;
+  const token = auth ? getAccessToken() : null;
+  let response = await executeRequest(path, options, token);
+  const canAutoRefresh = auth && autoRefresh && !REFRESH_EXCLUDED_PATHS.has(path);
+  let attemptedRefresh = false;
+
+  if (response.status === 401 && canAutoRefresh) {
+    attemptedRefresh = true;
+    const refreshed = await waitForRefreshSession();
+
+    if (!refreshed) {
+      handleSessionExpired();
+      throw await toApiError(response);
+    }
+
+    response = await executeRequest(path, options, auth ? getAccessToken() : null);
+  }
 
   if (response.status === 401 && auth) {
-    handleUnauthorized();
-
-    if (typeof window !== "undefined" && !AUTH_ROUTES.has(window.location.pathname)) {
-      window.location.replace("/login");
+    if (attemptedRefresh) {
+      handleSessionExpired();
     }
+
+    throw await toApiError(response);
   }
 
   if (!response.ok) {
-    const fallbackMessage = response.statusText || "请求失败";
-    let payload: ApiErrorPayload | null = null;
-
-    try {
-      payload = (await response.json()) as ApiErrorPayload;
-    } catch {
-      payload = null;
-    }
-
-    throw new ApiError(payload?.statusCode ?? response.status, payload?.message ?? fallbackMessage);
+    throw await toApiError(response);
   }
 
   if (response.status === 204) {

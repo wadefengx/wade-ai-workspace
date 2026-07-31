@@ -1,23 +1,30 @@
 "use client";
 
 import {
+  AppstoreOutlined,
   BookOutlined,
   BulbOutlined,
   DatabaseOutlined,
   FileTextOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  MessageOutlined,
   PlusOutlined,
   RobotOutlined,
+  SearchOutlined,
   SettingOutlined,
+  SunOutlined,
   TeamOutlined
 } from "@ant-design/icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { App, Avatar, Button, Dropdown, Form, Input, Modal, Select, Spin, Typography } from "antd";
+import { App, Avatar, Button, Dropdown, Form, Input, Modal, Select, Spin, Tooltip, Typography } from "antd";
 import type { MenuProps } from "antd";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ApiError, apiFetch } from "../lib/api";
 import { buildWorkspaceHref } from "../lib/workspace-navigation";
 import { useAuthStore } from "../stores/auth";
+import { type ThemeMode, useThemeStore } from "../theme/store";
 import {
   fetchChannels,
   fetchWorkspaces,
@@ -27,6 +34,8 @@ import {
   type Workspace
 } from "./workspace-context";
 import styles from "./workspace-shell.module.css";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 type NavItem = {
   key: "knowledge" | "memory" | "members" | "agents" | "settings" | "specs" | "skills";
@@ -45,6 +54,34 @@ const navItems: NavItem[] = [
   { key: "specs", label: "Specs", icon: <FileTextOutlined />, href: "/specs" },
   { key: "skills", label: "Skills", icon: <BulbOutlined />, href: "/skills" }
 ];
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+type SidebarState = {
+  collapsed: boolean;
+  setCollapsed: (collapsed: boolean) => void;
+};
+
+type ChannelGroup = {
+  key: string;
+  label: string;
+  channels: Channel[];
+  sortOrder: number;
+  sortTimestamp: number;
+};
+
+const useSidebarStore = create<SidebarState>()(
+  persist(
+    (set) => ({
+      collapsed: false,
+      setCollapsed: (collapsed) => set({ collapsed })
+    }),
+    {
+      name: "zone-ai-sidebar-collapsed",
+      storage: createJSONStorage(() => localStorage)
+    }
+  )
+);
 
 function resolveActiveNavKey(pathname: string) {
   if (pathname === "/knowledge") {
@@ -125,6 +162,105 @@ function formatRegisteredAt(value?: string) {
   }).format(new Date(value));
 }
 
+function startOfDay(value: Date) {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+}
+
+function formatMonthLabel(value: Date) {
+  return `${value.getFullYear()}年${value.getMonth() + 1}月`;
+}
+
+function resolveChannelGroup(channel: Channel, now: Date): Omit<ChannelGroup, "channels"> {
+  if (!channel.lastMessageAt) {
+    return {
+      key: "no-messages",
+      label: "暂无消息",
+      sortOrder: 99,
+      sortTimestamp: Number.NEGATIVE_INFINITY
+    };
+  }
+
+  const timestamp = new Date(channel.lastMessageAt);
+
+  if (Number.isNaN(timestamp.getTime())) {
+    return {
+      key: "no-messages",
+      label: "暂无消息",
+      sortOrder: 99,
+      sortTimestamp: Number.NEGATIVE_INFINITY
+    };
+  }
+
+  const dayDiff = Math.floor((startOfDay(now).getTime() - startOfDay(timestamp).getTime()) / DAY_IN_MS);
+
+  if (dayDiff <= 0) {
+    return {
+      key: "today",
+      label: "今天",
+      sortOrder: 0,
+      sortTimestamp: Number.POSITIVE_INFINITY
+    };
+  }
+
+  if (dayDiff < 7) {
+    return {
+      key: "this-week",
+      label: "一周前",
+      sortOrder: 1,
+      sortTimestamp: now.getTime() - 7 * DAY_IN_MS
+    };
+  }
+
+  if (dayDiff < 30) {
+    return {
+      key: "this-month",
+      label: "一月前",
+      sortOrder: 2,
+      sortTimestamp: now.getTime() - 30 * DAY_IN_MS
+    };
+  }
+
+  return {
+    key: `${timestamp.getFullYear()}-${timestamp.getMonth() + 1}`,
+    label: formatMonthLabel(timestamp),
+    sortOrder: 3,
+    sortTimestamp: new Date(timestamp.getFullYear(), timestamp.getMonth(), 1).getTime()
+  };
+}
+
+function compareChannelsByActivity(a: Channel, b: Channel) {
+  const activityDiff =
+    new Date(b.lastMessageAt ?? 0).getTime() - new Date(a.lastMessageAt ?? 0).getTime();
+
+  if (activityDiff !== 0) {
+    return activityDiff;
+  }
+
+  const createdAtDiff = new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
+
+  if (createdAtDiff !== 0) {
+    return createdAtDiff;
+  }
+
+  return a.name.localeCompare(b.name);
+}
+
+function compareChannelGroups(a: ChannelGroup, b: ChannelGroup) {
+  if (a.sortOrder !== b.sortOrder) {
+    return a.sortOrder - b.sortOrder;
+  }
+
+  return b.sortTimestamp - a.sortTimestamp;
+}
+
+function resolveThemeLabel(themeMode: ThemeMode, resolvedTheme: "light" | "dark") {
+  if (themeMode === "system") {
+    return `跟随系统（当前${resolvedTheme === "dark" ? "深色" : "浅色"}）`;
+  }
+
+  return resolvedTheme === "dark" ? "深色" : "浅色";
+}
+
 function BrandMark() {
   return (
     <svg className={styles.brandMark} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -151,12 +287,17 @@ export function WorkspaceNavigation() {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const { message } = App.useApp();
+  const themeMode = useThemeStore((state) => state.theme);
+  const setTheme = useThemeStore((state) => state.setTheme);
+  const sidebarCollapsed = useSidebarStore((state) => state.collapsed);
+  const setSidebarCollapsed = useSidebarStore((state) => state.setCollapsed);
   const clearSession = useAuthStore((state) => state.clearSession);
   const user = useAuthStore((state) => state.user);
   const {
     workspaceId,
     workspaces,
     workspacesLoading,
+    selectedWorkspace,
     channels,
     channelsLoading,
     selectedChannelId,
@@ -166,6 +307,10 @@ export function WorkspaceNavigation() {
   const [channelModalOpen, setChannelModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [chatSearch, setChatSearch] = useState("");
+  const [systemPrefersDark, setSystemPrefersDark] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
   const [accountAnchor, setAccountAnchor] = useState<{
     left: number;
     top: number;
@@ -175,6 +320,14 @@ export function WorkspaceNavigation() {
   const [workspaceForm] = Form.useForm<{ name: string }>();
   const [channelForm] = Form.useForm<{ name: string }>();
   const activeNavKey = useMemo(() => resolveActiveNavKey(pathname), [pathname]);
+  const resolvedTheme = useMemo<"light" | "dark">(
+    () => (themeMode === "system" ? (systemPrefersDark ? "dark" : "light") : themeMode),
+    [systemPrefersDark, themeMode]
+  );
+  const themeTooltip = useMemo(
+    () => `当前主题：${resolveThemeLabel(themeMode, resolvedTheme)}`,
+    [resolvedTheme, themeMode]
+  );
   const currentMember = useMemo(
     () => members.find((member) => member.userId === user?.id) ?? null,
     [members, user?.id]
@@ -190,7 +343,57 @@ export function WorkspaceNavigation() {
 
     return currentMember?.role ?? "USER";
   }, [currentMember?.role, user]);
+  const filteredChannels = useMemo(() => {
+    const keyword = chatSearch.trim().toLowerCase();
 
+    if (!keyword) {
+      return channels;
+    }
+
+    return channels.filter((channel) => channel.name.toLowerCase().includes(keyword));
+  }, [channels, chatSearch]);
+  const groupedChannels = useMemo<ChannelGroup[]>(() => {
+    const now = new Date();
+    const groups = new Map<string, ChannelGroup>();
+
+    for (const channel of [...filteredChannels].sort(compareChannelsByActivity)) {
+      const groupMeta = resolveChannelGroup(channel, now);
+      const existingGroup = groups.get(groupMeta.key);
+
+      if (existingGroup) {
+        existingGroup.channels.push(channel);
+        continue;
+      }
+
+      groups.set(groupMeta.key, {
+        ...groupMeta,
+        channels: [channel]
+      });
+    }
+
+    return Array.from(groups.values()).sort(compareChannelGroups);
+  }, [filteredChannels]);
+  const workspaceMenuItems = useMemo<NonNullable<MenuProps["items"]>>(
+    () =>
+      workspaces.map((workspace) => ({
+        key: workspace.id,
+        label: workspace.name
+      })),
+    [workspaces]
+  );
+  const workspaceMenu = useMemo<MenuProps>(
+    () => ({
+      items: workspaceMenuItems,
+      onClick: ({ key }) => {
+        router.push(
+          buildWorkspaceHref(pathname, String(key), {
+            channelId: selectedChannelId
+          })
+        );
+      }
+    }),
+    [pathname, router, selectedChannelId, workspaceMenuItems]
+  );
   const createWorkspaceMutation = useMutation({
     mutationFn: (values: { name: string }) =>
       apiFetch<Workspace>("/workspaces", {
@@ -295,6 +498,19 @@ export function WorkspaceNavigation() {
   }, [pathname]);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (event: MediaQueryListEvent) => {
+      setSystemPrefersDark(event.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleAccountTriggerClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const trigger = target?.closest(`.${styles.memberBar} .ant-btn`) as HTMLButtonElement | null;
@@ -338,92 +554,223 @@ export function WorkspaceNavigation() {
 
   return (
     <>
-      <aside className={styles.sidebar}>
-        <div className={styles.brand}>
-          <BrandMark />
-          <span>Zone AI</span>
+      <aside className={`${styles.sidebar} ${sidebarCollapsed ? styles.sidebarCollapsed : ""}`}>
+        <div className={styles.sidebarHeader}>
+          {sidebarCollapsed ? (
+            <Tooltip title="Zone AI" placement="right">
+              <div className={styles.brand}>
+                <BrandMark />
+              </div>
+            </Tooltip>
+          ) : (
+            <div className={styles.brand}>
+              <BrandMark />
+              <span className={styles.brandLabel}>Zone AI</span>
+            </div>
+          )}
+
+          <div className={styles.sidebarActions}>
+            <Tooltip title={themeTooltip} placement="bottom">
+              <Button
+                className={styles.sidebarActionButton}
+                type="text"
+                icon={resolvedTheme === "dark" ? <BulbOutlined /> : <SunOutlined />}
+                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+              />
+            </Tooltip>
+            <Tooltip title={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"} placement="bottom">
+              <Button
+                className={styles.sidebarActionButton}
+                type="text"
+                icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              />
+            </Tooltip>
+          </div>
         </div>
 
         <div className={styles.workspaceControls}>
-          <Typography.Text className={styles.sectionTitle}>Workspace</Typography.Text>
-          <Select
-            placeholder={workspaces.length ? "选择 Workspace" : "暂无 Workspace"}
-            value={workspaceId ?? undefined}
-            options={workspaces.map((workspace) => ({
-              label: workspace.name,
-              value: workspace.id
-            }))}
-            loading={workspacesLoading}
-            onChange={(value) => router.push(buildWorkspaceHref(pathname, value))}
-          />
-          <Button icon={<PlusOutlined />} onClick={() => setWorkspaceModalOpen(true)}>
-            新建 Workspace
-          </Button>
+          <div className={styles.sectionHeader}>
+            {sidebarCollapsed ? (
+              <Tooltip title="Workspace" placement="right">
+                <span className={styles.sectionIcon}>
+                  <AppstoreOutlined />
+                </span>
+              </Tooltip>
+            ) : (
+              <Typography.Text className={styles.sectionTitle}>Workspace</Typography.Text>
+            )}
+          </div>
+
+          {sidebarCollapsed ? (
+            <div className={styles.iconList}>
+              <Dropdown menu={workspaceMenu} trigger={["click"]}>
+                <Tooltip
+                  title={selectedWorkspace?.name ?? (workspaces.length ? "选择 Workspace" : "暂无 Workspace")}
+                  placement="right"
+                >
+                  <Button
+                    className={styles.iconOnlyButton}
+                    type="text"
+                    loading={workspacesLoading}
+                    icon={<AppstoreOutlined />}
+                  />
+                </Tooltip>
+              </Dropdown>
+              <Tooltip title="新建 Workspace" placement="right">
+                <Button
+                  className={styles.iconOnlyButton}
+                  type="text"
+                  icon={<PlusOutlined />}
+                  onClick={() => setWorkspaceModalOpen(true)}
+                />
+              </Tooltip>
+            </div>
+          ) : (
+            <>
+              <Select
+                placeholder={workspaces.length ? "选择 Workspace" : "暂无 Workspace"}
+                value={workspaceId ?? undefined}
+                options={workspaces.map((workspace) => ({
+                  label: workspace.name,
+                  value: workspace.id
+                }))}
+                loading={workspacesLoading}
+                onChange={(value) =>
+                  router.push(
+                    buildWorkspaceHref(pathname, value, {
+                      channelId: selectedChannelId
+                    })
+                  )
+                }
+              />
+              <Button icon={<PlusOutlined />} onClick={() => setWorkspaceModalOpen(true)}>
+                新建 Workspace
+              </Button>
+            </>
+          )}
         </div>
 
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
-            <Typography.Text className={styles.sectionTitle}>Channels</Typography.Text>
-            <Button
-              icon={<PlusOutlined />}
-              size="small"
-              type="text"
-              disabled={!workspaceId}
-              onClick={() => setChannelModalOpen(true)}
-            />
+            {sidebarCollapsed ? (
+              <Tooltip title="Chats" placement="right">
+                <span className={styles.sectionIcon}>
+                  <MessageOutlined />
+                </span>
+              </Tooltip>
+            ) : (
+              <Typography.Text className={styles.sectionTitle}>Chats</Typography.Text>
+            )}
+            <Tooltip title="新建 Chat" placement={sidebarCollapsed ? "right" : "top"}>
+              <Button
+                icon={<PlusOutlined />}
+                size="small"
+                type="text"
+                disabled={!workspaceId}
+                onClick={() => setChannelModalOpen(true)}
+              />
+            </Tooltip>
           </div>
+
+          {!sidebarCollapsed ? (
+            <Input
+              allowClear
+              className={styles.chatSearch}
+              placeholder="搜索 Chats"
+              prefix={<SearchOutlined />}
+              value={chatSearch}
+              onChange={(event) => setChatSearch(event.target.value)}
+            />
+          ) : null}
 
           {channelsLoading ? (
             <div className={styles.loadingBlock}>
               <Spin />
             </div>
           ) : (
-            <div className={styles.channelList}>
-              {channels.map((channel) => (
-                <Button
-                  key={channel.id}
-                  className={`${styles.channelButton} ${
-                    channel.id === selectedChannelId ? styles.channelButtonActive : ""
-                  }`}
-                  type="text"
-                  onClick={() => router.push(buildWorkspaceHref("/", workspaceId, { channelId: channel.id }))}
-                >
-                  # {channel.name}
-                </Button>
+            <div className={styles.channelGroups}>
+              {groupedChannels.map((group) => (
+                <div key={group.key} className={styles.channelGroup}>
+                  {!sidebarCollapsed ? (
+                    <Typography.Text className={styles.channelGroupTitle}>{group.label}</Typography.Text>
+                  ) : null}
+                  <div className={styles.channelList}>
+                    {group.channels.map((channel) => {
+                      const button = (
+                        <Button
+                          key={channel.id}
+                          className={`${styles.channelButton} ${
+                            channel.id === selectedChannelId ? styles.channelButtonActive : ""
+                          } ${sidebarCollapsed ? styles.channelButtonCollapsed : ""}`}
+                          type="text"
+                          onClick={() => router.push(buildWorkspaceHref("/", workspaceId, { channelId: channel.id }))}
+                        >
+                          <MessageOutlined />
+                          {!sidebarCollapsed ? <span className={styles.channelLabel}># {channel.name}</span> : null}
+                        </Button>
+                      );
+
+                      if (!sidebarCollapsed) {
+                        return button;
+                      }
+
+                      return (
+                        <Tooltip key={channel.id} title={`# ${channel.name}`} placement="right">
+                          {button}
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
-              {!channels.length ? (
+              {!channels.length && !sidebarCollapsed ? (
                 <Typography.Text type="secondary">
                   {workspaceId ? "还没有频道，先创建一个。" : "先创建 Workspace。"}
                 </Typography.Text>
+              ) : null}
+              {!!channels.length && !groupedChannels.length && !sidebarCollapsed ? (
+                <Typography.Text type="secondary">没有匹配的 Chats。</Typography.Text>
               ) : null}
             </div>
           )}
         </div>
 
         <div className={styles.section}>
-          <Typography.Text className={styles.sectionTitle}>Workspace Menu</Typography.Text>
+          {sidebarCollapsed ? (
+            <Tooltip title="Workspace Menu" placement="right">
+              <span className={styles.sectionIcon}>
+                <SettingOutlined />
+              </span>
+            </Tooltip>
+          ) : (
+            <Typography.Text className={styles.sectionTitle}>Workspace Menu</Typography.Text>
+          )}
           <div className={styles.placeholderList}>
             {navItems.map((item) => (
-              <Button
-                key={item.key}
-                className={`${styles.navButton} ${item.key === activeNavKey ? styles.channelButtonActive : ""}`}
-                type="text"
-                disabled={item.disabled}
-                onClick={() => {
-                  if (item.disabled || !item.href) {
-                    return;
-                  }
+              <Tooltip key={item.key} title={sidebarCollapsed ? item.label : undefined} placement="right">
+                <Button
+                  className={`${styles.navButton} ${item.key === activeNavKey ? styles.channelButtonActive : ""} ${
+                    sidebarCollapsed ? styles.navButtonCollapsed : ""
+                  }`}
+                  type="text"
+                  disabled={item.disabled}
+                  onClick={() => {
+                    if (item.disabled || !item.href) {
+                      return;
+                    }
 
-                  router.push(
-                    buildWorkspaceHref(item.href, workspaceId, {
-                      channelId: selectedChannelId
-                    })
-                  );
-                }}
-              >
-                {item.icon}
-                {item.label}
-              </Button>
+                    router.push(
+                      buildWorkspaceHref(item.href, workspaceId, {
+                        channelId: selectedChannelId
+                      })
+                    );
+                  }}
+                >
+                  {item.icon}
+                  {!sidebarCollapsed ? item.label : null}
+                </Button>
+              </Tooltip>
             ))}
           </div>
         </div>

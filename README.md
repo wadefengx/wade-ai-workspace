@@ -13,6 +13,7 @@ docker compose up --build
 
 - Web: http://localhost:3000
 - API health: http://localhost:3001/api/health
+- **API 文档(Swagger)**: http://localhost:3001/api/swagger
 
 ## 测试账号
 

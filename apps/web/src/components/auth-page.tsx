@@ -13,7 +13,9 @@ import styles from "./auth-page.module.css";
 type AuthMode = "login" | "register";
 
 type AuthResponse = {
-  token: string;
+  accessToken?: string;
+  refreshToken?: string;
+  token?: string;
   user: AuthUser;
 };
 
@@ -110,8 +112,19 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         auth: false,
         body: values
       }),
-    onSuccess: ({ token, user: currentUser }) => {
-      setSession({ token, user: currentUser });
+    onSuccess: ({ accessToken, refreshToken, token, user: currentUser }) => {
+      const resolvedAccessToken = accessToken ?? token;
+
+      if (!resolvedAccessToken) {
+        message.error("登录响应缺少 access token");
+        return;
+      }
+
+      setSession({
+        accessToken: resolvedAccessToken,
+        refreshToken,
+        user: currentUser
+      });
       message.success(content.successMessage);
       router.replace("/");
     },

@@ -34,7 +34,8 @@ describe("WorkspaceService", () => {
       deleteMany: jest.fn()
     },
     message: {
-      deleteMany: jest.fn()
+      deleteMany: jest.fn(),
+      groupBy: jest.fn()
     },
     knowledgeDocument: {
       findMany: jest.fn(),
@@ -121,6 +122,65 @@ describe("WorkspaceService", () => {
 
     await expect(service.listChannels("workspace-1", "user-2")).rejects.toBeInstanceOf(ForbiddenException);
     expect(prisma.channel.findMany).not.toHaveBeenCalled();
+  });
+
+  it("returns channels with lastMessageAt and messageCount", async () => {
+    prisma.workspace.findUnique.mockResolvedValue({ id: "workspace-1" });
+    prisma.workspaceMember.findFirst.mockResolvedValue({ id: "member-1" });
+    prisma.channel.findMany.mockResolvedValue([{
+      id: "channel-1",
+      workspaceId: "workspace-1",
+      name: "general",
+      createdAt: new Date("2024-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2024-01-01T00:00:00.000Z")
+    }, {
+      id: "channel-2",
+      workspaceId: "workspace-1",
+      name: "random",
+      createdAt: new Date("2024-01-02T00:00:00.000Z"),
+      updatedAt: new Date("2024-01-02T00:00:00.000Z")
+    }]);
+    prisma.message.groupBy.mockResolvedValue([{
+      channelId: "channel-1",
+      _count: { _all: 3 },
+      _max: {
+        createdAt: new Date("2024-01-03T00:00:00.000Z")
+      }
+    }]);
+    const service = await createService();
+
+    await expect(service.listChannels("workspace-1", "user-1")).resolves.toEqual([{
+      id: "channel-1",
+      workspaceId: "workspace-1",
+      name: "general",
+      createdAt: new Date("2024-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2024-01-01T00:00:00.000Z"),
+      lastMessageAt: new Date("2024-01-03T00:00:00.000Z"),
+      messageCount: 3
+    }, {
+      id: "channel-2",
+      workspaceId: "workspace-1",
+      name: "random",
+      createdAt: new Date("2024-01-02T00:00:00.000Z"),
+      updatedAt: new Date("2024-01-02T00:00:00.000Z"),
+      lastMessageAt: null,
+      messageCount: 0
+    }]);
+    expect(prisma.message.groupBy).toHaveBeenCalledWith({
+      by: ["channelId"],
+      where: {
+        workspaceId: "workspace-1",
+        channelId: {
+          in: ["channel-1", "channel-2"]
+        }
+      },
+      _count: {
+        _all: true
+      },
+      _max: {
+        createdAt: true
+      }
+    });
   });
 
   it("returns all workspaces for global admins", async () => {

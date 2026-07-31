@@ -13,6 +13,7 @@ import { AuthService } from "./auth.service";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
+import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
 import { AuthenticatedUser } from "../common/types/authenticated-user";
@@ -36,13 +37,20 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Post("refresh")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "刷新登录令牌" })
+  refresh(@Body() dto: RefreshTokenDto) {
+    return this.authService.refresh(dto.refreshToken);
+  }
+
   @Post("logout")
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "用户退出登录" })
   @ApiBearerAuth()
-  logout() {
-    return { message: "已退出登录" };
+  logout(@CurrentUser() user: AuthenticatedUser) {
+    return this.authService.logout(user.id);
   }
 
   @Get("me")

@@ -13,6 +13,8 @@ export type Channel = {
   id: string;
   name: string;
   createdAt?: string;
+  lastMessageAt?: string | null;
+  messageCount?: number;
 };
 
 export type Member = {

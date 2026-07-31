@@ -8,12 +8,10 @@ const DOC_NAME_PATTERN = /^[A-Za-z0-9_-]+$/;
 export class DocsService {
   async listSpecs() {
     const specsDir = await this.resolveDocsDir("specs");
-    const files = (await readdir(specsDir))
-      .filter((file) => file.endsWith(".md"))
-      .sort((left, right) => left.localeCompare(right));
+    const files = await this.listMarkdownFiles(specsDir);
 
     return Promise.all(files.map(async (file) => {
-      const content = await readFile(resolve(specsDir, file), "utf-8");
+      const content = await readFile(file, "utf-8");
       const title = content
         .split(/\r?\n/)
         .find((line) => line.startsWith("# "))
@@ -21,8 +19,8 @@ export class DocsService {
         .trim();
 
       return {
-        name: file.slice(0, -3),
-        title: title || file.slice(0, -3)
+        name: this.readDocName(file),
+        title: title || this.readDocName(file)
       };
     }));
   }
@@ -38,17 +36,15 @@ export class DocsService {
 
   async listSkills() {
     const skillsDir = await this.resolveDocsDir("skills");
-    const files = (await readdir(skillsDir))
-      .filter((file) => file.endsWith(".md"))
-      .sort((left, right) => left.localeCompare(right));
+    const files = await this.listMarkdownFiles(skillsDir);
 
     return Promise.all(files.map(async (file) => {
-      const content = await readFile(resolve(skillsDir, file), "utf-8");
+      const content = await readFile(file, "utf-8");
       const description = this.readFrontmatterValue(content, "description");
 
       return {
-        name: file.slice(0, -3),
-        description: description || file.slice(0, -3)
+        name: this.readDocName(file),
+        description: description || this.readDocName(file)
       };
     }));
   }
@@ -68,34 +64,57 @@ export class DocsService {
     }
 
     const docsDir = await this.resolveDocsDir(directory);
-    const filePath = resolve(docsDir, `${name}.md`);
+    const files = await this.listMarkdownFiles(docsDir);
+    const filePath = files.find((file) => this.readDocName(file) === name);
 
-    try {
-      await access(filePath);
-      return filePath;
-    } catch {
+    if (!filePath) {
       throw new NotFoundException("文档不存在");
     }
+
+    return filePath;
   }
 
   private async resolveDocsDir(directory: "specs" | "skills") {
     const baseRoot = resolve(__dirname, "../../..");
-    const candidates = [
-      resolve(baseRoot, directory),
-      resolve(baseRoot, "..", directory),
-      resolve(baseRoot, "..", "..", directory)
+    const rootCandidates = [
+      baseRoot,
+      resolve(baseRoot, ".."),
+      resolve(baseRoot, "..", "..")
     ];
 
-    for (const candidate of candidates) {
-      try {
-        await access(candidate);
-        return candidate;
-      } catch {
-        continue;
+    for (const root of rootCandidates) {
+      for (const candidate of [resolve(root, ".ai", directory), resolve(root, directory)]) {
+        try {
+          await access(candidate);
+          return candidate;
+        } catch {
+          continue;
+        }
       }
     }
 
     throw new NotFoundException("文档目录不存在");
+  }
+
+  private async listMarkdownFiles(directory: string): Promise<string[]> {
+    const entries = await readdir(directory, { withFileTypes: true });
+    const files = await Promise.all(entries.map(async (entry) => {
+      const entryPath = resolve(directory, entry.name);
+
+      if (entry.isDirectory()) {
+        return this.listMarkdownFiles(entryPath);
+      }
+
+      return entry.name.endsWith(".md") ? [entryPath] : [];
+    }));
+
+    return files
+      .flat()
+      .sort((left, right) => left.localeCompare(right));
+  }
+
+  private readDocName(filePath: string) {
+    return filePath.slice(filePath.lastIndexOf("/") + 1, -3);
   }
 
   private readFrontmatterValue(content: string, key: string) {

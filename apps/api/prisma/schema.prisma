@@ -63,6 +63,18 @@ model User {
   memberships       WorkspaceMember[]
   createdWorkspaces Workspace[]       @relation("WorkspaceCreator")
   memories          Memory[]          @relation("MemoryOwner")
+  refreshTokens     RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @map("userId") @db.ObjectId
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Workspace {

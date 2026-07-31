@@ -353,9 +353,41 @@ export class WorkspaceService {
   async listChannels(workspaceId: string, userId: string) {
     await this.ensureWorkspaceMember(workspaceId, userId);
 
-    return this.prisma.channel.findMany({
+    const channels = await this.prisma.channel.findMany({
       where: { workspaceId },
       orderBy: { createdAt: "asc" }
+    });
+
+    if (channels.length === 0) {
+      return [];
+    }
+
+    const messageStats = await this.prisma.message.groupBy({
+      by: ["channelId"],
+      where: {
+        workspaceId,
+        channelId: {
+          in: channels.map((channel) => channel.id)
+        }
+      },
+      _count: {
+        _all: true
+      },
+      _max: {
+        createdAt: true
+      }
+    });
+
+    const statsByChannelId = new Map(messageStats.map((item) => [item.channelId, item]));
+
+    return channels.map((channel) => {
+      const stats = statsByChannelId.get(channel.id);
+
+      return {
+        ...channel,
+        lastMessageAt: stats?._max.createdAt ?? null,
+        messageCount: stats?._count._all ?? 0
+      };
     });
   }
 

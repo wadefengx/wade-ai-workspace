@@ -9,7 +9,7 @@ import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
     secret: process.env.JWT_SECRET ?? "development-only-change-me",
     signOptions: {
       algorithm: "HS256",
-      expiresIn: "7d"
+      expiresIn: "15m"
     }
   })],
   controllers: [AuthController],
