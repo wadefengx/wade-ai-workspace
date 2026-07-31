@@ -4,6 +4,7 @@ import {
   BookOutlined,
   BulbOutlined,
   DatabaseOutlined,
+  DownOutlined,
   FileTextOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -16,12 +17,12 @@ import {
   TeamOutlined
 } from "@ant-design/icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { App, Avatar, Button, Dropdown, Form, Input, Modal, Select, Spin, Tooltip, Typography } from "antd";
+import { App, Avatar, Button, Dropdown, Form, Input, Modal, Select, Tooltip, Typography } from "antd";
 import type { MenuProps } from "antd";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ApiError, apiFetch } from "../lib/api";
-import { WORKSPACE_ICONS, renderWorkspaceIcon } from "../lib/workspace-icons";
+import { WORKSPACE_ICONS, getWorkspaceIconLabel, renderWorkspaceIcon } from "../lib/workspace-icons";
 import { buildWorkspaceHref } from "../lib/workspace-navigation";
 import { useAuthStore } from "../stores/auth";
 import { type ThemeMode, useThemeStore } from "../theme/store";
@@ -34,6 +35,7 @@ import {
   type Workspace
 } from "./workspace-context";
 import styles from "./workspace-shell.module.css";
+import { EmptyState, LoadingState } from "./ui-state";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -316,6 +318,7 @@ export function WorkspaceNavigation() {
   const [channelModalOpen, setChannelModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [collapsedChannelGroups, setCollapsedChannelGroups] = useState<Record<string, boolean>>({});
   const [chatSearch, setChatSearch] = useState("");
   const [systemPrefersDark, setSystemPrefersDark] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -576,6 +579,20 @@ export function WorkspaceNavigation() {
     }
   }, [workspaceForm, workspaceModalOpen]);
 
+  useEffect(() => {
+    const handleCreateChannel = () => {
+      if (workspaceId) {
+        setChannelModalOpen(true);
+      }
+    };
+
+    window.addEventListener("zone-ai:create-channel", handleCreateChannel);
+
+    return () => {
+      window.removeEventListener("zone-ai:create-channel", handleCreateChannel);
+    };
+  }, [workspaceId]);
+
   return (
     <>
       <aside className={`${styles.sidebar} ${sidebarCollapsed ? styles.sidebarCollapsed : ""}`}>
@@ -599,6 +616,7 @@ export function WorkspaceNavigation() {
                 <Button
                   className={styles.sidebarActionButton}
                   type="text"
+                  aria-label={themeTooltip}
                   icon={resolvedTheme === "dark" ? <BulbOutlined /> : <SunOutlined />}
                   onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
                 />
@@ -608,6 +626,7 @@ export function WorkspaceNavigation() {
               <Button
                 className={styles.sidebarActionButton}
                 type="text"
+                aria-label={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"}
                 icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               />
@@ -630,13 +649,24 @@ export function WorkspaceNavigation() {
             <div className={styles.iconList}>
               <Dropdown menu={workspaceMenu} trigger={["click"]}>
                 <Tooltip
-                  title={selectedWorkspace?.name ?? (workspaces.length ? "选择 Workspace" : "暂无 Workspace")}
+                  title={
+                    selectedWorkspace
+                      ? `${selectedWorkspace.name} · ${getWorkspaceIconLabel(resolveWorkspaceIconName(selectedWorkspace))}`
+                      : workspaces.length
+                        ? "选择 Workspace"
+                        : "暂无 Workspace"
+                  }
                   placement="right"
                 >
                   <Button
                     className={styles.workspaceIconButton}
                     type="text"
                     loading={workspacesLoading}
+                    aria-label={
+                      selectedWorkspace
+                        ? `当前 Workspace：${selectedWorkspace.name}，打开切换菜单`
+                        : "打开 Workspace 切换菜单"
+                    }
                     icon={renderWorkspaceIcon(resolveWorkspaceIconName(selectedWorkspace))}
                   />
                 </Tooltip>
@@ -645,6 +675,7 @@ export function WorkspaceNavigation() {
                 <Button
                   className={styles.iconOnlyButton}
                   type="text"
+                  aria-label="新建 Workspace"
                   icon={<PlusOutlined />}
                   onClick={() => setWorkspaceModalOpen(true)}
                 />
@@ -653,6 +684,7 @@ export function WorkspaceNavigation() {
           ) : (
             <>
               <Select
+                aria-label="选择 Workspace"
                 placeholder={workspaces.length ? "选择 Workspace" : "暂无 Workspace"}
                 value={workspaceId ?? undefined}
                 options={workspaces.map((workspace) => ({
@@ -675,7 +707,7 @@ export function WorkspaceNavigation() {
                   )
                 }
               />
-              <Button icon={<PlusOutlined />} onClick={() => setWorkspaceModalOpen(true)}>
+              <Button icon={<PlusOutlined />} aria-label="新建 Workspace" onClick={() => setWorkspaceModalOpen(true)}>
                 新建 Workspace
               </Button>
             </>
@@ -695,9 +727,11 @@ export function WorkspaceNavigation() {
             )}
             <Tooltip title="新建 Chat" placement={sidebarCollapsed ? "right" : "top"}>
               <Button
+                className={sidebarCollapsed ? styles.hiddenOnCollapsed : ""}
                 icon={<PlusOutlined />}
                 size="small"
                 type="text"
+                aria-label="新建 Chat"
                 disabled={!workspaceId}
                 onClick={() => setChannelModalOpen(true)}
               />
@@ -717,51 +751,90 @@ export function WorkspaceNavigation() {
 
           {channelsLoading ? (
             <div className={styles.loadingBlock}>
-              <Spin />
+              <LoadingState compact align="left" title="正在读取 Chats" description="同步频道列表与最近活跃时间。" />
             </div>
           ) : (
             <div className={styles.channelGroups}>
               {groupedChannels.map((group) => (
                 <div key={group.key} className={styles.channelGroup}>
                   {!sidebarCollapsed ? (
-                    <Typography.Text className={styles.channelGroupTitle}>{group.label}</Typography.Text>
+                    <div className={styles.channelGroupHeader}>
+                      <Button
+                        className={styles.channelGroupToggle}
+                        type="text"
+                        aria-label={`${collapsedChannelGroups[group.key] ? "展开" : "折叠"} ${group.label} 频道分组`}
+                        onClick={() =>
+                          setCollapsedChannelGroups((current) => ({
+                            ...current,
+                            [group.key]: !current[group.key]
+                          }))
+                        }
+                      >
+                        <span className={styles.channelGroupTitle}>{group.label}</span>
+                        <DownOutlined
+                          className={`${styles.channelGroupChevron} ${
+                            collapsedChannelGroups[group.key] ? styles.channelGroupChevronCollapsed : ""
+                          }`}
+                        />
+                      </Button>
+                    </div>
                   ) : null}
-                  <div className={styles.channelList}>
-                    {group.channels.map((channel) => {
-                      const button = (
-                        <Button
-                          key={channel.id}
-                          className={`${styles.channelButton} ${
-                            channel.id === selectedChannelId ? styles.channelButtonActive : ""
-                          } ${sidebarCollapsed ? styles.channelButtonCollapsed : ""}`}
-                          type="text"
-                          onClick={() => router.push(buildWorkspaceHref("/", workspaceId, { channelId: channel.id }))}
-                        >
-                          <MessageOutlined />
-                          {!sidebarCollapsed ? <span className={styles.channelLabel}># {channel.name}</span> : null}
-                        </Button>
-                      );
+                  <div
+                    className={`${styles.channelListCollapse} ${
+                      !sidebarCollapsed && collapsedChannelGroups[group.key] ? styles.channelListCollapseCollapsed : ""
+                    }`}
+                  >
+                    <div className={styles.channelListInner}>
+                      <div className={styles.channelList}>
+                        {group.channels.map((channel) => {
+                          const button = (
+                            <Button
+                              key={channel.id}
+                              className={`${styles.channelButton} ${
+                                channel.id === selectedChannelId ? styles.channelButtonActive : ""
+                              } ${sidebarCollapsed ? styles.channelButtonCollapsed : ""}`}
+                              type="text"
+                              aria-label={`打开频道 # ${channel.name}`}
+                              onClick={() => router.push(buildWorkspaceHref("/", workspaceId, { channelId: channel.id }))}
+                            >
+                              <MessageOutlined />
+                              {!sidebarCollapsed ? <span className={styles.channelLabel}># {channel.name}</span> : null}
+                            </Button>
+                          );
 
-                      if (!sidebarCollapsed) {
-                        return button;
-                      }
+                          if (!sidebarCollapsed) {
+                            return button;
+                          }
 
-                      return (
-                        <Tooltip key={channel.id} title={`# ${channel.name}`} placement="right">
-                          {button}
-                        </Tooltip>
-                      );
-                    })}
+                          return (
+                            <Tooltip key={channel.id} title={`# ${channel.name}`} placement="right">
+                              {button}
+                            </Tooltip>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
               {!channels.length && !sidebarCollapsed ? (
-                <Typography.Text type="secondary">
-                  {workspaceId ? "还没有频道，先创建一个。" : "先创建 Workspace。"}
-                </Typography.Text>
+                <EmptyState
+                  compact
+                  align="left"
+                  icon={<MessageOutlined />}
+                  title={workspaceId ? "还没有频道" : "先创建 Workspace"}
+                  description={workspaceId ? "先创建一个 Chat 频道，消息与 AI 对话就会开始沉淀。" : "创建 Workspace 后，这里会自动出现频道列表。"}
+                  action={
+                    workspaceId ? (
+                      <Button size="small" icon={<PlusOutlined />} onClick={() => setChannelModalOpen(true)}>
+                        新建 Chat
+                      </Button>
+                    ) : undefined
+                  }
+                />
               ) : null}
               {!!channels.length && !groupedChannels.length && !sidebarCollapsed ? (
-                <Typography.Text type="secondary">没有匹配的 Chats。</Typography.Text>
+                <EmptyState compact align="left" icon={<SearchOutlined />} title="没有匹配的 Chats" description="换个关键词试试，或清空搜索查看全部频道。" />
               ) : null}
             </div>
           )}
@@ -785,6 +858,7 @@ export function WorkspaceNavigation() {
                     sidebarCollapsed ? styles.navButtonCollapsed : ""
                   }`}
                   type="text"
+                  aria-label={`打开 ${item.label}`}
                   disabled={item.disabled}
                   onClick={() => {
                     if (item.disabled || !item.href) {
@@ -876,6 +950,7 @@ export function WorkspaceNavigation() {
                       selected ? styles.workspaceIconPickerButtonSelected : ""
                     }`}
                     type="button"
+                    aria-label={`选择 ${iconItem.label} 图标`}
                     onClick={() => workspaceForm.setFieldValue("icon", iconItem.key)}
                   >
                     {iconItem.icon}

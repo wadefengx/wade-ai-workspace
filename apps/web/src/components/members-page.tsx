@@ -1,12 +1,11 @@
 "use client";
 
-import { PlusOutlined, UserDeleteOutlined } from "@ant-design/icons";
+import { PlusOutlined, TeamOutlined, UserDeleteOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   App,
   Avatar,
   Button,
-  Empty,
   Form,
   Modal,
   Popconfirm,
@@ -21,6 +20,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ApiError, apiFetch } from "../lib/api";
 import { formatDateTime } from "../lib/datetime";
 import { useAuthStore } from "../stores/auth";
+import { EmptyState } from "./ui-state";
 import { WorkspacePageFrame } from "./workspace-page-frame";
 import { useWorkspacePageContext } from "./workspace-context";
 import styles from "./workspace-pages.module.css";
@@ -281,7 +281,7 @@ function MembersContent() {
 
   const tableLocale = useMemo(
     () => ({
-      emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前 Workspace 还没有成员。" />
+      emptyText: <EmptyState compact icon={<TeamOutlined />} title="还没有成员" description="把成员拉进来后，才能一起管理知识、记忆和 Agent。" />
     }),
     []
   );

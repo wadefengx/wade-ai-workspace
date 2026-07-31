@@ -1,10 +1,12 @@
 "use client";
 
+import { FolderOpenOutlined, ReadOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Empty, Spin, Typography } from "antd";
+import { Button, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { MarkdownContent } from "./markdown-content";
+import { EmptyState, LoadingState } from "./ui-state";
 import { WorkspacePageFrame } from "./workspace-page-frame";
 import styles from "./workspace-pages.module.css";
 
@@ -43,7 +45,7 @@ function SkillsContent() {
   });
 
   return (
-    <div style={{ display: "grid", gap: 16, gridTemplateColumns: "240px minmax(0, 1fr)" }}>
+    <div className={styles.responsiveSplit}>
       <div className={styles.pageCard}>
         <div className={styles.sectionHeader}>
           <div className={styles.helperStack}>
@@ -53,28 +55,26 @@ function SkillsContent() {
         </div>
 
         {skillsQuery.isLoading ? (
-          <div className={styles.loadingState}>
-            <Spin />
-          </div>
+          <LoadingState compact title="正在读取 Skills" description="同步团队沉淀下来的技能文档。" />
         ) : skillItems.length ? (
-          <div style={{ display: "grid", gap: 8 }}>
+          <div className={styles.selectionList}>
             {skillItems.map((item) => (
               <Button
                 key={item.name}
                 type={item.name === activeSelectedName ? "primary" : "default"}
                 block
-                style={{ height: "auto", textAlign: "left", whiteSpace: "normal" }}
+                className={styles.selectionButton}
                 onClick={() => setSelectedName(item.name)}
               >
-                <div style={{ display: "grid", gap: 4 }}>
+                <div className={styles.selectionMeta}>
                   <span>{item.name}</span>
-                  <span style={{ fontSize: 12, opacity: 0.72 }}>{item.description}</span>
+                  <span className={styles.selectionDescription}>{item.description}</span>
                 </div>
               </Button>
             ))}
           </div>
         ) : (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="还没有可用 Skills。" />
+          <EmptyState compact icon={<FolderOpenOutlined />} title="还没有可用 Skills" description="把可复用方法沉淀到仓库后，这里会自动展示。" />
         )}
       </div>
 
@@ -89,15 +89,13 @@ function SkillsContent() {
         </div>
 
         {skillDetailQuery.isLoading ? (
-          <div className={styles.loadingState}>
-            <Spin />
-          </div>
+          <LoadingState compact title="正在读取内容" description="马上展示选中的 Skill 原文。" />
         ) : skillDetailQuery.data ? (
-          <div style={{ overflowX: "auto" }}>
+          <div className={styles.scrollPanel}>
             <MarkdownContent content={skillDetailQuery.data.content} />
           </div>
         ) : (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="选择一个 Skill 后在这里查看内容。" />
+          <EmptyState compact icon={<ReadOutlined />} title="选择一个 Skill" description="从左侧挑一个技能文档后，这里会显示完整 Markdown 内容。" />
         )}
       </div>
     </div>

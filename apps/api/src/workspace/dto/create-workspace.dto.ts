@@ -3,7 +3,7 @@ import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 
 export class CreateWorkspaceDto {
   @ApiProperty({ description: "工作区名称", example: "Team Alpha", required: true })
-  @IsString()
+  @IsString({ message: "工作区名称必须是字符串" })
   @IsNotEmpty({ message: "工作区名称不能为空" })
   name!: string;
 

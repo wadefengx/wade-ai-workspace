@@ -2,13 +2,15 @@
 
 import {
   LoadingOutlined,
+  MessageOutlined,
+  PlusOutlined,
   RobotOutlined,
   SmileOutlined,
   TeamOutlined,
   UserOutlined
 } from "@ant-design/icons";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { App, Avatar, Button, Dropdown, Popover, Spin, Tag, Tooltip, Typography } from "antd";
+import { App, Avatar, Button, Dropdown, Grid, Popover, Tag, Tooltip, Typography } from "antd";
 import type { MenuProps } from "antd";
 import { Sender, Suggestion } from "@ant-design/x";
 import { useRouter } from "next/navigation";
@@ -29,6 +31,7 @@ import { formatDateTime } from "../lib/datetime";
 import { streamSse } from "../lib/sse";
 import { useAuthStore } from "../stores/auth";
 import styles from "./workspace-shell.module.css";
+import { EmptyState, LoadingState } from "./ui-state";
 
 type MessageSenderType = "USER" | "AGENT";
 type MessageStatus = "PENDING" | "STREAMING" | "COMPLETED" | "FAILED";
@@ -190,6 +193,7 @@ function renderMessageContent(content: string) {
 
 export function WorkspaceShell() {
   const router = useRouter();
+  const screens = Grid.useBreakpoint();
   const queryClient = useQueryClient();
   const { message } = App.useApp();
   const { selectedWorkspace, selectedChannel, selectedChannelId, members } = useWorkspaceContext();
@@ -662,13 +666,15 @@ export function WorkspaceShell() {
           </div>
 
           <div className={styles.memberBar}>
-            <Avatar.Group max={{ count: 4 }}>
-              {members.map((member) => (
-                <Tooltip key={member.id} title={`${member.name} · ${member.role}`}>
-                  <Avatar>{member.name.slice(0, 1).toUpperCase()}</Avatar>
-                </Tooltip>
-              ))}
-            </Avatar.Group>
+            {screens.md ? (
+              <Avatar.Group max={{ count: 4 }}>
+                {members.map((member) => (
+                  <Tooltip key={member.id} title={`${member.name} · ${member.role}`}>
+                    <Avatar>{member.name.slice(0, 1).toUpperCase()}</Avatar>
+                  </Tooltip>
+                ))}
+              </Avatar.Group>
+            ) : null}
 
             <Dropdown
               menu={{
@@ -681,7 +687,9 @@ export function WorkspaceShell() {
               }}
               trigger={["click"]}
             >
-              <Button icon={<UserOutlined />}>{user.name ?? user.email}</Button>
+              <Button icon={<UserOutlined />} aria-label="打开账户菜单">
+                {screens.sm ? user.name ?? user.email : "账户"}
+              </Button>
             </Dropdown>
           </div>
         </header>
@@ -723,7 +731,7 @@ export function WorkspaceShell() {
 
                       {messagesQuery.isLoading ? (
                         <div className={styles.messageLoading}>
-                          <Spin />
+                          <LoadingState compact title="正在同步消息" description="聊天记录马上就好。" />
                         </div>
                       ) : channelMessages.length ? (
                         <div className={styles.messageList}>
@@ -784,26 +792,30 @@ export function WorkspaceShell() {
                         </div>
                       ) : (
                         <div className={styles.emptyState}>
-                          <div className={styles.emptyCard}>
-                            <div className={styles.emptyIcon}>
-                              <RobotOutlined />
-                            </div>
-                            <Typography.Title level={3}>频道已就绪，等待首条消息</Typography.Title>
-                            <Typography.Paragraph type="secondary">
-                              发送普通消息开始协作，或输入 <strong>@AI</strong> 触发流式回答。
-                            </Typography.Paragraph>
-                          </div>
+                          <EmptyState
+                            icon={<RobotOutlined />}
+                            title="频道已就绪，等待首条消息"
+                            description={
+                              <>
+                                发送普通消息开始协作，或输入 <strong>@AI</strong> 触发流式回答。
+                              </>
+                            }
+                          />
                         </div>
                       )}
                     </>
                   ) : (
                     <div className={styles.emptyState}>
-                      <div className={styles.emptyCard}>
-                        <Typography.Title level={3}>选择一个频道开始聊天</Typography.Title>
-                        <Typography.Paragraph type="secondary">
-                          当前 Workspace 已就绪，切换到左侧频道即可查看消息历史并开始对话。
-                        </Typography.Paragraph>
-                      </div>
+                      <EmptyState
+                        icon={<MessageOutlined />}
+                        title="还没有可用频道"
+                        description="创建一个频道后，团队消息和 AI 对话都会在这里沉淀。"
+                        action={
+                          <Button icon={<PlusOutlined />} onClick={() => window.dispatchEvent(new CustomEvent("zone-ai:create-channel"))}>
+                            新建频道
+                          </Button>
+                        }
+                      />
                     </div>
                   )}
                 </div>
@@ -903,41 +915,49 @@ export function WorkspaceShell() {
               </div>
             </>
           ) : (
-            <div className={styles.workspaceEmpty}>
-              <Typography.Title level={3}>还没有 Workspace</Typography.Title>
-              <Typography.Paragraph type="secondary">
-                创建后会自动把你加入为 OWNER，并生成默认的 #general 频道。
-              </Typography.Paragraph>
-            </div>
+            <EmptyState
+              className={styles.workspaceEmpty}
+              align="left"
+              icon={<TeamOutlined />}
+              title="还没有 Workspace"
+              description="创建后会自动把你加入为 OWNER，并生成默认的 #general 频道。"
+              action={
+                <Button type="primary" onClick={() => router.push("/")}>
+                  前往创建 Workspace
+                </Button>
+              }
+            />
           )}
         </main>
       </div>
 
-      <aside className={styles.contextPanel}>
-        <div className={styles.contextStack}>
-          <div className={styles.contextCard}>
-            <Typography.Title level={5}>AI Context</Typography.Title>
-            <div className={styles.contextItem}>
-              <RobotOutlined />
-              Default Chat Agent
+      {screens.lg ? (
+        <aside className={styles.contextPanel}>
+          <div className={styles.contextStack}>
+            <div className={styles.contextCard}>
+              <Typography.Title level={5}>AI Context</Typography.Title>
+              <div className={styles.contextItem}>
+                <RobotOutlined />
+                Default Chat Agent
+              </div>
+              <Typography.Paragraph type="secondary">
+                当前支持频道内 <strong>@AI</strong> 流式回答；Memory、Knowledge 与模型配置页留给后续 Phase。
+              </Typography.Paragraph>
             </div>
-            <Typography.Paragraph type="secondary">
-              当前支持频道内 <strong>@AI</strong> 流式回答；Memory、Knowledge 与模型配置页留给后续 Phase。
-            </Typography.Paragraph>
-          </div>
 
-          <div className={styles.contextCard}>
-            <Typography.Title level={5}>Workspace Members</Typography.Title>
-            <div className={styles.contextItem}>
-              <TeamOutlined />
-              {selectedWorkspace ? `${members.length} 位成员` : "等待 Workspace 创建"}
+            <div className={styles.contextCard}>
+              <Typography.Title level={5}>Workspace Members</Typography.Title>
+              <div className={styles.contextItem}>
+                <TeamOutlined />
+                {selectedWorkspace ? `${members.length} 位成员` : "等待 Workspace 创建"}
+              </div>
+              <Typography.Paragraph type="secondary">
+                右侧面板继续保留工作台布局骨架，后续再接入更多上下文细节。
+              </Typography.Paragraph>
             </div>
-            <Typography.Paragraph type="secondary">
-              右侧面板继续保留工作台布局骨架，后续再接入更多上下文细节。
-            </Typography.Paragraph>
           </div>
-        </div>
-      </aside>
+        </aside>
+      ) : null}
     </div>
   );
 }

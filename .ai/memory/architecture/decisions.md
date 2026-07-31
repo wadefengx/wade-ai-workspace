@@ -8,6 +8,13 @@
 | Keep legacy `specs/` and `skills/` readable during migration | Avoids breaking parallel lanes |
 | Prefer local-first tooling and mirrors | Reduces external setup drift |
 | Keep AGENTS entrypoint short | Forces detail into structured docs instead of one giant file |
+| ADR-006: document planner/state/confidence/DAG/backlog/review/learning runtime hooks | Makes lane orchestration explicit and dashboard-ready without shipping app code |
+
+## ADR log
+
+| ADR | Decision | Scope | Status |
+|---|---|---|---|
+| ADR-006 | Elevate planner, lane states, confidence, dependency graph, backlog, review workflow, and memory-to-skill into first-class `.ai/` runtime docs | Organization/runtime governance | Accepted |
 
 ## Pending entries
 

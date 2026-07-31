@@ -1,12 +1,13 @@
 "use client";
 
-import { DeleteOutlined, InboxOutlined, ReloadOutlined } from "@ant-design/icons";
+import { DeleteOutlined, FileSearchOutlined, InboxOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Empty, Popconfirm, Space, Spin, Table, Tag, Tooltip, Typography, Upload } from "antd";
+import { App, Button, Popconfirm, Space, Table, Tag, Tooltip, Typography, Upload } from "antd";
 import type { TableColumnsType, UploadProps } from "antd";
 import { useMemo } from "react";
 import { WorkspacePageFrame } from "./workspace-page-frame";
 import { useWorkspacePageContext } from "./workspace-context";
+import { EmptyState, LoadingState } from "./ui-state";
 import styles from "./workspace-pages.module.css";
 import { ApiError, apiFetch, unwrapItems } from "../lib/api";
 import { formatDateTime } from "../lib/datetime";
@@ -231,9 +232,7 @@ function KnowledgeContent() {
         </div>
 
         {knowledgeQuery.isLoading ? (
-          <div className={styles.loadingState}>
-            <Spin />
-          </div>
+          <LoadingState compact title="正在读取文档" description="同步知识库索引状态。" />
         ) : (
           <Table<KnowledgeDocument>
             rowKey="id"
@@ -242,7 +241,7 @@ function KnowledgeContent() {
             pagination={false}
             locale={{
               emptyText: (
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="还没有知识文档，先上传一个文件。" />
+                <EmptyState compact icon={<FileSearchOutlined />} title="还没有知识文档" description="先上传一个 .md、.txt 或 .pdf 文件，AI 检索上下文就会从这里开始。" />
               )
             }}
           />

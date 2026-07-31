@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { App, Button, Form, Input, Space, Spin, Typography } from "antd";
+import { App, Button, Form, Input, Space, Typography } from "antd";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import { ApiError, apiFetch } from "../lib/api";
 import type { AuthUser } from "../stores/auth";
 import { useAuthStore } from "../stores/auth";
 import styles from "./auth-page.module.css";
+import { LoadingState } from "./ui-state";
 
 type AuthMode = "login" | "register";
 
@@ -111,11 +112,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   });
 
   if (!hydrated || isRestoring) {
-    return (
-      <div className={styles.page}>
-        <Spin size="large" />
-      </div>
-    );
+    return <LoadingState fullscreen title="正在恢复会话" description="请稍候，马上进入你的 Workspace。" />;
   }
 
   if (user) {

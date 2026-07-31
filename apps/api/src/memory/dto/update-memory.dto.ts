@@ -4,7 +4,7 @@ import { IsBoolean, IsNotEmpty, IsOptional, IsString } from "class-validator";
 export class UpdateMemoryDto {
   @ApiProperty({ description: "更新后的记忆内容", example: "客户偏好双周报使用中文输出。", required: false })
   @IsOptional()
-  @IsString()
+  @IsString({ message: "记忆内容必须是字符串" })
   @IsNotEmpty({ message: "记忆内容不能为空" })
   content?: string;
 

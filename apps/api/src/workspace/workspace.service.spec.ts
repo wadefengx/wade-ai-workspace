@@ -8,11 +8,17 @@ import { UserRole, WorkspaceRole } from "@prisma/client";
 import { Test } from "@nestjs/testing";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
+import { unlink } from "node:fs/promises";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateWorkspaceDto } from "./dto/create-workspace.dto";
 import { WorkspaceService } from "./workspace.service";
 
+jest.mock("node:fs/promises", () => ({
+  unlink: jest.fn()
+}));
+
 describe("WorkspaceService", () => {
+  const unlinkMock = jest.mocked(unlink);
   const prisma = {
     workspace: {
       findMany: jest.fn(),
@@ -59,6 +65,7 @@ describe("WorkspaceService", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     prisma.user.findUnique.mockResolvedValue(null);
+    unlinkMock.mockResolvedValue(undefined);
   });
 
   it("creates workspace with owner membership and default general channel", async () => {
@@ -443,6 +450,20 @@ describe("WorkspaceService", () => {
     })).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it("rejects transferring ownership to the current owner", async () => {
+    prisma.workspace.findUnique.mockResolvedValue({ id: "workspace-1" });
+    prisma.workspaceMember.findFirst
+      .mockResolvedValueOnce({ role: WorkspaceRole.OWNER })
+      .mockResolvedValueOnce({ id: "owner-member", userId: "owner-1" })
+      .mockResolvedValueOnce({ id: "owner-member", userId: "owner-1", role: WorkspaceRole.OWNER });
+    const service = await createService();
+
+    await expect(service.transferOwnership("workspace-1", "owner-1", {
+      toUserId: "owner-1"
+    })).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
   it("deletes workspace resources in one transaction", async () => {
     const tx = {
       message: {
@@ -485,6 +506,50 @@ describe("WorkspaceService", () => {
     expect(tx.workspace.delete).toHaveBeenCalledWith({
       where: { id: "workspace-1" }
     });
+  });
+
+  it("removes stored knowledge files after deleting a workspace", async () => {
+    const tx = {
+      message: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 })
+      },
+      channel: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 })
+      },
+      workspaceMember: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 })
+      },
+      knowledgeChunk: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 })
+      },
+      knowledgeDocument: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 2 })
+      },
+      memory: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 })
+      },
+      agent: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 })
+      },
+      workspace: {
+        delete: jest.fn().mockResolvedValue(undefined)
+      }
+    };
+    prisma.workspace.findUnique.mockResolvedValue({ id: "workspace-1" });
+    prisma.workspaceMember.findFirst.mockResolvedValue({ role: WorkspaceRole.OWNER });
+    prisma.knowledgeDocument.findMany.mockResolvedValue([
+      { storageKey: "docs/a.md" },
+      { storageKey: "docs/b.pdf" }
+    ]);
+    prisma.$transaction.mockImplementation(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx));
+    const service = await createService();
+
+    await expect(service.deleteWorkspace("workspace-1", "owner-1")).resolves.toEqual({
+      id: "workspace-1"
+    });
+    expect(unlinkMock).toHaveBeenCalledTimes(2);
+    expect(unlinkMock).toHaveBeenCalledWith("/app/uploads/docs/a.md");
+    expect(unlinkMock).toHaveBeenCalledWith("/app/uploads/docs/b.pdf");
   });
 
   async function createService() {

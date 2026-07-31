@@ -5,7 +5,7 @@ import { IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 export class ListChannelMessagesQueryDto {
   @ApiProperty({ description: "分页游标消息 ID", example: "6890c1f2a8d5f503f6b0d123", required: false })
   @IsOptional()
-  @IsString()
+  @IsString({ message: "cursor 必须是字符串" })
   cursor?: string;
 
   @ApiProperty({ description: "单次拉取消息条数", example: 20, required: false })

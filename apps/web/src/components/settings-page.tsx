@@ -2,21 +2,7 @@
 
 import { DeleteOutlined, SaveOutlined, SearchOutlined, SwapOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  App,
-  Button,
-  Empty,
-  Form,
-  Input,
-  Popconfirm,
-  Radio,
-  Select,
-  Space,
-  Spin,
-  Table,
-  Tag,
-  Typography
-} from "antd";
+import { App, Button, Form, Input, Popconfirm, Radio, Select, Space, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -24,6 +10,7 @@ import { ApiError, apiFetch } from "../lib/api";
 import { WORKSPACE_ICONS, renderWorkspaceIcon } from "../lib/workspace-icons";
 import { useAuthStore } from "../stores/auth";
 import { type ThemeMode, useThemeStore } from "../theme/store";
+import { EmptyState, LoadingState } from "./ui-state";
 import { WorkspacePageFrame } from "./workspace-page-frame";
 import { useWorkspacePageContext, workspaceKeys } from "./workspace-context";
 import styles from "./workspace-pages.module.css";
@@ -356,7 +343,7 @@ function SettingsContent() {
             >
               <Input.Password />
             </Form.Item>
-            <div style={{ display: "grid", gap: 16 }}>
+            <div className={styles.formColumn}>
               <Form.Item
                 label="新密码"
                 name="newPassword"
@@ -453,6 +440,7 @@ function SettingsContent() {
                         selected ? shellStyles.workspaceIconPickerButtonSelected : ""
                       }`}
                       type="button"
+                      aria-label={`选择 ${iconItem.label} 图标`}
                       onClick={() => workspaceForm.setFieldValue("icon", iconItem.key)}
                     >
                       {iconItem.icon}
@@ -461,7 +449,7 @@ function SettingsContent() {
                 })}
               </div>
             </Form.Item>
-            <div className={styles.helperStack} style={{ marginBottom: 16 }}>
+            <div className={`${styles.helperStack} ${styles.inlinePreview}`}>
               <Typography.Text type="secondary">当前显示：</Typography.Text>
               <div className={shellStyles.workspaceOptionLabel}>
                 <span className={shellStyles.workspacePreviewIcon}>{renderWorkspaceIcon(selectedWorkspaceIcon)}</span>
@@ -479,7 +467,7 @@ function SettingsContent() {
             </Button>
           </Form>
 
-          <div style={{ display: "grid", gap: 16, marginTop: 24 }}>
+          <div className={styles.stackWithTopMargin}>
             <div className={styles.summaryCard}>
               <div className={styles.summaryCardHeader}>
                 <div className={styles.helperStack}>
@@ -564,16 +552,14 @@ function SettingsContent() {
               allowClear
               prefix={<SearchOutlined />}
               placeholder="按姓名或邮箱搜索用户"
-              style={{ maxWidth: 320 }}
+              className={styles.searchControl}
               value={userSearchInput}
               onChange={(event) => setUserSearchInput(event.target.value)}
             />
           </div>
 
           {usersQuery.isLoading ? (
-            <div className={styles.loadingState}>
-              <Spin />
-            </div>
+            <LoadingState compact title="正在读取用户" description="同步全局账户列表。" />
           ) : (
             <Table<ManagedUser>
               rowKey="id"
@@ -582,7 +568,7 @@ function SettingsContent() {
               pagination={false}
               scroll={{ x: 1000 }}
               locale={{
-                emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的用户。" />
+                emptyText: <EmptyState compact icon={<SearchOutlined />} title="没有匹配的用户" description="换个姓名或邮箱关键词试试。" />
               }}
             />
           )}

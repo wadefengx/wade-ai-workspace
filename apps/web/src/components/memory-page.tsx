@@ -1,11 +1,12 @@
 "use client";
 
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, InboxOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Empty, Form, Input, Modal, Popconfirm, Select, Space, Spin, Switch, Typography } from "antd";
+import { App, Button, Form, Input, Modal, Popconfirm, Select, Space, Switch, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { WorkspacePageFrame } from "./workspace-page-frame";
 import { useWorkspacePageContext } from "./workspace-context";
+import { EmptyState, LoadingState } from "./ui-state";
 import styles from "./workspace-pages.module.css";
 import { ApiError, apiFetch, unwrapItems } from "../lib/api";
 import { formatDateTime } from "../lib/datetime";
@@ -205,9 +206,7 @@ function MemoryContent() {
 
       {memoriesQuery.isLoading ? (
         <div className={styles.pageCard}>
-          <div className={styles.loadingState}>
-            <Spin />
-          </div>
+          <LoadingState compact title="正在读取记忆" description="同步个人、团队和项目记忆。" />
         </div>
       ) : (
         groupedMemories.map((group) => (
@@ -266,7 +265,7 @@ function MemoryContent() {
                 ))}
               </div>
             ) : (
-              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={group.emptyText} />
+              <EmptyState compact icon={<InboxOutlined />} title={group.title} description={group.emptyText} />
             )}
           </div>
         ))

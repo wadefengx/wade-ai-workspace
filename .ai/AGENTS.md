@@ -23,7 +23,7 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 
 - `.ai/organization/`: collaboration model and role contracts.
 - `.ai/registry/`: runtime lookup indexes for skills, workflows, roles, tools, and models.
-- `.ai/runtime/`: agent execution policy.
+- `.ai/runtime/`: agent execution policy, planner, lane state, confidence, DAG, backlog, and learning loops.
 - `.ai/workflows/`: repeatable task flows.
 - `.ai/specs/`: template and completed specs.
 - `.ai/skills/`: reusable skills.
@@ -35,5 +35,12 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 ## Runtime defaults
 
 - Standard execution path: `runtime/pipeline.md`
+- Planner split rule: `runtime/planner.md`
+- Lane state machine: `runtime/lane-states.md`
+- Confidence gate: `runtime/confidence.md`
+- Task DAG: `runtime/dependency-graph.md`
+- Backlog queues: `runtime/backlog.md`
+- Review workflow: `workflows/review.md`
+- Memory to skill: `runtime/memory-to-skill.md`
 - Index-first lookup: `registry/README.md`
 - Task topology: `organization/topology.md`

@@ -3,7 +3,7 @@ import { IsEmail, IsNotEmpty, IsString, MinLength } from "class-validator";
 
 export class RegisterDto {
   @ApiProperty({ description: "用户姓名", example: "Wade", required: true })
-  @IsString()
+  @IsString({ message: "姓名必须是字符串" })
   @IsNotEmpty({ message: "姓名不能为空" })
   name!: string;
 
@@ -12,7 +12,7 @@ export class RegisterDto {
   email!: string;
 
   @ApiProperty({ description: "登录密码", example: "password123", required: true })
-  @IsString()
+  @IsString({ message: "密码必须是字符串" })
   @MinLength(8, { message: "密码至少需要 8 位" })
   password!: string;
 }

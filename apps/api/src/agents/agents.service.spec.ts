@@ -191,6 +191,37 @@ describe("AgentsService", () => {
     });
   });
 
+  it("returns the current agent when the patch is empty", async () => {
+    prisma.agent.findUnique.mockResolvedValue({
+      id: "agent-1",
+      workspaceId: "workspace-1",
+      name: "Workspace AI",
+      type: AgentType.OPENAI_COMPATIBLE,
+      engineType: "default-chat",
+      isDefault: true,
+      providerConfigRef: JSON.stringify({
+        baseUrl: "http://provider.old/v1",
+        model: "qwen3:8b"
+      })
+    });
+    prisma.workspaceMember.findFirst.mockResolvedValue({ id: "member-1" });
+    const service = await createService();
+
+    await expect(service.updateAgent("agent-1", "user-1", {})).resolves.toEqual({
+      id: "agent-1",
+      name: "Workspace AI",
+      type: AgentType.OPENAI_COMPATIBLE,
+      engineType: "default-chat",
+      isDefault: true,
+      providerConfig: {
+        baseUrl: "http://provider.old/v1",
+        model: "qwen3:8b",
+        hasApiKey: false
+      }
+    });
+    expect(prisma.agent.update).not.toHaveBeenCalled();
+  });
+
   it("rejects deleting the default agent", async () => {
     prisma.agent.findUnique.mockResolvedValue({
       id: "agent-1",

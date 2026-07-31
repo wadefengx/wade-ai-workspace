@@ -75,6 +75,8 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 ## Change Log
 
 - 2026-08-01 Phase 10 Lane A: added backend Workspace icon support in Prisma/schema, seed backfill/default demo data, workspace create/update DTO handling, and API tests for icon persistence/validation.
+- 2026-08-01 Phase 10 自我进化(全角色):PM/Architect 落地运行机制(planner/lane-states/confidence/dependency-graph/backlog/review-workflow/memory-to-skill + ADR-006);UX/UI/FE 响应式/a11y/空状态统一/微交互/视觉一致;BE/QA e2e 迁入 `.ai/harness/regression/`(phase6 30 + phase9 19 + phase10 13 全绿)+ 3 高价值单测;修复折叠态 icon 参差(统一 40×40)。
+- 2026-08-01 Phase 10:UX/UI 重构 + AIOS 增强(zustand/动画/dayjs/workspace icon/mermaid/登录页 Apple 化 + registry/pipeline/topology)。
 - 2026-08-01 Phase 9 Lane C: added AIOS `.ai/` organization/runtime/workflow/memory/knowledge/architecture/harness structure, copied specs and skills into `.ai`, and rewrote `AGENTS.md` as the runtime entrypoint.
 - 2026-08-01 Phase 9 Lane B: added persisted JWT session restore + single-flight refresh retry, sidebar collapse persistence, Chats search/time grouping, and a header theme toggle in `apps/web/src/{stores/auth.ts,lib/api.ts,components/{auth-page.tsx,workspace-context.tsx,workspace-navigation.tsx,workspace-shell.module.css}}`.
 - 2026-08-01 Phase 8 Lane C: added Settings / Specs / Skills pages, expanded Agents presets and CRUD UI, and enabled `@All` mention highlighting.

@@ -8,7 +8,7 @@ export class CreateMemoryDto {
   type!: MemoryType;
 
   @ApiProperty({ description: "记忆内容", example: "客户偏好周报使用中文输出。", required: true })
-  @IsString()
+  @IsString({ message: "记忆内容必须是字符串" })
   @IsNotEmpty({ message: "记忆内容不能为空" })
   content!: string;
 }

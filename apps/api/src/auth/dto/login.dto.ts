@@ -7,7 +7,7 @@ export class LoginDto {
   email!: string;
 
   @ApiProperty({ description: "登录密码", example: "admin", required: true })
-  @IsString()
+  @IsString({ message: "密码必须是字符串" })
   @IsNotEmpty({ message: "密码不能为空" })
   password!: string;
 }

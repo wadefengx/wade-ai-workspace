@@ -138,12 +138,59 @@
   gap: var(--space-sm, 8px);
 }
 
-.channelGroupTitle {
-  color: var(--muted);
+.channelGroupHeader {
+  display: flex;
+  align-items: center;
+}
+
+.channelGroupToggle {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 !important;
+  color: var(--muted) !important;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.channelGroupToggle:hover,
+.channelGroupToggle:focus-visible {
+  color: var(--text) !important;
+}
+
+.channelGroupTitle {
+  min-width: 0;
+}
+
+.channelGroupChevron {
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
+}
+
+.channelGroupChevronCollapsed {
+  transform: rotate(-90deg);
+}
+
+.channelListCollapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 0.22s ease,
+    opacity 0.22s ease;
+}
+
+.channelListCollapseCollapsed {
+  grid-template-rows: 0fr;
+  opacity: 0.68;
+}
+
+.channelListInner {
+  overflow: hidden;
 }
 
 .channelList,
@@ -182,9 +229,33 @@
   padding-inline: 0 !important;
 }
 
+/* 折叠态统一 icon 条目盒模型:40×40 居中,消除参差 */
+.sidebarCollapsed .navButton,
+.sidebarCollapsed .channelButton,
+.sidebarCollapsed .iconOnlyButton,
+.sidebarCollapsed .workspaceIconButton {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 !important;
+  margin-inline: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+}
+
+.hiddenOnCollapsed {
+  display: none;
+}
+
 .navButton :global(.anticon),
 .channelButton :global(.anticon) {
   font-size: 16px;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
 }
 
 .navButtonCollapsed :global(.anticon),
@@ -200,10 +271,17 @@
   color: var(--primary);
 }
 
+.navButton:hover :global(.anticon),
+.channelButton:hover :global(.anticon),
+.channelButtonActive :global(.anticon) {
+  transform: translateX(1px) scale(1.05);
+}
+
 .main {
   display: flex;
   min-width: 0;
   flex: 1;
+  overflow: hidden;
 }
 
 .center {
@@ -241,6 +319,7 @@
 .conversation {
   display: flex;
   min-height: 0;
+  min-width: 0;
   flex: 1;
   flex-direction: column;
   gap: var(--space-md, 16px);
@@ -261,6 +340,7 @@
 .messagesPanel {
   display: flex;
   min-height: 0;
+  min-width: 0;
   flex: 1;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg, 16px);
@@ -694,13 +774,15 @@
     border-color 0.2s ease,
     background 0.2s ease,
     color 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .workspaceIconPickerButton:hover {
   border-color: var(--primary-border);
   background: var(--hover);
   color: var(--primary);
+  transform: scale(1.02);
 }
 
 .workspaceIconPickerButtonSelected {
@@ -708,6 +790,11 @@
   background: var(--primary-surface);
   color: var(--primary);
   box-shadow: 0 0 0 1px rgb(2 74 216 / 12%);
+  transform: scale(1.04);
+}
+
+.workspaceIconPickerButton:active {
+  transform: scale(0.97);
 }
 
 .streamCursor {
@@ -733,7 +820,21 @@
   }
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1024px) {
+  .sidebar {
+    --sidebar-width: 248px;
+    padding: var(--space-md, 16px) var(--space-sm, 8px);
+  }
+
+  .topbar {
+    padding: var(--space-md, 16px);
+  }
+
+  .conversation,
+  .contextPanel {
+    padding: var(--space-md, 16px);
+  }
+
   .contextPanel {
     display: none;
   }
@@ -747,6 +848,7 @@
   .sidebar {
     width: 100%;
     flex-basis: auto;
+    padding: var(--space-md, 16px);
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
@@ -766,6 +868,7 @@
 
   .memberBar {
     justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   .messageScrollArea {

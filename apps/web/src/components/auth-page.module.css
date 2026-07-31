@@ -172,3 +172,17 @@
 .footerHint {
   font-size: var(--font-size-sm);
 }
+
+@media (max-width: 640px) {
+  .page {
+    padding: var(--space-md);
+    align-items: stretch;
+  }
+
+  .card {
+    width: 100%;
+    min-height: calc(100vh - var(--space-lg, 24px) * 2);
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+  }
+}

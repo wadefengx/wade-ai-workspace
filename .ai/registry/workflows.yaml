@@ -8,11 +8,18 @@ pipeline:
       - skill-resolver
       - context-loader
       - planner
+      - backlog-router
       - executor
       - reviewer
       - harness
+      - confidence-gate
       - memory-writer
+      - skill-promotion
       - done
+    checkpoints:
+      - planner-ready
+      - review-confidence
+      - release-confidence
 
 workflows:
   feature:
@@ -39,3 +46,45 @@ workflows:
     path: workflows/research.md
     tags: [discovery, citations]
     skill_refs: []
+  review:
+    path: workflows/review.md
+    tags: [quality, gate]
+    skill_refs: [common-sdd-workflow]
+
+runtime_docs:
+  planner:
+    path: runtime/planner.md
+    description: Requirement -> Epic -> Story -> Task -> Lane 拆解规则
+    tags: [planning, decomposition, lanes]
+    owner: pm-architect
+    reference: runtime/pipeline.md
+  lane-states:
+    path: runtime/lane-states.md
+    description: Lane 主状态机与 blocked 覆盖规则
+    tags: [states, lanes, dashboard]
+    owner: pm-qa
+    reference: runtime/pipeline.md
+  confidence:
+    path: runtime/confidence.md
+    description: Lane confidence 评分与升级阈值
+    tags: [quality, score, review]
+    owner: architect-qa
+    reference: workflows/review.md
+  dependency-graph:
+    path: runtime/dependency-graph.md
+    description: Task DAG 声明、等待语义与拓扑顺序
+    tags: [dag, deps, scheduling]
+    owner: architect
+    reference: runtime/planner.md
+  backlog:
+    path: runtime/backlog.md
+    description: Backlog 队列分组与条目字段
+    tags: [queue, planning, dashboard]
+    owner: pm
+    reference: runtime/lane-states.md
+  memory-to-skill:
+    path: runtime/memory-to-skill.md
+    description: Lesson 到 skill 的晋升流程
+    tags: [memory, skill, learning]
+    owner: architect
+    reference: workflows/review.md

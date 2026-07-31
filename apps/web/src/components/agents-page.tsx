@@ -1,11 +1,12 @@
 "use client";
 
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, PlusOutlined, RobotOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Empty, Form, Input, Modal, Popconfirm, Select, Space, Spin, Tag, Typography } from "antd";
+import { App, Button, Form, Input, Modal, Popconfirm, Select, Space, Tag, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { ApiError, apiFetch, unwrapItems } from "../lib/api";
 import { useAuthStore } from "../stores/auth";
+import { EmptyState, LoadingState } from "./ui-state";
 import { WorkspacePageFrame } from "./workspace-page-frame";
 import { useWorkspacePageContext } from "./workspace-context";
 import styles from "./workspace-pages.module.css";
@@ -443,9 +444,7 @@ function AgentsContent() {
   if (agentsQuery.isLoading) {
     return (
       <div className={styles.pageCard}>
-        <div className={styles.loadingState}>
-          <Spin />
-        </div>
+        <LoadingState compact title="正在读取 Agents" description="同步默认 Agent 与 Provider 配置。" />
       </div>
     );
   }
@@ -477,7 +476,7 @@ function AgentsContent() {
         {agents.length ? (
           <div className={styles.summaryGrid}>{summaryCards}</div>
         ) : (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前 Workspace 还没有可配置的 Agent。" />
+          <EmptyState compact icon={<RobotOutlined />} title="还没有可配置的 Agent" description="创建一个 Agent 后，就能按 Workspace 覆盖模型和 Provider 参数。" />
         )}
       </div>
 
