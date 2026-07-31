@@ -1,0 +1,30 @@
+.page {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top, rgb(2 74 216 / 8%), transparent 32%),
+    var(--background);
+}
+
+.card {
+  width: min(100%, 420px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgb(15 23 42 / 8%);
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  margin-bottom: 8px !important;
+}
+
+.footer {
+  margin-top: 20px;
+  text-align: center;
+}

@@ -1,0 +1,201 @@
+.pageStack {
+  display: grid;
+  gap: 16px;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pageCard {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  box-shadow: 0 14px 32px rgb(15 23 42 / 5%);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.sectionHeader :global(.ant-typography) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.helperText {
+  margin-top: 8px !important;
+}
+
+.loadingState {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+}
+
+.uploadDragger :global(.ant-upload),
+.uploadDragger :global(.ant-upload-drag) {
+  border-radius: 16px;
+}
+
+.fileCell {
+  display: grid;
+  gap: 4px;
+}
+
+.helperStack {
+  display: grid;
+  gap: 4px;
+}
+
+.formRow {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+
+.formTypeField,
+.formContentField {
+  margin-bottom: 16px;
+}
+
+.memoryList {
+  display: grid;
+  gap: 12px;
+}
+
+.memoryItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fcfdff;
+}
+
+.memoryBody {
+  min-width: 0;
+  flex: 1;
+}
+
+.memoryContent {
+  margin-bottom: 8px !important;
+  white-space: pre-wrap;
+}
+
+.memoryActions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.switchLabel {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.memberIdentity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.memberMeta {
+  display: grid;
+  gap: 2px;
+}
+
+.memberActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.memberRoleSelect {
+  min-width: 120px;
+}
+
+.summaryGrid,
+.agentGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.summaryGrid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.summaryCard,
+.agentConfigCard {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fcfdff;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 10px;
+}
+
+.summaryCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.summaryMeta,
+.agentMeta {
+  display: grid;
+  gap: 6px;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agentConfigHeader {
+  margin-bottom: 16px;
+}
+
+.agentConfigHeader :global(.ant-typography) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .memoryItem {
+    flex-direction: column;
+  }
+
+  .memoryActions {
+    width: 100%;
+  }
+
+  .memberActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .memberRoleSelect {
+    width: 100%;
+  }
+}

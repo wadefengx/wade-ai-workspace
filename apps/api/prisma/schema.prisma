@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum MessageSenderType {
+  USER
+  AGENT
+}
+
+enum MessageStatus {
+  PENDING
+  STREAMING
+  COMPLETED
+  FAILED
+}
+
+enum ExtractionStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum MemoryType {
+  PERSONAL
+  TEAM
+  PROJECT
+}
+
+model User {
+  id                String            @id @default(auto()) @map("_id") @db.ObjectId
+  name              String
+  email             String            @unique
+  passwordHash      String
+  role              UserRole          @default(USER)
+  avatarUrl         String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  memberships       WorkspaceMember[]
+  createdWorkspaces Workspace[]       @relation("WorkspaceCreator")
+  memories          Memory[]          @relation("MemoryOwner")
+}
+
+model Workspace {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  createdById String            @db.ObjectId
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  createdBy   User              @relation("WorkspaceCreator", fields: [createdById], references: [id])
+  members     WorkspaceMember[]
+  channels    Channel[]
+  messages    Message[]
+  documents   KnowledgeDocument[]
+  chunks      KnowledgeChunk[]
+  memories    Memory[]
+  agents      Agent[]
+}
+
+model WorkspaceMember {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String        @db.ObjectId
+  userId      String        @db.ObjectId
+  role        WorkspaceRole @default(MEMBER)
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
+
+  @@unique([workspaceId, userId])
+}
+
+model Channel {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String    @db.ObjectId
+  name        String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  messages    Message[]
+
+  @@index([workspaceId])
+}
+
+model Message {
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId      String            @db.ObjectId
+  channelId        String            @db.ObjectId
+  senderType       MessageSenderType
+  senderId         String
+  content          String
+  status           MessageStatus     @default(COMPLETED)
+  replyToMessageId String?           @db.ObjectId
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id])
+  channel          Channel           @relation(fields: [channelId], references: [id])
+
+  @@index([channelId, createdAt])
+}
+
+model Agent {
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId       String    @db.ObjectId
+  name              String
+  engineType        String
+  providerConfigRef String?
+  capabilitiesJson  Json?
+  isDefault         Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  workspace         Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model KnowledgeDocument {
+  id               String           @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId      String           @db.ObjectId
+  filename         String
+  mimeType         String
+  storageKey       String
+  extractionStatus ExtractionStatus @default(PENDING)
+  extractedContent String?
+  errorMessage     String?
+  createdBy        String           @db.ObjectId
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  workspace        Workspace        @relation(fields: [workspaceId], references: [id])
+  chunks           KnowledgeChunk[]
+
+  @@index([workspaceId])
+}
+
+model KnowledgeChunk {
+  id         String            @id @default(auto()) @map("_id") @db.ObjectId
+  documentId String            @db.ObjectId
+  workspaceId String           @db.ObjectId
+  content    String
+  chunkIndex Int
+  embedding  Float[]
+  createdAt  DateTime          @default(now())
+  document   KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  workspace  Workspace         @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, documentId])
+}
+
+model Memory {
+  id              String     @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId     String     @db.ObjectId
+  userId          String?    @db.ObjectId
+  type            MemoryType
+  content         String
+  sourceMessageId String?    @db.ObjectId
+  confidence      Float?
+  enabled         Boolean    @default(true)
+  createdBy       String     @db.ObjectId
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  workspace       Workspace  @relation(fields: [workspaceId], references: [id])
+  user            User?      @relation("MemoryOwner", fields: [userId], references: [id])
+
+  @@index([workspaceId, type, enabled])
+}

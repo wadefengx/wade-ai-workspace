@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# env & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# uploads / runtime data
+uploads/
+*.log
+.DS_Store
+
+# coverage
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# prisma (generated at build time)
+apps/api/src/generated/
