@@ -19,6 +19,7 @@ import {
 import type { TableColumnsType } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { ApiError, apiFetch } from "../lib/api";
+import { formatDateTime } from "../lib/datetime";
 import { useAuthStore } from "../stores/auth";
 import { WorkspacePageFrame } from "./workspace-page-frame";
 import { useWorkspacePageContext } from "./workspace-context";
@@ -62,13 +63,6 @@ const addMemberRoleOptions = [
   { label: "MEMBER", value: "MEMBER" },
   { label: "ADMIN", value: "ADMIN" }
 ];
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(new Date(value));
-}
 
 function getRoleColor(role: WorkspaceRole) {
   if (role === "OWNER") {

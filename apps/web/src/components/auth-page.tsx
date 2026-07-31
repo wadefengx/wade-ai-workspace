@@ -1,10 +1,12 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { App, Button, Card, Form, Input, Space, Spin, Typography } from "antd";
+import { App, Button, Form, Input, Space, Spin, Typography } from "antd";
+import { motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ApiError, apiFetch } from "../lib/api";
 import type { AuthUser } from "../stores/auth";
 import { useAuthStore } from "../stores/auth";
@@ -63,33 +65,6 @@ const contentByMode: Record<
   }
 };
 
-function BrandMark() {
-  return (
-    <svg
-      className={styles.brandMark}
-      viewBox="0 0 64 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id="auth-zone-ai-gradient" x1="10" y1="8" x2="56" y2="58" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#024AD8" />
-          <stop offset="1" stopColor="#6A8DFF" />
-        </linearGradient>
-      </defs>
-      <rect x="4" y="4" width="56" height="56" rx="18" fill="url(#auth-zone-ai-gradient)" />
-      <path
-        d="M18 19H46L26.5 45H46"
-        stroke="white"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="7"
-      />
-    </svg>
-  );
-}
-
 export function AuthPage({ mode }: { mode: AuthMode }) {
   const router = useRouter();
   const { message } = App.useApp();
@@ -98,6 +73,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const user = useAuthStore((state) => state.user);
   const setSession = useAuthStore((state) => state.setSession);
   const content = contentByMode[mode];
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (hydrated && user) {
@@ -116,10 +92,11 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       const resolvedAccessToken = accessToken ?? token;
 
       if (!resolvedAccessToken) {
-        message.error("登录响应缺少 access token");
+        setSubmitError("登录响应缺少 access token");
         return;
       }
 
+      setSubmitError(null);
       setSession({
         accessToken: resolvedAccessToken,
         refreshToken,
@@ -129,7 +106,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       router.replace("/");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "请求失败，请稍后重试");
+      setSubmitError(error instanceof ApiError ? error.message : "请求失败，请稍后重试");
     }
   });
 
@@ -147,22 +124,38 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
   return (
     <div className={styles.page}>
-      <Card className={styles.card}>
+      <motion.section
+        className={styles.card}
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
         <div className={styles.header}>
           <div className={styles.brand}>
-            <BrandMark />
-            <span className={styles.brandLabel}>Zone AI</span>
+            <div className={styles.brandIcon}>
+              <Image src="/icon.svg" alt="" width={44} height={44} priority />
+            </div>
+            <div>
+              <Typography.Title level={1} className={styles.brandLabel}>
+                Zone AI
+              </Typography.Title>
+              <Typography.Text className={styles.brandSubtitle}>AI Native workspace for your team.</Typography.Text>
+            </div>
           </div>
           <Typography.Title level={2} className={styles.title}>
             {content.title}
           </Typography.Title>
-          <Typography.Text type="secondary">{content.subtitle}</Typography.Text>
+          <Typography.Text className={styles.subtitle}>{content.subtitle}</Typography.Text>
         </div>
 
         <Form<LoginValues | RegisterValues>
+          className={styles.form}
           layout="vertical"
           requiredMark={false}
-          onFinish={(values) => mutation.mutate(values)}
+          onFinish={(values) => {
+            setSubmitError(null);
+            mutation.mutate(values);
+          }}
         >
           {mode === "register" ? (
             <Form.Item<RegisterValues>
@@ -170,7 +163,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
               label="姓名"
               rules={[{ required: true, message: "请输入姓名" }]}
             >
-              <Input autoComplete="name" placeholder="Wade" size="large" />
+              <Input autoComplete="name" placeholder="Wade" className={styles.input} />
             </Form.Item>
           ) : null}
 
@@ -182,7 +175,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
               { type: "email", message: "请输入有效邮箱" }
             ]}
           >
-            <Input autoComplete="email" placeholder="wade@example.com" size="large" />
+            <Input autoComplete="email" placeholder="wade@example.com" className={styles.input} />
           </Form.Item>
 
           <Form.Item<LoginValues>
@@ -190,21 +183,23 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             label="密码"
             rules={[{ required: true, message: "请输入密码" }]}
           >
-            <Input.Password autoComplete="current-password" placeholder="请输入密码" size="large" />
+            <Input.Password autoComplete="current-password" placeholder="请输入密码" className={styles.input} />
           </Form.Item>
 
-          <Button block htmlType="submit" type="primary" size="large" loading={mutation.isPending}>
+          {submitError ? <Typography.Text className={styles.inlineError}>{submitError}</Typography.Text> : null}
+
+          <Button block htmlType="submit" type="primary" className={styles.submitButton} loading={mutation.isPending}>
             {content.submitLabel}
           </Button>
         </Form>
 
         <Space className={styles.footer} direction="vertical" size={4}>
-          <Typography.Text type="secondary">
-            {content.alternateLabel}{" "}
-            <Link href={content.alternateHref}>{content.alternateCta}</Link>
+          <Typography.Text className={styles.footerText}>
+            {content.alternateLabel} <Link href={content.alternateHref}>{content.alternateCta}</Link>
           </Typography.Text>
+          <Typography.Text className={styles.footerHint}>使用你的团队账号继续进入协作空间。</Typography.Text>
         </Space>
-      </Card>
+      </motion.section>
     </div>
   );
 }

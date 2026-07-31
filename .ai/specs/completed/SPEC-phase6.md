@@ -1,3 +1,10 @@
+---
+status: done
+phase: Phase 6
+owner: PM
+updated: 2026-08-01
+---
+
 # SPEC-Phase 6 — 成员与权限管理 + Agent 模型配置
 
 版本:1.0(2026-08-01)

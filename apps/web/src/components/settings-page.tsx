@@ -21,11 +21,13 @@ import type { TableColumnsType } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ApiError, apiFetch } from "../lib/api";
+import { WORKSPACE_ICONS, renderWorkspaceIcon } from "../lib/workspace-icons";
 import { useAuthStore } from "../stores/auth";
 import { type ThemeMode, useThemeStore } from "../theme/store";
 import { WorkspacePageFrame } from "./workspace-page-frame";
 import { useWorkspacePageContext, workspaceKeys } from "./workspace-context";
 import styles from "./workspace-pages.module.css";
+import shellStyles from "./workspace-shell.module.css";
 
 type WorkspaceRole = "OWNER" | "ADMIN" | "MEMBER";
 type GlobalUserRole = "USER" | "ADMIN";
@@ -38,6 +40,7 @@ type ChangePasswordValues = {
 
 type RenameWorkspaceValues = {
   name: string;
+  icon: string;
 };
 
 type ManagedUser = {
@@ -51,6 +54,10 @@ type ManagedUser = {
 const settingsKeys = {
   users: (keyword: string) => ["settings", "users", keyword] as const
 };
+
+function resolveWorkspaceIconName(workspace?: { icon?: unknown } | null) {
+  return typeof workspace?.icon === "string" && workspace.icon ? workspace.icon : "TeamOutlined";
+}
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("zh-CN", {
@@ -85,6 +92,8 @@ function SettingsContent() {
   const { message } = App.useApp();
   const [passwordForm] = Form.useForm<ChangePasswordValues>();
   const [workspaceForm] = Form.useForm<RenameWorkspaceValues>();
+  const selectedWorkspaceIcon = Form.useWatch("icon", workspaceForm);
+  const selectedWorkspaceName = Form.useWatch("name", workspaceForm);
   const user = useAuthStore((state) => state.user);
   const themeMode = useThemeStore((state) => state.theme);
   const setTheme = useThemeStore((state) => state.setTheme);
@@ -96,7 +105,8 @@ function SettingsContent() {
 
   useEffect(() => {
     workspaceForm.setFieldValue("name", selectedWorkspace?.name ?? "");
-  }, [selectedWorkspace?.name, workspaceForm]);
+    workspaceForm.setFieldValue("icon", resolveWorkspaceIconName(selectedWorkspace));
+  }, [selectedWorkspace, workspaceForm]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -431,6 +441,33 @@ function SettingsContent() {
             >
               <Input placeholder="输入新的 Workspace 名称" />
             </Form.Item>
+            <Form.Item label="Workspace Icon" name="icon" rules={[{ required: true, message: "请选择 Workspace Icon" }]}>
+              <div className={shellStyles.workspaceIconPickerGrid}>
+                {WORKSPACE_ICONS.map((iconItem) => {
+                  const selected = selectedWorkspaceIcon === iconItem.key;
+
+                  return (
+                    <button
+                      key={iconItem.key}
+                      className={`${shellStyles.workspaceIconPickerButton} ${
+                        selected ? shellStyles.workspaceIconPickerButtonSelected : ""
+                      }`}
+                      type="button"
+                      onClick={() => workspaceForm.setFieldValue("icon", iconItem.key)}
+                    >
+                      {iconItem.icon}
+                    </button>
+                  );
+                })}
+              </div>
+            </Form.Item>
+            <div className={styles.helperStack} style={{ marginBottom: 16 }}>
+              <Typography.Text type="secondary">当前显示：</Typography.Text>
+              <div className={shellStyles.workspaceOptionLabel}>
+                <span className={shellStyles.workspacePreviewIcon}>{renderWorkspaceIcon(selectedWorkspaceIcon)}</span>
+                <Typography.Text>{selectedWorkspaceName || "Workspace"}</Typography.Text>
+              </div>
+            </div>
             <Button
               type="primary"
               htmlType="submit"

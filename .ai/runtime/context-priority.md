@@ -7,11 +7,12 @@
 | 1 | Active task request | Interpreting the current ask |
 | 2 | Relevant phase spec | Defining scope and acceptance |
 | 3 | Root `AGENTS.md` + `.ai/runtime/` | Applying repo-wide rules |
-| 4 | `.ai/organization/` | Deciding ownership and routing |
-| 5 | `.ai/memory/` | Reusing durable project knowledge |
-| 6 | `.ai/skills/` | Reusing proven execution patterns |
-| 7 | `.ai/architecture/` + `.ai/knowledge/` | Deep reference and background |
-| 8 | Legacy `specs/` and `skills/` | Compatibility during migration |
+| 4 | `.ai/registry/` | Resolving the right file before broad scans |
+| 5 | `.ai/organization/` | Deciding ownership and routing |
+| 6 | `.ai/memory/` | Reusing durable project knowledge |
+| 7 | `.ai/skills/` | Reusing proven execution patterns |
+| 8 | `.ai/architecture/` + `.ai/knowledge/` | Deep reference and background |
+| 9 | Legacy `specs/` and `skills/` | Compatibility during migration |
 
 ## Tie-breakers
 

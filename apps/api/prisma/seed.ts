@@ -35,8 +35,38 @@ async function backfillAgentTypes() {
   });
 }
 
+async function backfillWorkspaceIcons() {
+  await prisma.$runCommandRaw({
+    update: "Workspace",
+    updates: [{
+      q: {
+        icon: {
+          $exists: false
+        }
+      },
+      u: {
+        $set: {
+          icon: "TeamOutlined"
+        }
+      },
+      multi: true
+    }, {
+      q: {
+        icon: null
+      },
+      u: {
+        $set: {
+          icon: "TeamOutlined"
+        }
+      },
+      multi: true
+    }]
+  });
+}
+
 async function main() {
   await backfillAgentTypes();
+  await backfillWorkspaceIcons();
   const adminPasswordHash = await hash("admin", 10);
   await prisma.user.upsert({
     where: { email: "admin@wade.local" },
@@ -66,6 +96,7 @@ async function main() {
   await prisma.workspace.create({
     data: {
       name: "Demo Workspace",
+      icon: "TeamOutlined",
       createdById: user.id,
       members: { create: { userId: user.id, role: WorkspaceRole.OWNER } },
       channels: { create: { name: "general" } }

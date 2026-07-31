@@ -1,11 +1,15 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useStore } from "zustand";
+import { useShallow } from "zustand/react/shallow";
+import { createStore, type StoreApi } from "zustand/vanilla";
 import { apiFetch, unwrapItems } from "../lib/api";
 
 export type Workspace = {
   id: string;
   name: string;
+  icon?: string | null;
   createdAt?: string;
 };
 
@@ -46,19 +50,212 @@ export const workspaceKeys = {
   members: (workspaceId: string | null) => ["workspaces", workspaceId, "members"] as const
 };
 
-export async function fetchWorkspaces() {
+type CreateWorkspaceInput = {
+  name: string;
+  icon?: string | null;
+};
+
+type CreateChannelInput = {
+  name: string;
+};
+
+type WorkspaceStoreState = {
+  workspaces: Workspace[];
+  members: Member[];
+  channels: Channel[];
+  workspaceId: string | null;
+  selectedChannelId: string | null;
+  workspacesLoading: boolean;
+  membersLoading: boolean;
+  channelsLoading: boolean;
+  fetchWorkspaces: () => Promise<Workspace[]>;
+  fetchMembers: (workspaceId: string) => Promise<Member[]>;
+  fetchChannels: (workspaceId: string) => Promise<Channel[]>;
+  selectWorkspace: (workspaceId: string | null) => void;
+  selectChannel: (channelId: string | null) => void;
+  createWorkspace: (input: CreateWorkspaceInput) => Promise<Workspace>;
+  createChannel: (workspaceId: string, input: CreateChannelInput) => Promise<Channel>;
+  invalidate: (scope?: "all" | "workspaces" | "members" | "channels") => void;
+  sync: (value: WorkspaceContextValue) => void;
+};
+
+type WorkspaceStore = StoreApi<WorkspaceStoreState>;
+
+const WorkspaceStoreContext = createContext<WorkspaceStore | null>(null);
+
+function resolveWorkspaceId(workspaces: Workspace[], workspaceId: string | null) {
+  if (!workspaces.length) {
+    return null;
+  }
+
+  return workspaces.some((workspace) => workspace.id === workspaceId) ? workspaceId : workspaces[0].id;
+}
+
+function resolveChannelId(channels: Channel[], channelId: string | null) {
+  if (!channels.length) {
+    return null;
+  }
+
+  return channels.some((channel) => channel.id === channelId) ? channelId : channels[0].id;
+}
+
+function pickStoreFields(value: WorkspaceContextValue) {
+  return {
+    workspaces: value.workspaces,
+    members: value.members,
+    channels: value.channels,
+    workspaceId: value.workspaceId,
+    selectedChannelId: value.selectedChannelId,
+    workspacesLoading: value.workspacesLoading,
+    membersLoading: value.membersLoading,
+    channelsLoading: value.channelsLoading
+  };
+}
+
+async function requestWorkspaces() {
   return unwrapItems(await apiFetch<Workspace[] | { items: Workspace[] }>("/workspaces"));
 }
 
-export async function fetchChannels(workspaceId: string) {
+async function requestChannels(workspaceId: string) {
   return unwrapItems(await apiFetch<Channel[] | { items: Channel[] }>(`/workspaces/${workspaceId}/channels`));
 }
 
-export async function fetchMembers(workspaceId: string) {
+async function requestMembers(workspaceId: string) {
   return unwrapItems(await apiFetch<Member[] | { items: Member[] }>(`/workspaces/${workspaceId}/members`));
 }
 
-const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
+async function requestCreateWorkspace({ name, icon }: CreateWorkspaceInput) {
+  return apiFetch<Workspace>("/workspaces", {
+    method: "POST",
+    body: {
+      name,
+      icon: icon ?? null
+    }
+  });
+}
+
+async function requestCreateChannel(workspaceId: string, { name }: CreateChannelInput) {
+  return apiFetch<Channel>(`/workspaces/${workspaceId}/channels`, {
+    method: "POST",
+    body: { name }
+  });
+}
+
+export async function fetchWorkspaces() {
+  return requestWorkspaces();
+}
+
+export async function fetchChannels(workspaceId: string) {
+  return requestChannels(workspaceId);
+}
+
+export async function fetchMembers(workspaceId: string) {
+  return requestMembers(workspaceId);
+}
+
+export async function createWorkspace(input: CreateWorkspaceInput) {
+  return requestCreateWorkspace(input);
+}
+
+export async function createChannel(workspaceId: string, input: CreateChannelInput) {
+  return requestCreateChannel(workspaceId, input);
+}
+
+function createWorkspaceContextStore(initialValue: WorkspaceContextValue) {
+  return createStore<WorkspaceStoreState>((set, get) => ({
+    ...pickStoreFields(initialValue),
+    async fetchWorkspaces() {
+      set({ workspacesLoading: true });
+
+      try {
+        const workspaces = await requestWorkspaces();
+        const workspaceId = resolveWorkspaceId(workspaces, get().workspaceId);
+        set({ workspaces, workspaceId, workspacesLoading: false });
+        return workspaces;
+      } catch (error) {
+        set({ workspacesLoading: false });
+        throw error;
+      }
+    },
+    async fetchMembers(workspaceId) {
+      set({ membersLoading: true });
+
+      try {
+        const members = await requestMembers(workspaceId);
+        set({ members, membersLoading: false });
+        return members;
+      } catch (error) {
+        set({ membersLoading: false });
+        throw error;
+      }
+    },
+    async fetchChannels(workspaceId) {
+      set({ channelsLoading: true });
+
+      try {
+        const channels = await requestChannels(workspaceId);
+        const selectedChannelId = resolveChannelId(channels, get().selectedChannelId);
+        set({ channels, selectedChannelId, channelsLoading: false });
+        return channels;
+      } catch (error) {
+        set({ channelsLoading: false });
+        throw error;
+      }
+    },
+    selectWorkspace(workspaceId) {
+      set({ workspaceId });
+    },
+    selectChannel(selectedChannelId) {
+      set({ selectedChannelId });
+    },
+    async createWorkspace(input) {
+      const workspace = await requestCreateWorkspace(input);
+      set((state) => ({
+        workspaces: [...state.workspaces, workspace],
+        workspaceId: workspace.id
+      }));
+      return workspace;
+    },
+    async createChannel(workspaceId, input) {
+      const channel = await requestCreateChannel(workspaceId, input);
+      set((state) => ({
+        channels: [...state.channels, channel],
+        selectedChannelId: channel.id
+      }));
+      return channel;
+    },
+    invalidate(scope = "all") {
+      if (scope === "workspaces") {
+        set({ workspaces: [], workspacesLoading: false });
+        return;
+      }
+
+      if (scope === "members") {
+        set({ members: [], membersLoading: false });
+        return;
+      }
+
+      if (scope === "channels") {
+        set({ channels: [], selectedChannelId: null, channelsLoading: false });
+        return;
+      }
+
+      set({
+        workspaces: [],
+        members: [],
+        channels: [],
+        workspaceId: null,
+        selectedChannelId: null,
+        workspacesLoading: false,
+        membersLoading: false,
+        channelsLoading: false
+      });
+    },
+    sync(value) {
+      set(pickStoreFields(value));
+    }
+  }));
+}
 
 export function WorkspaceContextProvider({
   children,
@@ -67,17 +264,35 @@ export function WorkspaceContextProvider({
   children: ReactNode;
   value: WorkspaceContextValue;
 }) {
-  return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
+  const [store] = useState(() => createWorkspaceContextStore(value));
+
+  useEffect(() => {
+    store.getState().sync(value);
+  }, [store, value]);
+
+  return <WorkspaceStoreContext.Provider value={store}>{children}</WorkspaceStoreContext.Provider>;
 }
 
 export function useWorkspaceContext() {
-  const context = useContext(WorkspaceContext);
+  const store = useContext(WorkspaceStoreContext);
 
-  if (!context) {
+  if (!store) {
     throw new Error("WorkspaceContext is missing");
   }
 
-  return context;
+  // zustand v5:selector 必须返回稳定引用,否则 useSyncExternalStore 无限循环
+  return useStore(store, useShallow((state) => ({
+    workspaceId: state.workspaceId,
+    workspaces: state.workspaces,
+    workspacesLoading: state.workspacesLoading,
+    selectedWorkspace: state.workspaces.find((workspace) => workspace.id === state.workspaceId) ?? null,
+    channels: state.channels,
+    channelsLoading: state.channelsLoading,
+    selectedChannelId: state.selectedChannelId,
+    selectedChannel: state.channels.find((channel) => channel.id === state.selectedChannelId) ?? null,
+    members: state.members,
+    membersLoading: state.membersLoading
+  })));
 }
 
 export const useWorkspacePageContext = useWorkspaceContext;

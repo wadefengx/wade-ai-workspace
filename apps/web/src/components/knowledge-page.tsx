@@ -9,6 +9,7 @@ import { WorkspacePageFrame } from "./workspace-page-frame";
 import { useWorkspacePageContext } from "./workspace-context";
 import styles from "./workspace-pages.module.css";
 import { ApiError, apiFetch, unwrapItems } from "../lib/api";
+import { formatDateTime } from "../lib/datetime";
 
 type ExtractionStatus = "PENDING" | "PROCESSING" | "READY" | "FAILED";
 
@@ -31,13 +32,6 @@ const statusTagColor: Record<ExtractionStatus, string> = {
   READY: "success",
   FAILED: "error"
 };
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(new Date(value));
-}
 
 function isProcessingStatus(status: ExtractionStatus) {
   return status === "PENDING" || status === "PROCESSING";

@@ -3,47 +3,172 @@
   min-height: 100vh;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--space-lg);
   background:
-    radial-gradient(circle at top, rgb(2 74 216 / 8%), transparent 32%),
-    var(--background);
+    radial-gradient(circle at top, rgb(106 141 255 / 24%), transparent 34%),
+    linear-gradient(180deg, #f7f9fc 0%, #eef3ff 100%);
+}
+
+:global(:root[data-theme="dark"]) .page {
+  background:
+    radial-gradient(circle at top, rgb(106 141 255 / 18%), transparent 34%),
+    linear-gradient(180deg, #0f1420 0%, #161c2b 100%);
 }
 
 .card {
-  width: min(100%, 420px);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: 0 16px 40px rgb(15 23 42 / 8%);
+  width: min(100%, 460px);
+  padding: 32px;
+  border: 1px solid rgb(255 255 255 / 40%);
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 62%);
+  box-shadow:
+    0 24px 60px rgb(15 23 42 / 12%),
+    inset 0 1px 0 rgb(255 255 255 / 45%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+:global(:root[data-theme="dark"]) .card {
+  border-color: rgb(255 255 255 / 10%);
+  background: rgb(22 28 43 / 72%);
+  box-shadow:
+    0 28px 72px rgb(0 0 0 / 36%),
+    inset 0 1px 0 rgb(255 255 255 / 8%);
 }
 
 .header {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 14px;
+  margin-bottom: 22px;
 }
 
-.brandMark {
-  width: 40px;
-  height: 40px;
+.brandIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 72%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 65%);
+}
+
+:global(:root[data-theme="dark"]) .brandIcon {
+  background: rgb(255 255 255 / 8%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%);
 }
 
 .brandLabel {
-  color: var(--primary);
-  font-size: 18px;
+  margin: 0 !important;
+  color: var(--text) !important;
+  font-size: 28px !important;
   font-weight: 700;
+  line-height: 1.1 !important;
+}
+
+.brandSubtitle {
+  color: var(--muted) !important;
+  font-size: var(--font-size-sm);
 }
 
 .title {
-  margin-bottom: 8px !important;
+  margin-bottom: var(--space-sm) !important;
+  font-size: var(--font-size-title) !important;
+}
+
+.subtitle {
+  color: var(--muted) !important;
+  font-size: var(--font-size-base);
+}
+
+.form :global(.ant-form-item) {
+  margin-bottom: 18px;
+}
+
+.form :global(.ant-form-item-label > label) {
+  color: var(--text);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.input {
+  height: 44px;
+  border-radius: 12px;
+}
+
+.input:global(.ant-input),
+.input:global(.ant-input-affix-wrapper) {
+  border-color: rgb(23 32 51 / 10%);
+  background: rgb(255 255 255 / 72%);
+  box-shadow: none;
+}
+
+.input:global(.ant-input:hover),
+.input:global(.ant-input-affix-wrapper:hover) {
+  border-color: rgb(2 74 216 / 36%);
+}
+
+.input:global(.ant-input:focus),
+.input:global(.ant-input-affix-wrapper-focused) {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(2 74 216 / 12%);
+  background: rgb(255 255 255 / 90%);
+}
+
+:global(:root[data-theme="dark"]) .input:global(.ant-input),
+:global(:root[data-theme="dark"]) .input:global(.ant-input-affix-wrapper) {
+  border-color: rgb(255 255 255 / 10%);
+  background: rgb(15 20 32 / 42%);
+  color: var(--text);
+}
+
+:global(:root[data-theme="dark"]) .input:global(.ant-input:focus),
+:global(:root[data-theme="dark"]) .input:global(.ant-input-affix-wrapper-focused) {
+  background: rgb(15 20 32 / 72%);
+}
+
+.inlineError {
+  display: block;
+  margin: -4px 0 12px;
+  color: var(--danger) !important;
+}
+
+.submitButton {
+  height: 44px;
+  margin-top: 4px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #024ad8 0%, #6a8dff 100%) !important;
+  box-shadow: 0 16px 32px rgb(2 74 216 / 24%);
+}
+
+.submitButton:hover,
+.submitButton:focus-visible {
+  filter: brightness(1.08);
+}
+
+.submitButton:global(.ant-btn-color-primary.ant-btn-variant-solid):disabled,
+.submitButton:global(.ant-btn-color-primary.ant-btn-variant-solid).ant-btn-loading {
+  background: linear-gradient(135deg, #3c6fdc 0%, #88a4ff 100%) !important;
 }
 
 .footer {
-  margin-top: 20px;
+  width: 100%;
+  margin-top: 22px;
   text-align: center;
+}
+
+.footerText,
+.footerHint {
+  color: var(--muted) !important;
+}
+
+.footerHint {
+  font-size: var(--font-size-sm);
 }

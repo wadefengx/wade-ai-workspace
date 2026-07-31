@@ -1,0 +1,20 @@
+skills:
+  common-ponytail:
+    path: skills/common/ponytail.md
+    tags: [engineering, philosophy, all-roles]
+    owner: frontend
+    depends: []
+  common-sdd-workflow:
+    path: skills/common/sdd-workflow.md
+    tags: [workflow, planning, delivery, all-roles]
+    owner: pm
+    depends: []
+
+placeholders:
+  frontend: []
+  backend: []
+  architecture: []
+  testing: []
+  documentation: []
+  ai: []
+  devops: []

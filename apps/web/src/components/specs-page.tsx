@@ -2,9 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Button, Empty, Spin, Typography } from "antd";
-import ReactMarkdown from "react-markdown";
 import { useMemo, useState } from "react";
 import { apiFetch } from "../lib/api";
+import { MarkdownContent } from "./markdown-content";
 import { WorkspacePageFrame } from "./workspace-page-frame";
 import styles from "./workspace-pages.module.css";
 
@@ -90,8 +90,8 @@ function SpecsContent() {
             <Spin />
           </div>
         ) : specDetailQuery.data ? (
-          <div style={{ lineHeight: 1.7, overflowX: "auto" }}>
-            <ReactMarkdown>{specDetailQuery.data.content}</ReactMarkdown>
+          <div style={{ overflowX: "auto" }}>
+            <MarkdownContent content={specDetailQuery.data.content} />
           </div>
         ) : (
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="选择一个 Spec 后在这里查看内容。" />

@@ -4,12 +4,13 @@
 
 1. Root `AGENTS.md` for mission, lifecycle, rules, and directory map.
 2. `.ai/organization/` for team model, routing, and collaboration rules.
-3. `.ai/runtime/` for model, prompt, tool, coding, and context priorities.
-4. Relevant `.ai/specs/` or legacy `specs/` documents for current scope.
-5. Relevant `.ai/skills/` or legacy `skills/` documents for proven execution patterns.
-6. `.ai/memory/` for project facts, decisions, conventions, and known issues.
-7. `.ai/architecture/` and `.ai/knowledge/` for deeper reference when needed.
-8. `.ai/harness/` for evals, regressions, fixtures, prompts, and scorecards.
+3. `.ai/registry/` to resolve the right workflow, skill, role, model, or tool path before scanning directories.
+4. `.ai/runtime/` for model, prompt, tool, coding, pipeline, and context priorities.
+5. Relevant `.ai/specs/` or legacy `specs/` documents for current scope.
+6. Relevant `.ai/skills/` or legacy `skills/` documents for proven execution patterns.
+7. `.ai/memory/` for project facts, decisions, conventions, and known issues.
+8. `.ai/architecture/` and `.ai/knowledge/` for deeper reference when needed.
+9. `.ai/harness/` for evals, regressions, fixtures, prompts, and scorecards.
 
 ## Loading principles
 

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  AppstoreOutlined,
   BookOutlined,
   BulbOutlined,
   DatabaseOutlined,
@@ -22,6 +21,7 @@ import type { MenuProps } from "antd";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ApiError, apiFetch } from "../lib/api";
+import { WORKSPACE_ICONS, renderWorkspaceIcon } from "../lib/workspace-icons";
 import { buildWorkspaceHref } from "../lib/workspace-navigation";
 import { useAuthStore } from "../stores/auth";
 import { type ThemeMode, useThemeStore } from "../theme/store";
@@ -68,6 +68,11 @@ type ChannelGroup = {
   channels: Channel[];
   sortOrder: number;
   sortTimestamp: number;
+};
+
+type WorkspaceFormValues = {
+  name: string;
+  icon: string;
 };
 
 const useSidebarStore = create<SidebarState>()(
@@ -253,6 +258,10 @@ function compareChannelGroups(a: ChannelGroup, b: ChannelGroup) {
   return b.sortTimestamp - a.sortTimestamp;
 }
 
+function resolveWorkspaceIconName(workspace?: { icon?: unknown } | null) {
+  return typeof workspace?.icon === "string" && workspace.icon ? workspace.icon : "TeamOutlined";
+}
+
 function resolveThemeLabel(themeMode: ThemeMode, resolvedTheme: "light" | "dark") {
   if (themeMode === "system") {
     return `跟随系统（当前${resolvedTheme === "dark" ? "深色" : "浅色"}）`;
@@ -317,7 +326,8 @@ export function WorkspaceNavigation() {
     width: number;
     height: number;
   } | null>(null);
-  const [workspaceForm] = Form.useForm<{ name: string }>();
+  const [workspaceForm] = Form.useForm<WorkspaceFormValues>();
+  const selectedWorkspaceIcon = Form.useWatch("icon", workspaceForm);
   const [channelForm] = Form.useForm<{ name: string }>();
   const activeNavKey = useMemo(() => resolveActiveNavKey(pathname), [pathname]);
   const resolvedTheme = useMemo<"light" | "dark">(
@@ -377,7 +387,12 @@ export function WorkspaceNavigation() {
     () =>
       workspaces.map((workspace) => ({
         key: workspace.id,
-        label: workspace.name
+        label: (
+          <span className={styles.workspaceOptionLabel}>
+            <span className={styles.workspacePreviewIcon}>{renderWorkspaceIcon(resolveWorkspaceIconName(workspace))}</span>
+            <span className={styles.workspaceOptionText}>{workspace.name}</span>
+          </span>
+        )
       })),
     [workspaces]
   );
@@ -395,7 +410,7 @@ export function WorkspaceNavigation() {
     [pathname, router, selectedChannelId, workspaceMenuItems]
   );
   const createWorkspaceMutation = useMutation({
-    mutationFn: (values: { name: string }) =>
+    mutationFn: (values: WorkspaceFormValues) =>
       apiFetch<Workspace>("/workspaces", {
         method: "POST",
         body: values
@@ -552,13 +567,22 @@ export function WorkspaceNavigation() {
     };
   }, [accountMenuOpen]);
 
+  useEffect(() => {
+    if (workspaceModalOpen) {
+      workspaceForm.setFieldsValue({
+        name: "",
+        icon: "TeamOutlined"
+      });
+    }
+  }, [workspaceForm, workspaceModalOpen]);
+
   return (
     <>
       <aside className={`${styles.sidebar} ${sidebarCollapsed ? styles.sidebarCollapsed : ""}`}>
-        <div className={styles.sidebarHeader}>
+        <div className={`${styles.sidebarHeader} ${sidebarCollapsed ? styles.sidebarHeaderCollapsed : ""}`}>
           {sidebarCollapsed ? (
             <Tooltip title="Zone AI" placement="right">
-              <div className={styles.brand}>
+              <div className={`${styles.brand} ${styles.brandCollapsed}`}>
                 <BrandMark />
               </div>
             </Tooltip>
@@ -569,15 +593,17 @@ export function WorkspaceNavigation() {
             </div>
           )}
 
-          <div className={styles.sidebarActions}>
-            <Tooltip title={themeTooltip} placement="bottom">
-              <Button
-                className={styles.sidebarActionButton}
-                type="text"
-                icon={resolvedTheme === "dark" ? <BulbOutlined /> : <SunOutlined />}
-                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-              />
-            </Tooltip>
+          <div className={`${styles.sidebarActions} ${sidebarCollapsed ? styles.sidebarActionsCollapsed : ""}`}>
+            {!sidebarCollapsed ? (
+              <Tooltip title={themeTooltip} placement="bottom">
+                <Button
+                  className={styles.sidebarActionButton}
+                  type="text"
+                  icon={resolvedTheme === "dark" ? <BulbOutlined /> : <SunOutlined />}
+                  onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                />
+              </Tooltip>
+            ) : null}
             <Tooltip title={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"} placement="bottom">
               <Button
                 className={styles.sidebarActionButton}
@@ -592,10 +618,8 @@ export function WorkspaceNavigation() {
         <div className={styles.workspaceControls}>
           <div className={styles.sectionHeader}>
             {sidebarCollapsed ? (
-              <Tooltip title="Workspace" placement="right">
-                <span className={styles.sectionIcon}>
-                  <AppstoreOutlined />
-                </span>
+              <Tooltip title={selectedWorkspace?.name ?? "Workspace"} placement="right">
+                <span className={styles.sectionIcon}>{renderWorkspaceIcon(resolveWorkspaceIconName(selectedWorkspace))}</span>
               </Tooltip>
             ) : (
               <Typography.Text className={styles.sectionTitle}>Workspace</Typography.Text>
@@ -610,10 +634,10 @@ export function WorkspaceNavigation() {
                   placement="right"
                 >
                   <Button
-                    className={styles.iconOnlyButton}
+                    className={styles.workspaceIconButton}
                     type="text"
                     loading={workspacesLoading}
-                    icon={<AppstoreOutlined />}
+                    icon={renderWorkspaceIcon(resolveWorkspaceIconName(selectedWorkspace))}
                   />
                 </Tooltip>
               </Dropdown>
@@ -632,7 +656,14 @@ export function WorkspaceNavigation() {
                 placeholder={workspaces.length ? "选择 Workspace" : "暂无 Workspace"}
                 value={workspaceId ?? undefined}
                 options={workspaces.map((workspace) => ({
-                  label: workspace.name,
+                  label: (
+                    <span className={styles.workspaceOptionLabel}>
+                      <span className={styles.workspacePreviewIcon}>
+                        {renderWorkspaceIcon(resolveWorkspaceIconName(workspace))}
+                      </span>
+                      <span className={styles.workspaceOptionText}>{workspace.name}</span>
+                    </span>
+                  ),
                   value: workspace.id
                 }))}
                 loading={workspacesLoading}
@@ -823,6 +854,7 @@ export function WorkspaceNavigation() {
           form={workspaceForm}
           layout="vertical"
           requiredMark={false}
+          initialValues={{ name: "", icon: "TeamOutlined" }}
           onFinish={(values) => createWorkspaceMutation.mutate(values)}
         >
           <Form.Item
@@ -831,6 +863,26 @@ export function WorkspaceNavigation() {
             rules={[{ required: true, message: "请输入 Workspace 名称" }]}
           >
             <Input placeholder="例如：Product Team" />
+          </Form.Item>
+          <Form.Item label="Workspace Icon" name="icon" rules={[{ required: true, message: "请选择 Workspace Icon" }]}>
+            <div className={styles.workspaceIconPickerGrid}>
+              {WORKSPACE_ICONS.map((iconItem) => {
+                const selected = selectedWorkspaceIcon === iconItem.key;
+
+                return (
+                  <button
+                    key={iconItem.key}
+                    className={`${styles.workspaceIconPickerButton} ${
+                      selected ? styles.workspaceIconPickerButtonSelected : ""
+                    }`}
+                    type="button"
+                    onClick={() => workspaceForm.setFieldValue("icon", iconItem.key)}
+                  >
+                    {iconItem.icon}
+                  </button>
+                );
+              })}
+            </div>
           </Form.Item>
         </Form>
       </Modal>

@@ -10,7 +10,7 @@
   --sidebar-width: 280px;
   width: var(--sidebar-width);
   flex: 0 0 var(--sidebar-width);
-  padding: 20px 16px;
+  padding: var(--space-lg, 24px) var(--space-md, 16px);
   border-right: 1px solid var(--line);
   background: var(--surface-subtle);
   transition:
@@ -21,45 +21,62 @@
 
 .sidebarCollapsed {
   --sidebar-width: 64px;
-  padding-inline: 8px;
+  padding-inline: var(--space-sm, 8px);
 }
 
 .sidebarHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: var(--space-sm, 8px);
+  margin-bottom: var(--space-lg, 24px);
+}
+
+.sidebarHeaderCollapsed {
+  flex-direction: column;
+  align-items: center;
 }
 
 .sidebarActions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-sm, 8px);
+}
+
+.sidebarActionsCollapsed {
+  justify-content: center;
 }
 
 .sidebarActionButton,
-.iconOnlyButton {
+.iconOnlyButton,
+.workspaceIconButton {
   display: inline-flex;
+  width: 32px;
+  height: 32px;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--text);
 }
 
 .sidebarActionButton:hover,
-.iconOnlyButton:hover {
-  background: var(--primary-surface) !important;
+.iconOnlyButton:hover,
+.workspaceIconButton:hover {
+  background: var(--hover) !important;
   color: var(--primary) !important;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-sm, 8px);
   color: var(--primary);
-  font-size: 18px;
+  font-size: var(--font-size-lg, 16px);
   font-weight: 700;
+}
+
+.brandCollapsed {
+  justify-content: center;
 }
 
 .brandLabel {
@@ -74,18 +91,19 @@
 
 .workspaceControls {
   display: grid;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: var(--space-sm, 8px);
+  margin-bottom: var(--space-lg, 24px);
 }
 
 .section {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-lg, 24px);
 }
 
 .sectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-sm, 8px);
   margin-bottom: 10px;
 }
 
@@ -108,22 +126,24 @@
 .iconList,
 .channelGroups {
   display: grid;
-  gap: 12px;
+  gap: var(--space-sm, 8px);
 }
 
 .chatSearch {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-sm, 8px);
 }
 
 .channelGroup {
   display: grid;
-  gap: 8px;
+  gap: var(--space-sm, 8px);
 }
 
 .channelGroupTitle {
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .channelList,
@@ -139,11 +159,12 @@
   align-items: center;
   gap: 10px;
   justify-content: flex-start;
+  min-height: 40px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 12px;
   background: transparent;
   color: var(--text);
-  font-size: 14px;
+  font-size: var(--font-size-base, 14px);
   font-weight: 500;
 }
 
@@ -159,6 +180,17 @@
 .iconOnlyButton {
   justify-content: center;
   padding-inline: 0 !important;
+}
+
+.navButton :global(.anticon),
+.channelButton :global(.anticon) {
+  font-size: 16px;
+}
+
+.navButtonCollapsed :global(.anticon),
+.channelButtonCollapsed :global(.anticon),
+.workspaceIconButton :global(.anticon) {
+  font-size: 18px;
 }
 
 .channelButtonActive,
@@ -185,8 +217,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 18px 24px;
+  gap: var(--space-md, 16px);
+  padding: 18px var(--space-lg, 24px);
   border-bottom: 1px solid var(--line);
 }
 
@@ -197,12 +229,13 @@
 .topbarTitle,
 .channelTitle {
   margin: 0 !important;
+  font-size: var(--font-size-title, 20px) !important;
 }
 
 .memberBar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-md, 16px);
 }
 
 .conversation {
@@ -210,8 +243,8 @@
   min-height: 0;
   flex: 1;
   flex-direction: column;
-  gap: 16px;
-  padding: 24px;
+  gap: var(--space-md, 16px);
+  padding: var(--space-lg, 24px);
 }
 
 .channelCard {
@@ -230,7 +263,7 @@
   min-height: 0;
   flex: 1;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: var(--radius-lg, 16px);
   background: linear-gradient(180deg, var(--surface-gradient-start) 0%, var(--surface-gradient-end) 100%);
   box-shadow: 0 14px 32px rgb(15 23 42 / 5%);
 }
@@ -239,7 +272,7 @@
   width: 100%;
   min-height: 0;
   overflow-y: auto;
-  padding: 20px;
+  padding: var(--space-lg, 24px);
 }
 
 .messageList {
@@ -264,7 +297,7 @@
   width: min(720px, 100%);
   padding: 14px 16px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 16px);
   box-shadow: 0 10px 24px rgb(15 23 42 / 4%);
 }
 
@@ -291,7 +324,7 @@
 }
 
 .messageAuthor {
-  font-size: 13px;
+  font-size: var(--font-size-sm, 13px);
   font-weight: 700;
 }
 
@@ -314,12 +347,14 @@
   white-space: pre-wrap;
   word-break: break-word;
   line-height: 1.7;
+  font-size: var(--font-size-base, 14px);
 }
 
 .markdown {
   color: var(--text);
   line-height: 1.7;
   word-break: break-word;
+  font-size: var(--font-size-base, 14px);
 }
 
 .markdown > :first-child {
@@ -338,6 +373,7 @@
   margin: 0 0 12px;
 }
 
+.markdownInlineCode,
 .markdown code {
   padding: 0.12em 0.4em;
   border-radius: 6px;
@@ -347,6 +383,7 @@
   font-size: 0.92em;
 }
 
+.markdownCodeBlock,
 .markdown pre {
   overflow-x: auto;
   padding: 12px 14px;
@@ -356,10 +393,55 @@
   color: #e5efff;
 }
 
+.markdownCodeBlock code,
 .markdown pre code {
   padding: 0;
   background: transparent;
   color: inherit;
+}
+
+.markdownDiagram {
+  display: grid;
+  gap: var(--space-sm, 8px);
+  margin: 0 0 12px;
+}
+
+.markdownDiagramCard {
+  padding: var(--space-md, 16px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg, 16px);
+  background: var(--surface-soft);
+}
+
+.markdownDiagramSvg {
+  overflow-x: auto;
+}
+
+.markdownDiagramSvg :global(svg) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.markdownDiagramActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+}
+
+.markdownDiagramDetails {
+  margin-top: var(--space-sm, 8px);
+}
+
+.markdownDiagramSummary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: var(--font-size-sm, 13px);
+}
+
+.markdownDiagramSource {
+  margin-top: var(--space-sm, 8px) !important;
 }
 
 .markdown blockquote {
@@ -407,7 +489,7 @@
   max-width: 560px;
   padding: 32px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-lg, 16px);
   background: var(--surface-soft);
   box-shadow: 0 14px 32px rgb(15 23 42 / 5%);
   text-align: center;
@@ -426,11 +508,11 @@
 
 .composer {
   display: flex;
-  gap: 12px;
+  gap: var(--space-sm, 8px);
   align-items: flex-end;
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-lg, 16px);
   background: var(--surface);
   box-shadow: 0 8px 24px rgb(15 23 42 / 5%);
 }
@@ -471,12 +553,12 @@
 .composerHint {
   display: block;
   margin-top: 8px;
-  font-size: 12px;
+  font-size: var(--font-size-sm, 13px);
 }
 
 .contextPanel {
   width: 320px;
-  padding: 24px;
+  padding: var(--space-lg, 24px);
   border-left: 1px solid var(--line);
   background: var(--surface-soft);
 }
@@ -506,13 +588,13 @@
 
 .accountMenuEmail {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--font-size-sm, 13px);
 }
 
 .accountProfile {
   display: grid;
   justify-items: center;
-  gap: 20px;
+  gap: var(--space-md, 16px);
   padding-top: 8px;
 }
 
@@ -537,18 +619,18 @@
 
 .accountProfileValue {
   color: var(--text);
-  font-size: 14px;
+  font-size: var(--font-size-base, 14px);
   word-break: break-word;
 }
 
 .contextStack {
   display: grid;
-  gap: 16px;
+  gap: var(--space-md, 16px);
 }
 
 .contextCard {
   max-width: none;
-  padding: 20px;
+  padding: var(--space-lg, 24px);
   text-align: left;
 }
 
@@ -561,7 +643,71 @@
 }
 
 .loadingBlock {
-  padding: 24px 0;
+  padding: var(--space-lg, 24px) 0;
+}
+
+.workspaceOptionLabel {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+}
+
+.workspaceOptionText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspacePreviewIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.workspaceIconButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+
+.workspaceIconPickerGrid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: var(--space-sm, 8px);
+}
+
+.workspaceIconPickerButton {
+  display: inline-flex;
+  width: 100%;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.workspaceIconPickerButton:hover {
+  border-color: var(--primary-border);
+  background: var(--hover);
+  color: var(--primary);
+}
+
+.workspaceIconPickerButtonSelected {
+  border-color: var(--primary);
+  background: var(--primary-surface);
+  color: var(--primary);
+  box-shadow: 0 0 0 1px rgb(2 74 216 / 12%);
 }
 
 .streamCursor {
@@ -606,7 +752,7 @@
   }
 
   .conversation {
-    padding: 16px;
+    padding: var(--space-md, 16px);
   }
 }
 

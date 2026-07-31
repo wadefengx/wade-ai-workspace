@@ -8,11 +8,12 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 
 1. Root `AGENTS.md` or this mirror.
 2. `.ai/organization/` for team model, routing, communication, and role contracts.
-3. `.ai/runtime/` for context, prompt, model, tool, and coding policy.
-4. Relevant `.ai/specs/` files for active scope; legacy `specs/` stays readable during migration.
-5. Relevant `.ai/skills/` files for proven execution patterns; legacy `skills/` stays readable during migration.
-6. `.ai/memory/` for durable facts, decisions, conventions, and known issues.
-7. `.ai/architecture/`, `.ai/knowledge/`, and `.ai/harness/` when deeper reference is needed.
+3. `.ai/registry/` for stable indexes before scanning deeper trees.
+4. `.ai/runtime/` for context, prompt, model, tool, coding policy, and pipeline.
+5. Relevant `.ai/specs/` files for active scope; legacy `specs/` stays readable during migration.
+6. Relevant `.ai/skills/` files for proven execution patterns; legacy `skills/` stays readable during migration.
+7. `.ai/memory/` for durable facts, decisions, conventions, and known issues.
+8. `.ai/architecture/`, `.ai/knowledge/`, and `.ai/harness/` when deeper reference is needed.
 
 ## AI lifecycle
 
@@ -21,6 +22,7 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 ## Directory map
 
 - `.ai/organization/`: collaboration model and role contracts.
+- `.ai/registry/`: runtime lookup indexes for skills, workflows, roles, tools, and models.
 - `.ai/runtime/`: agent execution policy.
 - `.ai/workflows/`: repeatable task flows.
 - `.ai/specs/`: template and completed specs.
@@ -29,3 +31,9 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 - `.ai/knowledge/`: curated reference.
 - `.ai/architecture/`: overviews and ADRs.
 - `.ai/harness/`: validation support assets.
+
+## Runtime defaults
+
+- Standard execution path: `runtime/pipeline.md`
+- Index-first lookup: `registry/README.md`
+- Task topology: `organization/topology.md`

@@ -25,6 +25,7 @@ import {
 import { FullScreenSpinner } from "./auth-status";
 import { useWorkspaceContext } from "./workspace-context";
 import { ApiError, apiFetch, resolveApiUrl } from "../lib/api";
+import { formatDateTime } from "../lib/datetime";
 import { streamSse } from "../lib/sse";
 import { useAuthStore } from "../stores/auth";
 import styles from "./workspace-shell.module.css";
@@ -118,12 +119,7 @@ function isChatMessage(value: unknown): value is ChatMessage {
 }
 
 function formatMessageTime(createdAt: string) {
-  return new Intl.DateTimeFormat("zh-CN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    month: "2-digit",
-    day: "2-digit"
-  }).format(new Date(createdAt));
+  return formatDateTime(createdAt);
 }
 
 function getStatusLabel(message: Pick<ChatMessage, "senderType" | "status">) {

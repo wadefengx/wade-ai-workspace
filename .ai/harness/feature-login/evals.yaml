@@ -1,0 +1,13 @@
+evals:
+  - id: login-success
+    workflow: feature
+    prompt_ref: feature-login/golden/001-login-success.md
+    assertions:
+      - http_status == 200
+      - accessToken is non-empty string
+      - refreshToken is non-empty string
+      - user.email == alice@example.com
+      - statusCode is absent
+    score:
+      pass: 1.0
+      fail: 0.0

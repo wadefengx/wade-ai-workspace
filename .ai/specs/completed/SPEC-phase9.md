@@ -1,3 +1,10 @@
+---
+status: done
+phase: Phase 9
+owner: PM
+updated: 2026-08-01
+---
+
 # SPEC-Phase 9 — 会话体验 / JWT 续期 / AIOS 组织层
 
 版本:1.0(2026-08-01)

@@ -1,6 +1,13 @@
 ---
 name: ponytail
 description: 团队 common skill——懒惰工程哲学(最短可行实现、YAGNI、根因修复)。
+owner: frontend
+version: "1.0"
+tags: [engineering, philosophy, all-roles]
+inputs: [task, code]
+outputs: [minimal-diff, decision]
+depends: []
+confidence: stable
 ---
 
 # Ponytail

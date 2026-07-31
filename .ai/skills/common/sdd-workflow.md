@@ -1,6 +1,13 @@
 ---
 name: sdd-workflow
 description: 团队通用 SDD 工作流——从需求、spec、开发到 QA 与沉淀的操作化步骤。
+owner: pm
+version: "1.0"
+tags: [workflow, delivery, planning, all-roles]
+inputs: [task, spec]
+outputs: [execution-plan, acceptance]
+depends: []
+confidence: stable
 ---
 
 # SDD Workflow

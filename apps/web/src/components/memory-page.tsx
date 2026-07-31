@@ -8,6 +8,7 @@ import { WorkspacePageFrame } from "./workspace-page-frame";
 import { useWorkspacePageContext } from "./workspace-context";
 import styles from "./workspace-pages.module.css";
 import { ApiError, apiFetch, unwrapItems } from "../lib/api";
+import { formatDateTime } from "../lib/datetime";
 
 type MemoryType = "PERSONAL" | "TEAM" | "PROJECT";
 
@@ -57,13 +58,6 @@ const memoryGroups: Array<{
     emptyText: "还没有项目记忆。"
   }
 ];
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(new Date(value));
-}
 
 async function fetchMemories(workspaceId: string) {
   return unwrapItems(await apiFetch<MemoryItem[] | { items: MemoryItem[] }>(`/workspaces/${workspaceId}/memories`));

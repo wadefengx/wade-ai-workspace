@@ -1,0 +1,24 @@
+defaults:
+  doc-surgery:
+    order: [gpt-5.4, deepseek, qwen3:8b]
+    reference: runtime/model-routing.md
+  multi-file-reasoning:
+    order: [gpt-5.4, deepseek]
+    reference: runtime/model-routing.md
+  repetitive-validation:
+    order: [qwen3:8b, hermes]
+    reference: runtime/model-routing.md
+
+models:
+  gpt-5.4:
+    class: remote-primary
+    use: higher-capability multi-file reasoning
+  deepseek:
+    class: remote-fallback
+    use: search-heavy or cost-aware fallback
+  qwen3:8b:
+    class: local-ollama
+    use: fast local validation and routine execution
+  hermes:
+    class: openai-compatible
+    use: local or self-hosted eval target

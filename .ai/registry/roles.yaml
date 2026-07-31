@@ -1,0 +1,22 @@
+roles:
+  pm:
+    path: organization/roles/pm.md
+    tags: [scope, acceptance, coordination]
+  architect:
+    path: organization/roles/architect.md
+    tags: [contracts, topology, adr]
+  frontend:
+    path: organization/roles/frontend.md
+    tags: [ui, interaction, web]
+  backend:
+    path: organization/roles/backend.md
+    tags: [api, data, auth]
+  qa:
+    path: organization/roles/qa.md
+    tags: [validation, regression, acceptance]
+  ux:
+    path: organization/roles/ux.md
+    tags: [copy, flow, usability]
+  devops:
+    path: organization/roles/devops.md
+    tags: [runtime, environment, tooling]

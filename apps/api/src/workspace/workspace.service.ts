@@ -45,6 +45,7 @@ export class WorkspaceService {
       const workspace = await tx.workspace.create({
         data: {
           name: dto.name,
+          icon: dto.icon,
           createdById: userId
         }
       });
@@ -73,10 +74,14 @@ export class WorkspaceService {
 
     return this.prisma.workspace.update({
       where: { id: workspaceId },
-      data: { name: dto.name },
+      data: {
+        name: dto.name,
+        icon: dto.icon
+      },
       select: {
         id: true,
         name: true,
+        icon: true,
         createdById: true,
         createdAt: true,
         updatedAt: true

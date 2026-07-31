@@ -1,0 +1,41 @@
+pipeline:
+  default:
+    path: runtime/pipeline.md
+    stages:
+      - user-task
+      - task-classifier
+      - workflow-selector
+      - skill-resolver
+      - context-loader
+      - planner
+      - executor
+      - reviewer
+      - harness
+      - memory-writer
+      - done
+
+workflows:
+  feature:
+    path: workflows/feature.md
+    tags: [delivery, new-scope]
+    skill_refs: [common-sdd-workflow, common-ponytail]
+  bugfix:
+    path: workflows/bugfix.md
+    tags: [stability, regression]
+    skill_refs: [common-ponytail]
+  refactor:
+    path: workflows/refactor.md
+    tags: [cleanup, structure]
+    skill_refs: [common-ponytail]
+  release:
+    path: workflows/release.md
+    tags: [qa, handoff]
+    skill_refs: [common-sdd-workflow]
+  architecture:
+    path: workflows/architecture.md
+    tags: [design, adr]
+    skill_refs: [common-sdd-workflow, common-ponytail]
+  research:
+    path: workflows/research.md
+    tags: [discovery, citations]
+    skill_refs: []

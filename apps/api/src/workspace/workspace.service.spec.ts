@@ -6,7 +6,10 @@ import {
 } from "@nestjs/common";
 import { UserRole, WorkspaceRole } from "@prisma/client";
 import { Test } from "@nestjs/testing";
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 import { PrismaService } from "../prisma/prisma.service";
+import { CreateWorkspaceDto } from "./dto/create-workspace.dto";
 import { WorkspaceService } from "./workspace.service";
 
 describe("WorkspaceService", () => {
@@ -64,6 +67,7 @@ describe("WorkspaceService", () => {
         create: jest.fn().mockResolvedValue({
           id: "workspace-1",
           name: "Core Team",
+          icon: "RocketOutlined",
           createdById: "user-1",
           createdAt: new Date("2024-01-01T00:00:00.000Z"),
           updatedAt: new Date("2024-01-01T00:00:00.000Z")
@@ -86,9 +90,13 @@ describe("WorkspaceService", () => {
     }).compile();
     const service = module.get(WorkspaceService);
 
-    await expect(service.createWorkspace("user-1", { name: "Core Team" })).resolves.toEqual({
+    await expect(service.createWorkspace("user-1", {
+      name: "Core Team",
+      icon: "RocketOutlined"
+    })).resolves.toEqual({
       id: "workspace-1",
       name: "Core Team",
+      icon: "RocketOutlined",
       createdById: "user-1",
       createdAt: new Date("2024-01-01T00:00:00.000Z"),
       updatedAt: new Date("2024-01-01T00:00:00.000Z")
@@ -98,6 +106,13 @@ describe("WorkspaceService", () => {
         workspaceId: "workspace-1",
         userId: "user-1",
         role: WorkspaceRole.OWNER
+      }
+    });
+    expect(tx.workspace.create).toHaveBeenCalledWith({
+      data: {
+        name: "Core Team",
+        icon: "RocketOutlined",
+        createdById: "user-1"
       }
     });
     expect(tx.channel.create).toHaveBeenCalledWith({
@@ -187,23 +202,46 @@ describe("WorkspaceService", () => {
     prisma.user.findUnique.mockResolvedValue({ role: UserRole.ADMIN });
     prisma.workspace.findMany.mockResolvedValue([{
       id: "workspace-1",
-      name: "Team Alpha"
+      name: "Team Alpha",
+      icon: "TeamOutlined"
     }, {
       id: "workspace-2",
-      name: "Demo Workspace"
+      name: "Demo Workspace",
+      icon: "RocketOutlined"
     }]);
     const service = await createService();
 
     await expect(service.listForUser("admin-1")).resolves.toEqual([{
       id: "workspace-1",
-      name: "Team Alpha"
+      name: "Team Alpha",
+      icon: "TeamOutlined"
     }, {
       id: "workspace-2",
-      name: "Demo Workspace"
+      name: "Demo Workspace",
+      icon: "RocketOutlined"
     }]);
     expect(prisma.workspace.findMany).toHaveBeenCalledWith({
       orderBy: { createdAt: "asc" }
     });
+  });
+
+  it("validates optional workspace icon on create dto", async () => {
+    const invalidDto = plainToInstance(CreateWorkspaceDto, {
+      name: "Team Alpha",
+      icon: "x".repeat(51)
+    });
+    const invalidResults = await validate(invalidDto);
+
+    expect(invalidResults).toHaveLength(1);
+    expect(invalidResults[0]?.constraints).toMatchObject({
+      maxLength: "工作区图标长度不能超过50个字符"
+    });
+
+    const validDto = plainToInstance(CreateWorkspaceDto, {
+      name: "Team Alpha",
+      icon: "TeamOutlined"
+    });
+    await expect(validate(validDto)).resolves.toEqual([]);
   });
 
   it("allows global admins to list members without workspace membership", async () => {

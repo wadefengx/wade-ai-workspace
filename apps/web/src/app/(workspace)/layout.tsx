@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "antd";
+import { motion } from "framer-motion";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, type ReactNode } from "react";
 import { FullScreenSpinner, useRequireAuth } from "../../components/auth-status";
@@ -108,7 +109,15 @@ function WorkspaceLayoutContent({ children }: Readonly<{ children: ReactNode }>)
     >
       <Layout className={styles.shell}>
         <WorkspaceNavigation />
-        {children}
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          style={{ flex: 1, minWidth: 0, display: "flex" }}
+        >
+          {children}
+        </motion.div>
       </Layout>
     </WorkspaceContextProvider>
   );

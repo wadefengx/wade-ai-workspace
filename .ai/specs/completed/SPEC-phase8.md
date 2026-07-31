@@ -1,3 +1,10 @@
+---
+status: done
+phase: Phase 8
+owner: PM
+updated: 2026-08-01
+---
+
 # SPEC-Phase 8 — 用户体系 / 资源 CRUD / Agent 生态 / 主题与品牌(Zone AI)
 
 版本:1.0(2026-08-01)

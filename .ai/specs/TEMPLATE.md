@@ -1,3 +1,10 @@
+---
+status: draft
+phase: Phase X
+owner: PM
+updated: YYYY-MM-DD
+---
+
 # SPEC-Phase X — <功能标题>
 
 版本:0.1(YYYY-MM-DD)
