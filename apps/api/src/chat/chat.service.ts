@@ -96,6 +96,78 @@ export class ChatService {
     });
   }
 
+  /**
+   * 调用本地模型为对话生成简洁标题(≤20 字),并更新频道名。
+   * 容错:模型不可用时返回当前标题,不抛 500。
+   */
+  async generateChannelTitle(workspaceId: string, channelId: string) {
+    const channel = await this.prisma.channel.findFirst({
+      where: { id: channelId, workspaceId }
+    });
+
+    if (!channel) {
+      throw new NotFoundException("频道不存在");
+    }
+
+    try {
+      const messages = await this.prisma.message.findMany({
+        where: { channelId, senderType: MessageSenderType.USER },
+        orderBy: { createdAt: "asc" },
+        take: 6,
+        select: { content: true }
+      });
+      const transcript = messages.map((message) => message.content.trim()).filter(Boolean).join("\n").slice(0, 800);
+
+      if (!transcript) {
+        return { title: channel.name };
+      }
+
+      const baseUrl = (process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434").replace(/\/$/, "");
+      const model = process.env.OLLAMA_CHAT_MODEL ?? "qwen3:8b";
+      const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          stream: false,
+          messages: [
+            {
+              role: "system",
+              content:
+                "你是对话标题生成器。根据用户提供的对话内容,生成一个简洁的中文标题,不超过 15 个字。只输出标题本身,不要引号、不要解释、不要标点。"
+            },
+            { role: "user", content: `对话内容:\n${transcript}` }
+          ],
+          options: { temperature: 0.3 }
+        })
+      });
+
+      if (!response.ok) {
+        return { title: channel.name };
+      }
+
+      const data = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      const rawTitle = data?.choices?.[0]?.message?.content?.trim() ?? "";
+      const title = rawTitle.replace(/^["“”'\s]+|["“”'\s]+$/g, "").slice(0, 20);
+
+      if (!title) {
+        return { title: channel.name };
+      }
+
+      await this.prisma.channel.update({
+        where: { id: channel.id },
+        data: { name: title }
+      });
+
+      return { title };
+    } catch {
+      // 模型不可用/超时:保留原标题
+      return { title: channel.name };
+    }
+  }
+
   async *streamAgentReply(input: StreamAgentReplyInput): AsyncIterable<ChatSseEvent> {
     const agent = await this.ensureDefaultAgent(input.workspaceId);
     await this.createMessage(input.workspaceId, input.channelId, input.userId, {

@@ -94,6 +94,19 @@ export class ChatController {
     );
   }
 
+  @Post(":channelId/generate-title")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "调用模型为对话生成标题并更新频道名" })
+  @ApiBearerAuth()
+  generateChannelTitle(
+    @Req() request: ChannelAccessRequest,
+    @Param("channelId") channelId: string
+  ) {
+    const channelAccess = requireChannelAccess(request);
+
+    return this.chatService.generateChannelTitle(channelAccess.workspaceId, channelId);
+  }
+
   @Post(":channelId/ai/stream")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "流式获取 AI 回复" })
