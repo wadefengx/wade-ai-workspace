@@ -36,6 +36,8 @@ export function WorkspacePageFrame({
   const clearSession = useAuthStore((state) => state.clearSession);
   const user = useAuthStore((state) => state.user);
   const { workspaceId, selectedWorkspace, members, membersLoading } = useWorkspacePageContext();
+  // 统一由 pageScrollBody 提供滚动,scrollableContent 保留兼容调用方
+  void scrollableContent;
 
   const logoutMutation = useMutation({
     mutationFn: () =>
@@ -102,21 +104,7 @@ export function WorkspacePageFrame({
 
         <main className={shellStyles.conversation}>
           {selectedWorkspace ? (
-            scrollableContent ? (
-              <div className={pageStyles.pageScrollBody}>
-                <div className={pageStyles.pageStack}>
-                  <div className={pageStyles.pageHeader}>
-                    <div>
-                      <Typography.Title level={3} className={shellStyles.channelTitle}>
-                        {title}
-                      </Typography.Title>
-                      <Typography.Text type="secondary">{description}</Typography.Text>
-                    </div>
-                  </div>
-                  {children}
-                </div>
-              </div>
-            ) : (
+            <div className={pageStyles.pageScrollBody}>
               <div className={pageStyles.pageStack}>
                 <div className={pageStyles.pageHeader}>
                   <div>
@@ -128,7 +116,7 @@ export function WorkspacePageFrame({
                 </div>
                 {children}
               </div>
-            )
+            </div>
           ) : (
             <EmptyState
               className={shellStyles.workspaceEmpty}

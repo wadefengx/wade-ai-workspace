@@ -38,10 +38,11 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 3. Keep user-facing errors and validation copy in Chinese unless a spec says otherwise.
 4. Prefer copy-safe migrations over move/delete when parallel lanes may still read old paths.
 5. Reuse helpers, contracts, and patterns before writing new code; fix root causes, not one caller.
-6. Keep the workspace SPA conventions intact: shared layout, stable navigation, and documented response shapes.
-7. Use `npmmirror` for npm and `gitclone` for GitHub taps; fall back to `quay.io` when Docker Hub is unavailable.
-8. Do not touch unrelated app code for document-only or structure-only work.
-9. Update direct docs when behavior, process, or durable context changes.
+6. **Execution mode:Hermes 直接执行全部开发,不再 spawn 外部 coding agent(如 Copilot CLI)。** 需求→spec→按领域切 lane(Hermes 自己串行/并行执行)→单测+harness+浏览器验收→memory/skill 回流→commit。通用开发体系见 `AI_DEV_INSTRUCTION.md`。
+7. Keep the workspace SPA conventions intact: shared layout, stable navigation, and documented response shapes.
+8. Use `npmmirror` for npm and `gitclone` for GitHub taps; fall back to `quay.io` when Docker Hub is unavailable.
+9. Do not touch unrelated app code for document-only or structure-only work.
+10. Update direct docs when behavior, process, or durable context changes.
 
 ## Directory index
 
