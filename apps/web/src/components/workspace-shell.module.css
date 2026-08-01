@@ -717,9 +717,9 @@
   gap: var(--space-sm, 8px);
   width: min(780px, 100%);
   margin: 0 auto;
-  padding: 12px 16px 16px;
-  background: var(--surface);
-  box-shadow: 0 8px 24px rgb(15 23 42 / 5%);
+  padding: 8px 0 16px;
+  background: transparent;
+  box-shadow: none;
 }
 
 .composerStatus {
@@ -733,9 +733,22 @@
   width: 100%;
 }
 
-/* @ant-design/x Sender 宽度占满 */
+/* @ant-design/x Sender:圆角输入卡片,与消息区等宽 */
 .composerInput :global(.ant-sender) {
   width: 100%;
+  border-radius: 24px;
+  border: 1px solid var(--line, rgba(148, 163, 184, 0.25));
+  background: var(--surface, #ffffff);
+  box-shadow: 0 8px 24px rgb(15 23 42 / 6%);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.composerInput :global(.ant-sender:hover),
+.composerInput :global(.ant-sender:focus-within) {
+  border-color: var(--primary, #024ad8);
+  box-shadow: 0 8px 28px rgb(2 74 216 / 12%);
 }
 
 .emojiGrid {

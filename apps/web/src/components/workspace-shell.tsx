@@ -14,8 +14,7 @@ import {
   UserOutlined
 } from "@ant-design/icons";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { App, Avatar, Button, Dropdown, Grid, Popover, Tag, Tooltip, Typography } from "antd";
-import type { MenuProps } from "antd";
+import { App, Avatar, Button, Grid, Popover, Tag, Tooltip, Typography } from "antd";
 import { Bubble, Sender, Suggestion } from "@ant-design/x";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
@@ -29,7 +28,7 @@ import {
   type ComponentRef
 } from "react";
 import { FullScreenSpinner } from "./auth-status";
-import { useWorkspaceContext } from "./workspace-context";
+import { useWorkspaceContext, workspaceKeys } from "./workspace-context";
 import { ApiError, apiFetch, resolveApiUrl } from "../lib/api";
 import { formatDateTime } from "../lib/datetime";
 import { streamSse } from "../lib/sse";
@@ -230,9 +229,8 @@ export function WorkspaceShell() {
   const screens = Grid.useBreakpoint();
   const queryClient = useQueryClient();
   const { message } = App.useApp();
-  const { selectedWorkspace, selectedChannel, selectedChannelId, members } = useWorkspaceContext();
+  const { workspaceId, selectedWorkspace, selectedChannel, selectedChannelId, members } = useWorkspaceContext();
   const accessToken = useAuthStore((state) => state.token);
-  const clearSession = useAuthStore((state) => state.clearSession);
   const user = useAuthStore((state) => state.user);
   const [draftState, setDraftState] = useState<{ channelId: string | null; value: string }>({
     channelId: null,
@@ -251,6 +249,10 @@ export function WorkspaceShell() {
   const activeStreamAbortRef = useRef<AbortController | null>(null);
   const shouldAutoFollowRef = useRef(true);
   const copiedTooltipTimeoutRef = useRef<number | null>(null);
+  const channelNameRef = useRef<string | null>(null);
+  useEffect(() => {
+    channelNameRef.current = selectedChannel?.name ?? null;
+  }, [selectedChannel?.name]);
   const draft = draftState.channelId === selectedChannelId ? draftState.value : "";
 
   const messagesQuery = useInfiniteQuery({
@@ -284,29 +286,6 @@ export function WorkspaceShell() {
 
     return [...persistedMessages, ...visibleLocalMessages].sort(compareMessages);
   }, [localMessages, persistedMessages, selectedChannelId]);
-
-  const logoutMutation = useMutation({
-    mutationFn: () =>
-      apiFetch("/auth/logout", {
-        method: "POST"
-      }),
-    onSettled: async () => {
-      clearSession();
-      await queryClient.cancelQueries();
-      queryClient.clear();
-      router.replace("/login");
-    }
-  });
-
-  const userMenuItems = useMemo<MenuProps["items"]>(
-    () => [
-      {
-        key: "logout",
-        label: "退出登录"
-      }
-    ],
-    []
-  );
 
   const scrollToBottom = useCallback(() => {
     if (!messagesContainerRef.current) {
@@ -492,6 +471,18 @@ export function WorkspaceShell() {
 
         if (streamCompleted) {
           await refetchCurrentMessages();
+          // AI 回复完成后,若频道还是默认名,调用模型生成标题(DeepSeek 式)
+          const channelName = channelNameRef.current;
+          if (channelName && /^(对话\s*\d+|新对话)$/.test(channelName)) {
+            try {
+              await apiFetch<{ title: string }>(`/channels/${channelId}/generate-title`, {
+                method: "POST"
+              });
+              queryClient.invalidateQueries({ queryKey: workspaceKeys.channels(workspaceId) });
+            } catch {
+              // 标题生成失败不影响主流程
+            }
+          }
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
@@ -516,7 +507,7 @@ export function WorkspaceShell() {
         setStreamStatus((current) => (current?.channelId === channelId ? null : current));
       }
     },
-    [accessToken, patchLocalMessage, refetchCurrentMessages, removeLocalMessage, scrollToBottomIfNeeded]
+    [accessToken, patchLocalMessage, queryClient, refetchCurrentMessages, removeLocalMessage, scrollToBottomIfNeeded, workspaceId]
   );
 
   const sendMessage = useCallback(
@@ -889,22 +880,6 @@ export function WorkspaceShell() {
                 ))}
               </Avatar.Group>
             ) : null}
-
-            <Dropdown
-              menu={{
-                items: userMenuItems,
-                onClick: ({ key }) => {
-                  if (key === "logout") {
-                    logoutMutation.mutate();
-                  }
-                }
-              }}
-              trigger={["click"]}
-            >
-              <Button icon={<UserOutlined />} aria-label="打开账户菜单">
-                {screens.sm ? user.name ?? user.email : "账户"}
-              </Button>
-            </Dropdown>
           </div>
         </header>
 

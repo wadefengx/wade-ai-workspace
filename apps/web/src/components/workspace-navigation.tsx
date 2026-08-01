@@ -22,6 +22,7 @@ import { App, Avatar, Button, Dropdown, Form, Input, Modal, Select, Tooltip, Typ
 import type { MenuProps } from "antd";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import styled from "styled-components";
 import { ApiError, apiFetch } from "../lib/api";
 import { WORKSPACE_ICONS, getWorkspaceIconLabel, renderWorkspaceIcon } from "../lib/workspace-icons";
 import { buildWorkspaceHref } from "../lib/workspace-navigation";
@@ -92,6 +93,44 @@ const useSidebarStore = create<SidebarState>()(
     }
   )
 );
+
+/* styled-components 组件化示范:侧边栏底部用户卡片 */
+const SidebarFooter = styled.div`
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+`;
+
+const UserCard = styled.button<{ $collapsed?: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: ${({ $collapsed }) => ($collapsed ? "8px 0" : "8px 10px")};
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: var(--hover, rgba(148, 163, 184, 0.12));
+  }
+`;
+
+const UserCardInfo = styled.span`
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  flex: 1;
+
+  .ant-typography {
+    display: block;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+`;
 
 function resolveActiveNavKey(pathname: string) {
   if (pathname === "/dashboard") {
@@ -283,13 +322,9 @@ function resolveThemeLabel(themeMode: ThemeMode, resolvedTheme: "light" | "dark"
   return resolvedTheme === "dark" ? "深色" : "浅色";
 }
 
-function resolveNextChatName(channels: Channel[]) {
-  const maxIndex = channels.reduce((currentMax, channel) => {
-    const match = channel.name.match(/^对话\s+(\d+)$/);
-    return match ? Math.max(currentMax, Number(match[1])) : currentMax;
-  }, 0);
-
-  return `对话 ${maxIndex + 1}`;
+function resolveNextChatName() {
+  // 新对话统一叫"新对话",AI 回复完成后由模型生成真实标题
+  return "新对话";
 }
 
 function BrandMark() {
@@ -483,7 +518,7 @@ export function WorkspaceNavigation() {
         throw new Error("缺少 Workspace");
       }
 
-      return requestCreateChannel(workspaceId, { name: resolveNextChatName(channels) });
+      return requestCreateChannel(workspaceId, { name: resolveNextChatName() });
     },
     onSuccess: async (channel) => {
       if (!workspaceId) {
@@ -946,6 +981,31 @@ export function WorkspaceNavigation() {
           </div>
           ) : null}
         </div>
+
+        <SidebarFooter>
+          <UserCard
+            type="button"
+            $collapsed={sidebarCollapsed}
+            aria-label="打开账户菜单"
+            onClick={(event) => {
+              const { left, top, width, height } = event.currentTarget.getBoundingClientRect();
+              setAccountAnchor({ left, top, width, height });
+              setAccountMenuOpen(true);
+            }}
+          >
+            <Avatar size={32}>{user?.name?.slice(0, 1).toUpperCase() ?? "U"}</Avatar>
+            {!sidebarCollapsed ? (
+              <UserCardInfo>
+                <Typography.Text strong ellipsis>
+                  {user?.name ?? "Account"}
+                </Typography.Text>
+                <Typography.Text type="secondary" ellipsis>
+                  {user?.email ?? ""}
+                </Typography.Text>
+              </UserCardInfo>
+            ) : null}
+          </UserCard>
+        </SidebarFooter>
       </aside>
 
       {accountAnchor && user ? (
