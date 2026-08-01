@@ -753,7 +753,7 @@ export function WorkspaceNavigation() {
             ) : (
               <>
                 <Button
-                  className={styles.channelGroupToggle}
+                  className={styles.sectionCollapseToggle}
                   type="text"
                   aria-label={`${collapsedSections.chats ? "展开" : "折叠"} Chats 区域`}
                   onClick={() =>
@@ -766,7 +766,7 @@ export function WorkspaceNavigation() {
                     }`}
                   />
                 </Button>
-                <Typography.Text className={styles.sectionTitle}>Chats</Typography.Text>
+                <Typography.Text className={`${styles.sectionTitle} ${styles.sectionCollapseTitle}`}>Chats</Typography.Text>
               </>
             )}
             <Tooltip title="新建 Chat" placement={sidebarCollapsed ? "right" : "top"}>
@@ -900,7 +900,7 @@ export function WorkspaceNavigation() {
           ) : (
             <>
               <Button
-                className={styles.channelGroupToggle}
+                className={styles.sectionCollapseToggle}
                 type="text"
                 aria-label={`${collapsedSections.menu ? "展开" : "折叠"} Workspace Menu 区域`}
                 onClick={() =>
@@ -913,7 +913,7 @@ export function WorkspaceNavigation() {
                   }`}
                 />
               </Button>
-              <Typography.Text className={styles.sectionTitle}>Workspace Menu</Typography.Text>
+              <Typography.Text className={`${styles.sectionTitle} ${styles.sectionCollapseTitle}`}>Workspace Menu</Typography.Text>
             </>
           )}
           {!collapsedSections.menu ? (

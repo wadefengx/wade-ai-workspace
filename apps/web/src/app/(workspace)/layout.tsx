@@ -84,7 +84,7 @@ function WorkspaceLayoutContent({ children }: Readonly<{ children: ReactNode }>)
     );
   }, [pathname, requestedChannelId, requestedWorkspaceId, router, workspaceId]);
 
-  if (!hydrated || isRestoring) {
+  if (!hydrated || isRestoring || workspacesQuery.isLoading) {
     return <FullScreenSpinner />;
   }
 

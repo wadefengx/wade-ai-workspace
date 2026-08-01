@@ -159,6 +159,23 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
+}
+
+/* 一级菜单(CHATS / WORKSPACE MENU)折叠按钮:紧凑,文字占满剩余空间 */
+.sectionCollapseToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  padding: 0 !important;
+  color: var(--muted) !important;
+}
+
+.sectionCollapseTitle {
+  flex: 1;
+  min-width: 0;
   text-transform: uppercase;
 }
 
