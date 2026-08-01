@@ -95,6 +95,32 @@
   margin-bottom: var(--space-md, 16px);
 }
 
+.settingsRows {
+  display: grid;
+  gap: var(--space-sm, 8px);
+}
+
+.settingsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md, 16px);
+  padding: var(--space-md, 16px);
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
+  border-radius: var(--radius-md, 12px);
+  background: var(--surface, transparent);
+  transition: border-color 0.2s ease;
+}
+
+.settingsRow:hover {
+  border-color: var(--primary, #024ad8);
+}
+
+.settingsRowIcon {
+  font-size: 20px;
+  color: var(--primary, #024ad8);
+  flex-shrink: 0;
+}
+
 .searchControl {
   width: min(100%, 320px);
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { DeleteOutlined, SaveOutlined, SearchOutlined, SwapOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, KeyOutlined, MailOutlined, SaveOutlined, SearchOutlined, SwapOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Form, Input, Popconfirm, Radio, Select, Space, Table, Tag, Typography } from "antd";
+import { App, Button, Drawer, Form, Input, Popconfirm, Radio, Select, Space, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -89,6 +89,8 @@ function SettingsContent() {
   const [deleteWorkspaceArmed, setDeleteWorkspaceArmed] = useState(false);
   const [userSearchInput, setUserSearchInput] = useState("");
   const [debouncedUserSearch, setDebouncedUserSearch] = useState("");
+  const [passwordDrawerOpen, setPasswordDrawerOpen] = useState(false);
+  const [workspaceDrawerOpen, setWorkspaceDrawerOpen] = useState(false);
 
   useEffect(() => {
     workspaceForm.setFieldValue("name", selectedWorkspace?.name ?? "");
@@ -325,61 +327,29 @@ function SettingsContent() {
         <div className={styles.sectionHeader}>
           <div className={styles.helperStack}>
             <Typography.Title level={5}>账户</Typography.Title>
-            <Typography.Text type="secondary">修改当前账号密码；新密码至少 6 位。</Typography.Text>
+            <Typography.Text type="secondary">账号信息与登录安全。</Typography.Text>
           </div>
         </div>
 
-        <Form
-          form={passwordForm}
-          layout="vertical"
-          initialValues={{ currentPassword: "", newPassword: "", confirmPassword: "" }}
-          onFinish={(values) => changePasswordMutation.mutate(values)}
-        >
-          <div className={styles.formRow}>
-            <Form.Item
-              label="当前密码"
-              name="currentPassword"
-              rules={[{ required: true, message: "请输入当前密码" }]}
-            >
-              <Input.Password />
-            </Form.Item>
-            <div className={styles.formColumn}>
-              <Form.Item
-                label="新密码"
-                name="newPassword"
-                rules={[
-                  { required: true, message: "请输入新密码" },
-                  { min: 6, message: "新密码至少 6 位" }
-                ]}
-              >
-                <Input.Password />
-              </Form.Item>
-              <Form.Item
-                label="确认新密码"
-                name="confirmPassword"
-                dependencies={["newPassword"]}
-                rules={[
-                  { required: true, message: "请再次输入新密码" },
-                  ({ getFieldValue }) => ({
-                    validator(_, value: string) {
-                      if (!value || value === getFieldValue("newPassword")) {
-                        return Promise.resolve();
-                      }
-
-                      return Promise.reject(new Error("两次输入的新密码不一致"));
-                    }
-                  })
-                ]}
-              >
-                <Input.Password />
-              </Form.Item>
+        <div className={styles.settingsRows}>
+          <div className={styles.settingsRow}>
+            <MailOutlined className={styles.settingsRowIcon} />
+            <div className={styles.helperStack}>
+              <Typography.Text strong>{user?.name ?? "—"}</Typography.Text>
+              <Typography.Text type="secondary">{user?.email ?? "—"}</Typography.Text>
             </div>
           </div>
-
-          <Button type="primary" htmlType="submit" loading={changePasswordMutation.isPending}>
-            更新密码
-          </Button>
-        </Form>
+          <div className={styles.settingsRow}>
+            <KeyOutlined className={styles.settingsRowIcon} />
+            <div className={styles.helperStack}>
+              <Typography.Text strong>密码</Typography.Text>
+              <Typography.Text type="secondary">已设置;修改后需重新登录(新密码至少 6 位)。</Typography.Text>
+            </div>
+            <Button icon={<EditOutlined />} onClick={() => setPasswordDrawerOpen(true)}>
+              修改密码
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className={styles.pageCard}>
@@ -420,52 +390,22 @@ function SettingsContent() {
             </div>
           </div>
 
-          <Form form={workspaceForm} layout="vertical" onFinish={(values) => renameWorkspaceMutation.mutate(values)}>
-            <Form.Item
-              label="Workspace 名称"
-              name="name"
-              rules={[{ required: true, message: "请输入 Workspace 名称" }]}
-            >
-              <Input placeholder="输入新的 Workspace 名称" />
-            </Form.Item>
-            <Form.Item label="Workspace Icon" name="icon" rules={[{ required: true, message: "请选择 Workspace Icon" }]}>
-              <div className={shellStyles.workspaceIconPickerGrid}>
-                {WORKSPACE_ICONS.map((iconItem) => {
-                  const selected = selectedWorkspaceIcon === iconItem.key;
-
-                  return (
-                    <button
-                      key={iconItem.key}
-                      className={`${shellStyles.workspaceIconPickerButton} ${
-                        selected ? shellStyles.workspaceIconPickerButtonSelected : ""
-                      }`}
-                      type="button"
-                      aria-label={`选择 ${iconItem.label} 图标`}
-                      onClick={() => workspaceForm.setFieldValue("icon", iconItem.key)}
-                    >
-                      {iconItem.icon}
-                    </button>
-                  );
-                })}
+          <div className={styles.settingsRows}>
+            <div className={styles.settingsRow}>
+              <span className={shellStyles.workspacePreviewIcon}>
+                {renderWorkspaceIcon(resolveWorkspaceIconName(selectedWorkspace))}
+              </span>
+              <div className={styles.helperStack}>
+                <Typography.Text strong>{selectedWorkspace?.name ?? "—"}</Typography.Text>
+                <Typography.Text type="secondary">
+                  {membersLoading ? "读取成员中" : `${members.length} 位成员`}
+                </Typography.Text>
               </div>
-            </Form.Item>
-            <div className={`${styles.helperStack} ${styles.inlinePreview}`}>
-              <Typography.Text type="secondary">当前显示：</Typography.Text>
-              <div className={shellStyles.workspaceOptionLabel}>
-                <span className={shellStyles.workspacePreviewIcon}>{renderWorkspaceIcon(selectedWorkspaceIcon)}</span>
-                <Typography.Text>{selectedWorkspaceName || "Workspace"}</Typography.Text>
-              </div>
+              <Button icon={<EditOutlined />} onClick={() => setWorkspaceDrawerOpen(true)}>
+                编辑
+              </Button>
             </div>
-            <Button
-              type="primary"
-              htmlType="submit"
-              icon={<SaveOutlined />}
-              disabled={!workspaceId}
-              loading={renameWorkspaceMutation.isPending}
-            >
-              保存名称
-            </Button>
-          </Form>
+          </div>
 
           <div className={styles.stackWithTopMargin}>
             <div className={styles.summaryCard}>
@@ -574,6 +514,117 @@ function SettingsContent() {
           )}
         </div>
       ) : null}
+
+      <Drawer
+        title="修改密码"
+        width={420}
+        open={passwordDrawerOpen}
+        onClose={() => setPasswordDrawerOpen(false)}
+        destroyOnClose
+      >
+        <Form
+          form={passwordForm}
+          layout="vertical"
+          initialValues={{ currentPassword: "", newPassword: "", confirmPassword: "" }}
+          onFinish={(values) => changePasswordMutation.mutate(values)}
+        >
+          <Form.Item
+            label="当前密码"
+            name="currentPassword"
+            rules={[{ required: true, message: "请输入当前密码" }]}
+          >
+            <Input.Password />
+          </Form.Item>
+          <Form.Item
+            label="新密码"
+            name="newPassword"
+            rules={[
+              { required: true, message: "请输入新密码" },
+              { min: 6, message: "新密码至少 6 位" }
+            ]}
+          >
+            <Input.Password />
+          </Form.Item>
+          <Form.Item
+            label="确认新密码"
+            name="confirmPassword"
+            dependencies={["newPassword"]}
+            rules={[
+              { required: true, message: "请再次输入新密码" },
+              ({ getFieldValue }) => ({
+                validator(_, value: string) {
+                  if (!value || value === getFieldValue("newPassword")) {
+                    return Promise.resolve();
+                  }
+
+                  return Promise.reject(new Error("两次输入的新密码不一致"));
+                }
+              })
+            ]}
+          >
+            <Input.Password />
+          </Form.Item>
+          <Button type="primary" htmlType="submit" loading={changePasswordMutation.isPending} block>
+            更新密码
+          </Button>
+        </Form>
+      </Drawer>
+
+      <Drawer
+        title="编辑 Workspace"
+        width={460}
+        open={workspaceDrawerOpen}
+        onClose={() => setWorkspaceDrawerOpen(false)}
+        destroyOnClose
+      >
+        <Form form={workspaceForm} layout="vertical" onFinish={(values) => renameWorkspaceMutation.mutate(values)}>
+          <Form.Item
+            label="Workspace 名称"
+            name="name"
+            rules={[{ required: true, message: "请输入 Workspace 名称" }]}
+          >
+            <Input placeholder="输入新的 Workspace 名称" />
+          </Form.Item>
+          <Form.Item label="Workspace Icon" name="icon" rules={[{ required: true, message: "请选择 Workspace Icon" }]}>
+            <div className={shellStyles.workspaceIconPickerGrid}>
+              {WORKSPACE_ICONS.map((iconItem) => {
+                const selected = selectedWorkspaceIcon === iconItem.key;
+
+                return (
+                  <button
+                    key={iconItem.key}
+                    className={`${shellStyles.workspaceIconPickerButton} ${
+                      selected ? shellStyles.workspaceIconPickerButtonSelected : ""
+                    }`}
+                    type="button"
+                    aria-label={`选择 ${iconItem.label} 图标`}
+                    onClick={() => workspaceForm.setFieldValue("icon", iconItem.key)}
+                  >
+                    {iconItem.icon}
+                  </button>
+                );
+              })}
+            </div>
+          </Form.Item>
+          <div className={`${styles.helperStack} ${styles.inlinePreview}`}>
+            <Typography.Text type="secondary">当前显示：</Typography.Text>
+            <div className={shellStyles.workspaceOptionLabel}>
+              <span className={shellStyles.workspacePreviewIcon}>{renderWorkspaceIcon(selectedWorkspaceIcon)}</span>
+              <Typography.Text>{selectedWorkspaceName || "Workspace"}</Typography.Text>
+            </div>
+          </div>
+          <Button
+            type="primary"
+            htmlType="submit"
+            icon={<SaveOutlined />}
+            disabled={!workspaceId}
+            loading={renameWorkspaceMutation.isPending}
+            block
+          >
+            保存
+          </Button>
+        </Form>
+      </Drawer>
     </>
   );
 }
@@ -583,8 +634,6 @@ export function SettingsPage() {
     <WorkspacePageFrame
       title="Settings"
       description="管理账户、主题、Workspace 以及全局用户权限。"
-      contextTitle="Settings Context"
-      contextDescription="这里的修改会即时影响当前账号、Workspace 权限结构，以及后续成员协作体验。"
     >
       <SettingsContent />
     </WorkspacePageFrame>

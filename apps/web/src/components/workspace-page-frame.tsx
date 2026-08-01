@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
+import { UserOutlined, DatabaseOutlined } from "@ant-design/icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Avatar, Button, Dropdown, Grid, Typography } from "antd";
 import type { MenuProps } from "antd";
@@ -16,8 +16,6 @@ import { useWorkspacePageContext } from "./workspace-context";
 type WorkspacePageFrameProps = {
   title: string;
   description: string;
-  contextTitle: string;
-  contextDescription: string;
   children: ReactNode;
   scrollableContent?: boolean;
 };
@@ -25,8 +23,6 @@ type WorkspacePageFrameProps = {
 export function WorkspacePageFrame({
   title,
   description,
-  contextTitle,
-  contextDescription,
   children,
   scrollableContent = false
 }: WorkspacePageFrameProps) {
@@ -35,7 +31,7 @@ export function WorkspacePageFrame({
   const screens = Grid.useBreakpoint();
   const clearSession = useAuthStore((state) => state.clearSession);
   const user = useAuthStore((state) => state.user);
-  const { workspaceId, selectedWorkspace, members, membersLoading } = useWorkspacePageContext();
+  const { selectedWorkspace, members } = useWorkspacePageContext();
   // 统一由 pageScrollBody 提供滚动,scrollableContent 保留兼容调用方
   void scrollableContent;
 
@@ -121,7 +117,7 @@ export function WorkspacePageFrame({
             <EmptyState
               className={shellStyles.workspaceEmpty}
               align="left"
-              icon={<BookOutlined />}
+              icon={<DatabaseOutlined />}
               title="还没有 Workspace"
               description="先创建一个 Workspace，随后就能在这里管理文档、技能和成员。"
               action={
@@ -133,36 +129,6 @@ export function WorkspacePageFrame({
           )}
         </main>
       </div>
-
-      {screens.lg ? (
-        <aside className={shellStyles.contextPanel}>
-          <div className={shellStyles.contextStack}>
-            <div className={shellStyles.contextCard}>
-              <Typography.Title level={5}>{contextTitle}</Typography.Title>
-              <div className={shellStyles.contextItem}>
-                <BookOutlined />
-                {selectedWorkspace ? selectedWorkspace.name : "等待 Workspace 创建"}
-              </div>
-              <Typography.Paragraph type="secondary">{contextDescription}</Typography.Paragraph>
-            </div>
-
-            <div className={shellStyles.contextCard}>
-              <Typography.Title level={5}>Workspace Members</Typography.Title>
-              <div className={shellStyles.contextItem}>
-                <TeamOutlined />
-                {workspaceId
-                  ? membersLoading
-                    ? "读取成员中"
-                    : `${members.length} 位成员`
-                  : "等待 Workspace 创建"}
-              </div>
-              <Typography.Paragraph type="secondary">
-                当前页面保留与聊天工作台一致的上下文骨架，方便在各个 tab 间切换。
-              </Typography.Paragraph>
-            </div>
-          </div>
-        </aside>
-      ) : null}
     </div>
   );
 }

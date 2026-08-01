@@ -1,0 +1,48 @@
+# Lane Registry — 当前 AI 组织运行车道(每角色一个 lane)
+# 状态机:Draft → Ready → Running → Review → QA → Done → Merged(见 .ai/runtime/lane-states.md)
+
+lanes:
+  - id: A
+    title: Backend API
+    status: done
+    confidence: 0.96
+    agent: BE
+  - id: B
+    title: Frontend
+    status: done
+    confidence: 0.9
+    agent: FE
+  - id: C
+    title: UI & UX
+    status: done
+    confidence: 0.88
+    agent: UX/UI
+  - id: D
+    title: AIOS & Docs
+    status: done
+    confidence: 0.92
+    agent: PM
+  - id: E
+    title: Architecture
+    status: done
+    confidence: 0.9
+    agent: Architect
+  - id: F
+    title: QA & Harness
+    status: done
+    confidence: 0.95
+    agent: QA
+
+pipeline:
+  - stage: Planner
+    status: done
+  - stage: Spec
+    status: done
+  - stage: Implement
+    status: done
+  - stage: Review
+    status: done
+  - stage: Harness
+    status: done
+  - stage: Memory
+    status: done

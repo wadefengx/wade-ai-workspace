@@ -107,8 +107,6 @@ export function SkillsPage() {
     <WorkspacePageFrame
       title="Skills"
       description="浏览团队共用技能文档，在当前 Workspace 里快速对齐实现方式。"
-      contextTitle="Skill Context"
-      contextDescription="Skills 用于沉淀可复用的方法和约定；这里直接渲染仓库中的 Markdown 原文。"
     >
       <SkillsContent />
     </WorkspacePageFrame>

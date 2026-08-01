@@ -104,8 +104,6 @@ export function SpecsPage() {
     <WorkspacePageFrame
       title="Specs"
       description="浏览仓库中的阶段规格文档，方便在当前 Workspace 内对照实施。"
-      contextTitle="Spec Context"
-      contextDescription="Specs 是当前团队的实施契约；这里展示的是仓库内保存的原始 Markdown 版本。"
     >
       <SpecsContent />
     </WorkspacePageFrame>

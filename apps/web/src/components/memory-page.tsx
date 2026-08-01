@@ -316,8 +316,6 @@ export function MemoryPage() {
     <WorkspacePageFrame
       title="Memory"
       description="按个人、团队、项目三层管理长期记忆，并控制是否注入后续上下文。"
-      contextTitle="Memory Context"
-      contextDescription="个人记忆仅自己可见；团队与项目记忆会共享给当前 Workspace 成员。"
       scrollableContent
     >
       <MemoryContent />

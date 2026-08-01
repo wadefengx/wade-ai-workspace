@@ -376,8 +376,6 @@ export function MembersPage() {
     <WorkspacePageFrame
       title="Members"
       description="查看当前 Workspace 成员，并按角色授予或回收管理权限。"
-      contextTitle="Member Context"
-      contextDescription="成员与角色会直接影响聊天、知识库、记忆等协作权限。"
     >
       <MembersContent />
     </WorkspacePageFrame>

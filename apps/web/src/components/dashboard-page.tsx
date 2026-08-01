@@ -38,6 +38,7 @@ type OrganizationStats = {
     title: string;
     status: LaneStatus;
     confidence: number;
+    agent?: string;
   }>;
   pipeline?: Array<{
     stage: string;
@@ -373,8 +374,6 @@ function DashboardContent() {
     <WorkspacePageFrame
       title="Dashboard"
       description="查看 AI Organization、lane 流转、知识资产增长和团队反馈热度。"
-      contextTitle="Dashboard Context"
-      contextDescription="这个面板汇总当前 AI 组织的执行节奏、知识沉淀和用户反馈，适合做每日巡检。"
     >
       <motion.div initial="hidden" animate="visible" variants={containerVariants} className={styles.page}>
         <motion.section variants={cardVariants} className={`${styles.card} ${styles.heroCard}`}>
@@ -504,6 +503,7 @@ function DashboardContent() {
                             <div className={styles.laneHeader}>
                               <div className={styles.laneTitleGroup}>
                                 <Typography.Text strong>{lane.title}</Typography.Text>
+                                {lane.agent ? <Tag bordered={false} color="blue">{lane.agent}</Tag> : null}
                                 <Tag bordered={false} className={styles.statusTag}>
                                   {lane.status}
                                 </Tag>

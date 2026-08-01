@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuthStore } from "../stores/auth";
-import { LoadingState } from "./ui-state";
+import { WorkspaceSkeleton } from "./skeleton";
 
 export function useRequireAuth() {
   const router = useRouter();
@@ -25,5 +25,5 @@ export function useRequireAuth() {
 }
 
 export function FullScreenSpinner() {
-  return <LoadingState fullscreen title="正在加载工作区" description="正在恢复账户与 Workspace 上下文。" />;
+  return <WorkspaceSkeleton />;
 }

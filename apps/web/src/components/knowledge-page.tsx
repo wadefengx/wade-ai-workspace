@@ -257,8 +257,6 @@ export function KnowledgePage() {
     <WorkspacePageFrame
       title="Knowledge"
       description="上传 .md / .txt / .pdf 文档，查看索引状态，并在失败后重新构建。"
-      contextTitle="Knowledge Context"
-      contextDescription="文档完成提取并索引后，可作为后续 AI 检索上下文的一部分。"
     >
       <KnowledgeContent />
     </WorkspacePageFrame>

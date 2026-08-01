@@ -24,6 +24,7 @@ type LaneStats = {
   title: string;
   status: LaneStatus;
   confidence: number;
+  agent?: string;
 };
 
 type PipelineStage = {
@@ -59,7 +60,10 @@ type AggregateDayResult = {
 const DEFAULT_LANE_TITLES: Record<string, string> = {
   A: "Backend API",
   B: "Frontend",
-  C: "UI"
+  C: "UI",
+  D: "AIOS & Docs",
+  E: "Architecture",
+  F: "QA & Harness"
 };
 
 const DEFAULT_PIPELINE_STAGES = ["Planner", "Spec", "Implement", "Review", "Harness", "Memory"];
@@ -446,7 +450,8 @@ export class StatsService {
         ? lane.title.trim()
         : this.defaultLaneTitle(id),
       status: this.normalizeLaneStatus(lane.status),
-      confidence: this.normalizeConfidence(lane.confidence)
+      confidence: this.normalizeConfidence(lane.confidence),
+      agent: typeof lane.agent === "string" && lane.agent.trim() ? lane.agent.trim() : undefined
     }];
   }
 
@@ -592,12 +597,14 @@ export class StatsService {
   }
 
   private createBuiltInDefaultLanes(): LaneStats[] {
-    return ["A", "B", "C"].map((id) => ({
-      id,
-      title: this.defaultLaneTitle(id),
-      status: "done" as const,
-      confidence: 0.9
-    }));
+    return [
+      { id: "A", title: this.defaultLaneTitle("A"), status: "done" as const, confidence: 0.96, agent: "BE" },
+      { id: "B", title: this.defaultLaneTitle("B"), status: "done" as const, confidence: 0.9, agent: "FE" },
+      { id: "C", title: this.defaultLaneTitle("C"), status: "done" as const, confidence: 0.88, agent: "UX/UI" },
+      { id: "D", title: this.defaultLaneTitle("D"), status: "done" as const, confidence: 0.92, agent: "PM" },
+      { id: "E", title: this.defaultLaneTitle("E"), status: "done" as const, confidence: 0.9, agent: "Architect" },
+      { id: "F", title: this.defaultLaneTitle("F"), status: "done" as const, confidence: 0.95, agent: "QA" }
+    ];
   }
 
   private createZeroAssets(): AssetStats {

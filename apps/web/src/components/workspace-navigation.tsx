@@ -338,7 +338,27 @@ export function WorkspaceNavigation() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [collapsedChannelGroups, setCollapsedChannelGroups] = useState<Record<string, boolean>>({});
+  const [collapsedSections, setCollapsedSections] = useState<{ chats: boolean; menu: boolean }>(() => {
+    if (typeof window === "undefined") {
+      return { chats: false, menu: false };
+    }
+
+    try {
+      const raw = window.localStorage.getItem("wade-ai-collapsed-sections");
+      return raw ? { chats: false, menu: false, ...JSON.parse(raw) } : { chats: false, menu: false };
+    } catch {
+      return { chats: false, menu: false };
+    }
+  });
   const [chatSearch, setChatSearch] = useState("");
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("wade-ai-collapsed-sections", JSON.stringify(collapsedSections));
+    } catch {
+      // ignore persistence failures
+    }
+  }, [collapsedSections]);
   const [systemPrefersDark, setSystemPrefersDark] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
   );
@@ -731,7 +751,23 @@ export function WorkspaceNavigation() {
                 </span>
               </Tooltip>
             ) : (
-              <Typography.Text className={styles.sectionTitle}>Chats</Typography.Text>
+              <>
+                <Button
+                  className={styles.channelGroupToggle}
+                  type="text"
+                  aria-label={`${collapsedSections.chats ? "展开" : "折叠"} Chats 区域`}
+                  onClick={() =>
+                    setCollapsedSections((current) => ({ ...current, chats: !current.chats }))
+                  }
+                >
+                  <DownOutlined
+                    className={`${styles.channelGroupChevron} ${
+                      collapsedSections.chats ? styles.channelGroupChevronCollapsed : ""
+                    }`}
+                  />
+                </Button>
+                <Typography.Text className={styles.sectionTitle}>Chats</Typography.Text>
+              </>
             )}
             <Tooltip title="新建 Chat" placement={sidebarCollapsed ? "right" : "top"}>
               <Button
@@ -747,7 +783,7 @@ export function WorkspaceNavigation() {
             </Tooltip>
           </div>
 
-          {!sidebarCollapsed ? (
+          {!sidebarCollapsed && !collapsedSections.chats ? (
             <Input
               allowClear
               className={styles.chatSearch}
@@ -758,7 +794,7 @@ export function WorkspaceNavigation() {
             />
           ) : null}
 
-          {channelsLoading ? (
+          {!collapsedSections.chats && (channelsLoading ? (
             <div className={styles.loadingBlock}>
               <LoadingState compact align="left" title="正在读取 Chats" description="同步频道列表与最近活跃时间。" />
             </div>
@@ -851,7 +887,7 @@ export function WorkspaceNavigation() {
                 <EmptyState compact align="left" icon={<SearchOutlined />} title="没有匹配的 Chats" description="换个关键词试试，或清空搜索查看全部频道。" />
               ) : null}
             </div>
-          )}
+          ))}
         </div>
 
         <div className={styles.section}>
@@ -862,10 +898,26 @@ export function WorkspaceNavigation() {
               </span>
             </Tooltip>
           ) : (
-            <Typography.Text className={styles.sectionTitle}>Workspace Menu</Typography.Text>
+            <>
+              <Button
+                className={styles.channelGroupToggle}
+                type="text"
+                aria-label={`${collapsedSections.menu ? "展开" : "折叠"} Workspace Menu 区域`}
+                onClick={() =>
+                  setCollapsedSections((current) => ({ ...current, menu: !current.menu }))
+                }
+              >
+                <DownOutlined
+                  className={`${styles.channelGroupChevron} ${
+                    collapsedSections.menu ? styles.channelGroupChevronCollapsed : ""
+                  }`}
+                />
+              </Button>
+              <Typography.Text className={styles.sectionTitle}>Workspace Menu</Typography.Text>
+            </>
           )}
-          <div className={styles.placeholderList}>
-            {navItems.map((item) => (
+          {!collapsedSections.menu ? (
+          <div className={styles.placeholderList}>            {navItems.map((item) => (
               <Tooltip key={item.key} title={sidebarCollapsed ? item.label : undefined} placement="right">
                 <Button
                   className={`${styles.navButton} ${item.key === activeNavKey ? styles.channelButtonActive : ""} ${
@@ -892,6 +944,7 @@ export function WorkspaceNavigation() {
               </Tooltip>
             ))}
           </div>
+          ) : null}
         </div>
       </aside>
 

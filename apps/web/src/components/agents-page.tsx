@@ -541,8 +541,6 @@ export function AgentsPage() {
     <WorkspacePageFrame
       title="Agents"
       description="查看默认 Agent 的引擎与 Provider 配置，并按 Workspace 覆盖模型参数。"
-      contextTitle="Agent Context"
-      contextDescription="Workspace 级 Agent 配置会覆盖默认 Provider 环境变量，并立即影响后续 @AI 对话。"
     >
       <AgentsContent />
     </WorkspacePageFrame>
