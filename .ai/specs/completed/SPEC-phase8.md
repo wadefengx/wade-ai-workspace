@@ -5,7 +5,7 @@ owner: PM
 updated: 2026-08-01
 ---
 
-# SPEC-Phase 8 — 用户体系 / 资源 CRUD / Agent 生态 / 主题与品牌(Zone AI)
+# SPEC-Phase 8 — 用户体系 / 资源 CRUD / Agent 生态 / 主题与品牌(Wade AI)
 
 版本:1.0(2026-08-01)
 
@@ -18,7 +18,7 @@ updated: 2026-08-01
 5. 深色/浅色主题切换(跟随系统可选)。
 6. 头像下拉菜单:用户名/邮箱 + 个人详情 + 退出登录。
 7. 输入框 `@All` 全员提及(插入文本 + 高亮展示,MVP 不做推送)。
-8. 品牌更名为 **Zone AI**:左上角 logo、登录页、浏览器 tab(favicon + 动态标题随模块变化)。
+8. 品牌更名为 **Wade AI**:左上角 logo、登录页、浏览器 tab(favicon + 动态标题随模块变化)。
 
 ## 2. 角色与权限
 
@@ -110,11 +110,11 @@ GET /api/docs/skills/:name        → {name, content}
 - **Agents 页**:配置表单增加 `type` 选择(5 种,每类显示对应字段:ANTHROPIC/OPENAI_COMPATIBLE 显示 apiKey;预设 provider 快捷选择:OpenAI/DeepSeek/Ollama/Claude/OpenClaw/Hermes,选中自动填 baseUrl+model 建议值);新增/删除 agent 按钮(默认 agent 删除禁用);apiKey 占位 "已保存,留空保持不变"。
 - **@All**:workspace-shell Suggestion mentionItems 顶部加 `{label:"All members", value:"@All", icon:<TeamOutlined/>}`;消息渲染中 `@All` 高亮(紫色 Tag 风格)。
 - **Specs / Skills 页** `app/(workspace)/specs/page.tsx` + `components/specs-page.tsx`、`app/(workspace)/skills/page.tsx` + `components/skills-page.tsx`:左侧文件列表(标题/描述)+ 右侧 markdown 内容(react-markdown 已有);导航菜单由 Lane B 在 `workspace-navigation.tsx` 添加 Specs(icon FileTextOutlined)/ Skills(icon BulbOutlined)入口。
-- **品牌 Zone AI**:
-  - `app/layout.tsx` title "Zone AI" + `app/icon.svg`(渐变蓝底圆角方块 + 白色 Z 形,主色 #024AD8→#6a8dff 渐变)。
-  - `auth-page.tsx`、`workspace-navigation.tsx` 的 "Wade AI" → "Zone AI",左上角放 icon。
-  - 动态 tab 标题:`workspace-navigation`/layout 内 `useEffect(() => { document.title = \`Zone AI · ${moduleLabel}\` }, [pathname])`(聊天=Workspace、Knowledge、Memory、Members、Agents、Settings)。
-- 登录/注册页:顶部展示 icon + "Zone AI"。
+- **品牌 Wade AI**:
+  - `app/layout.tsx` title "Wade AI" + `app/icon.svg`(渐变蓝底圆角方块 + 白色 Z 形,主色 #024AD8→#6a8dff 渐变)。
+  - `auth-page.tsx`、`workspace-navigation.tsx` 的 "Wade AI" → "Wade AI",左上角放 icon。
+  - 动态 tab 标题:`workspace-navigation`/layout 内 `useEffect(() => { document.title = \`Wade AI · ${moduleLabel}\` }, [pathname])`(聊天=Workspace、Knowledge、Memory、Members、Agents、Settings)。
+- 登录/注册页:顶部展示 icon + "Wade AI"。
 
 ## 5. 任务拆分(并行 lane)
 
@@ -133,7 +133,7 @@ GET /api/docs/skills/:name        → {name, content}
    - 主题:切换深色,全站(聊天/各页/登录页)变暗,刷新保持;跟随系统生效。
    - 头像菜单:显示用户名/邮箱;个人详情 Modal;退出登录回 /login。
    - 输入框 `@` → All members 选项,插入 @All 并发送,消息中高亮。
-   - 品牌:tab 标题随模块变化;favicon 显示;登录页与左上角为 Zone AI 图标。
+   - 品牌:tab 标题随模块变化;favicon 显示;登录页与左上角为 Wade AI 图标。
 3. AGENTS.md Change Log 追加。
 
 ## 7. 不做(后续)

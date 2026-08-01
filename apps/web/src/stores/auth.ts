@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { ApiError, apiFetch, setAccessTokenGetter, setSessionRefreshHandler, setUnauthorizedHandler } from "../lib/api";
 
 const LEGACY_TOKEN_STORAGE_KEY = "wade-ai-workspace-token";
-const SESSION_STORAGE_KEY = "zone-ai-session";
+const SESSION_STORAGE_KEY = "wade-ai-session";
 
 export type AuthUser = {
   id: string;

@@ -1,4 +1,4 @@
-# AGENTS.md — Zone AI Runtime Entry
+# AGENTS.md — Wade AI Runtime Entry
 
 ## Mission
 
@@ -84,7 +84,7 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 - 2026-08-01 Phase 9 Lane C: added AIOS `.ai/` organization/runtime/workflow/memory/knowledge/architecture/harness structure, copied specs and skills into `.ai`, and rewrote `AGENTS.md` as the runtime entrypoint.
 - 2026-08-01 Phase 9 Lane B: added persisted JWT session restore + single-flight refresh retry, sidebar collapse persistence, Chats search/time grouping, and a header theme toggle in `apps/web/src/{stores/auth.ts,lib/api.ts,components/{auth-page.tsx,workspace-context.tsx,workspace-navigation.tsx,workspace-shell.module.css}}`.
 - 2026-08-01 Phase 8 Lane C: added Settings / Specs / Skills pages, expanded Agents presets and CRUD UI, and enabled `@All` mention highlighting.
-- 2026-08-01 Phase 8 Lane B: added persistent theme mode, Zone AI branding, dynamic workspace titles, and Settings / Specs / Skills navigation.
+- 2026-08-01 Phase 8 Lane B: added persistent theme mode, Wade AI branding, dynamic workspace titles, and Settings / Specs / Skills navigation.
 - 2026-08-01 Phase 8 Lane A: extended users/workspace/knowledge/agents/auth APIs, added docs browser support, and moved Swagger to `/api/swagger`.
 - 2026-08-01 Engineering baseline: formalized `specs/` workflow, added shared skills, documented test accounts, and initialized git.
 

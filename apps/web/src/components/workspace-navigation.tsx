@@ -87,7 +87,7 @@ const useSidebarStore = create<SidebarState>()(
       setCollapsed: (collapsed) => set({ collapsed })
     }),
     {
-      name: "zone-ai-sidebar-collapsed",
+      name: "wade-ai-sidebar-collapsed",
       storage: createJSONStorage(() => localStorage)
     }
   )
@@ -131,42 +131,42 @@ function resolveActiveNavKey(pathname: string) {
 
 function resolveDocumentTitle(pathname: string) {
   if (pathname === "/") {
-    return "Zone AI · Workspace";
+    return "Wade AI · Workspace";
   }
 
   if (pathname === "/dashboard") {
-    return "Zone AI · Dashboard";
+    return "Wade AI · Dashboard";
   }
 
   if (pathname === "/knowledge") {
-    return "Zone AI · Knowledge";
+    return "Wade AI · Knowledge";
   }
 
   if (pathname === "/memory") {
-    return "Zone AI · Memory";
+    return "Wade AI · Memory";
   }
 
   if (pathname === "/members") {
-    return "Zone AI · Members";
+    return "Wade AI · Members";
   }
 
   if (pathname === "/agents") {
-    return "Zone AI · Agents";
+    return "Wade AI · Agents";
   }
 
   if (pathname === "/settings") {
-    return "Zone AI · Settings";
+    return "Wade AI · Settings";
   }
 
   if (pathname === "/specs") {
-    return "Zone AI · Specs";
+    return "Wade AI · Specs";
   }
 
   if (pathname === "/skills") {
-    return "Zone AI · Skills";
+    return "Wade AI · Skills";
   }
 
-  return "Zone AI";
+  return "Wade AI";
 }
 
 function formatRegisteredAt(value?: string) {
@@ -296,12 +296,12 @@ function BrandMark() {
   return (
     <svg className={styles.brandMark} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
-        <linearGradient id="workspace-zone-ai-gradient" x1="10" y1="8" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+        <linearGradient id="workspace-wade-ai-gradient" x1="10" y1="8" x2="56" y2="58" gradientUnits="userSpaceOnUse">
           <stop stopColor="#024AD8" />
           <stop offset="1" stopColor="#6A8DFF" />
         </linearGradient>
       </defs>
-      <rect x="4" y="4" width="56" height="56" rx="18" fill="url(#workspace-zone-ai-gradient)" />
+      <rect x="4" y="4" width="56" height="56" rx="18" fill="url(#workspace-wade-ai-gradient)" />
       <path
         d="M18 19H46L26.5 45H46"
         stroke="white"
@@ -594,10 +594,10 @@ export function WorkspaceNavigation() {
       }
     };
 
-    window.addEventListener("zone-ai:create-channel", handleCreateChannel);
+    window.addEventListener("wade-ai:create-channel", handleCreateChannel);
 
     return () => {
-      window.removeEventListener("zone-ai:create-channel", handleCreateChannel);
+      window.removeEventListener("wade-ai:create-channel", handleCreateChannel);
     };
   }, [createChannelMutation, workspaceId]);
 
@@ -606,7 +606,7 @@ export function WorkspaceNavigation() {
       <aside className={`${styles.sidebar} ${sidebarCollapsed ? styles.sidebarCollapsed : ""}`}>
         <div className={`${styles.sidebarHeader} ${sidebarCollapsed ? styles.sidebarHeaderCollapsed : ""}`}>
           {sidebarCollapsed ? (
-            <Tooltip title="Zone AI" placement="right">
+            <Tooltip title="Wade AI" placement="right">
               <div className={`${styles.brand} ${styles.brandCollapsed}`}>
                 <BrandMark />
               </div>
@@ -614,7 +614,7 @@ export function WorkspaceNavigation() {
           ) : (
             <div className={styles.brand}>
               <BrandMark />
-              <span className={styles.brandLabel}>Zone AI</span>
+              <span className={styles.brandLabel}>Wade AI</span>
             </div>
           )}
 

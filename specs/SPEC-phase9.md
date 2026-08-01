@@ -32,7 +32,7 @@ POST /api/auth/logout   (Bearer access)   → {ok}(撤销当前 refresh token)
 ## 3. 侧边栏与 Chats(第 1/2 条)
 
 ### 折叠
-- `workspace-navigation.tsx`:折叠状态持久化(zustand persist key `zone-ai-sidebar-collapsed`);折叠时宽度 64px,只显示 icon(workspace Select 简化、频道 icon、菜单 icon),展开恢复 280px;品牌区显示 logo 缩略。
+- `workspace-navigation.tsx`:折叠状态持久化(zustand persist key `wade-ai-sidebar-collapsed`);折叠时宽度 64px,只显示 icon(workspace Select 简化、频道 icon、菜单 icon),展开恢复 280px;品牌区显示 logo 缩略。
 
 ### Chats
 - API:`GET /api/workspaces/:workspaceId/channels` 返回结构增加 `lastMessageAt`(该频道最近一条消息时间,无消息为 null)+ `messageCount`(可选)。

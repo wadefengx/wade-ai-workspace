@@ -17,7 +17,7 @@ export const useThemeStore = create<ThemeState>()(
       setTheme: (theme) => set({ theme })
     }),
     {
-      name: "zone-ai-theme",
+      name: "wade-ai-theme",
       storage: createJSONStorage(() => localStorage)
     }
   )

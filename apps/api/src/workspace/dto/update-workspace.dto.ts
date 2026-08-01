@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 
 export class UpdateWorkspaceDto {
-  @ApiProperty({ description: "工作区名称", example: "Zone AI", required: true })
+  @ApiProperty({ description: "工作区名称", example: "Wade AI", required: true })
   @IsString({ message: "工作区名称必须是字符串" })
   @IsNotEmpty({ message: "工作区名称不能为空" })
   name!: string;

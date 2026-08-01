@@ -1103,7 +1103,7 @@ export function WorkspaceShell() {
                         title="还没有可用频道"
                         description="创建一个频道后，团队消息和 AI 对话都会在这里沉淀。"
                         action={
-                          <Button icon={<PlusOutlined />} onClick={() => window.dispatchEvent(new CustomEvent("zone-ai:create-channel"))}>
+                          <Button icon={<PlusOutlined />} onClick={() => window.dispatchEvent(new CustomEvent("wade-ai:create-channel"))}>
                             新建 Chat
                           </Button>
                         }

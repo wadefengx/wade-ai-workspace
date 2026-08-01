@@ -33,7 +33,7 @@
 - `globals.css` 增加字号/间距变量:`--font-size-sm: 13px; --font-size-base: 14px; --font-size-lg: 16px; --font-size-title: 20px; --radius-md: 10px; --radius-lg: 16px; --space-sm: 8px; --space-md: 16px; --space-lg: 24px;`(浅/深色一致)。
 - 组件字号提升:侧边栏文字 14px、菜单 icon 16-18px、内容区标题层级清晰、次要文字用 --muted。
 - 交互:按钮 hover/focus 状态、卡片圆角统一 --radius-lg、留白用 --space 变量。
-- 登录/注册页重构(`auth-page.tsx` + `auth-page.module.css`):Apple 风——全屏渐变背景 + 居中毛玻璃卡片(backdrop-filter)、品牌 icon + Zone AI 大标题、输入框更大(高度 44px)、圆角 12、主按钮渐变(primary→#6a8dff)、页脚版权;入场动画(framer-motion fade+up)。
+- 登录/注册页重构(`auth-page.tsx` + `auth-page.module.css`):Apple 风——全屏渐变背景 + 居中毛玻璃卡片(backdrop-filter)、品牌 icon + Wade AI 大标题、输入框更大(高度 44px)、圆角 12、主按钮渐变(primary→#6a8dff)、页脚版权;入场动画(framer-motion fade+up)。
 
 ## 5. 文档图表渲染(第 6 条)
 

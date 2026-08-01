@@ -1,4 +1,4 @@
-# AGENTS.md — Zone AI Runtime Entry
+# AGENTS.md — Wade AI Runtime Entry
 
 ## Mission
 

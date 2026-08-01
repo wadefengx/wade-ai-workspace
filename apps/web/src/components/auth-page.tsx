@@ -45,7 +45,7 @@ const contentByMode: Record<
   }
 > = {
   login: {
-    title: "登录 Zone AI",
+    title: "登录 Wade AI",
     subtitle: "进入你的团队 AI Workspace。",
     submitLabel: "登录",
     alternateLabel: "还没有账号？",
@@ -55,7 +55,7 @@ const contentByMode: Record<
     endpoint: "/auth/login"
   },
   register: {
-    title: "创建 Zone AI 账号",
+    title: "创建 Wade AI 账号",
     subtitle: "注册后即可创建或加入 Workspace。",
     submitLabel: "注册",
     alternateLabel: "已经有账号？",
@@ -134,7 +134,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             </div>
             <div>
               <Typography.Title level={1} className={styles.brandLabel}>
-                Zone AI
+                Wade AI
               </Typography.Title>
               <Typography.Text className={styles.brandSubtitle}>AI Native workspace for your team.</Typography.Text>
             </div>

@@ -10,7 +10,7 @@
 
 | Topic | Current memory |
 |---|---|
-| Product name | Zone AI |
+| Product name | Wade AI |
 | Repo shape | Monorepo with `apps/web` and `apps/api` |
 | Validation baseline | Existing lint, typecheck, and test commands |
 | Delivery model | Spec-driven phases with parallel lanes |
