@@ -1,6 +1,8 @@
 # Wade AI Workspace
 
-面向团队的本地 AI Native Workspace。当前仓库实现了 Phase 0 工程基线：Next.js 工作台壳、NestJS 健康 API、MongoDB replica set、Ollama 和 Prisma 数据模型。
+面向团队的 **AI Native Workspace / AI Organization Platform**:spec 驱动的 AIOS 组织层(organization / runtime / registry / specs / skills / memory / harness)、多角色 lane 开发、@AI 流式对话、知识库 RAG、成员与权限管理(RBAC)、AI Organization Dashboard 与 Feedback Dashboard。
+
+> 开发其他项目前,可先读取 **[wadefengx/wade-ai](https://github.com/wadefengx/wade-ai)**(AI 使用沉淀知识库:ponytail 哲学 + AI-Native 开发体系 `AI_DEV_INSTRUCTION.md`),快速获得 AI 协作的背景知识。
 
 ## 启动
 
