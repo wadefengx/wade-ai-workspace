@@ -59,4 +59,14 @@ export class UpdateAgentDto {
   @IsOptional()
   @IsString({ message: "systemPrompt 必须是字符串" })
   systemPrompt?: string;
+
+  @ApiProperty({ description: "Embedding 模型名称，留空跟随 chat provider", required: false })
+  @IsOptional()
+  @IsString({ message: "embeddingModel 必须是字符串" })
+  embeddingModel?: string;
+
+  @ApiProperty({ description: "Embedding baseUrl，留空跟随 chat provider", required: false })
+  @IsOptional()
+  @IsString({ message: "embeddingBaseUrl 必须是字符串" })
+  embeddingBaseUrl?: string;
 }

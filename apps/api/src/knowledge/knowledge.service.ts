@@ -1,15 +1,19 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { ExtractionStatus, Prisma } from "@prisma/client";
+import { createHash } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join } from "node:path";
 import { PDFParse } from "pdf-parse";
-import { OllamaService } from "../ollama.service";
+import { EmbeddingService } from "../ai/embedding.service";
 import { isGlobalAdmin } from "../common/auth/global-admin";
 import { PrismaService } from "../prisma/prisma.service";
 import { UpdateKnowledgeDocumentDto } from "./dto/update-knowledge-document.dto";
 
 export const KNOWLEDGE_CHUNK_SIZE = 1_000;
-export const KNOWLEDGE_CHUNK_OVERLAP = 100;
+export const KNOWLEDGE_CHUNK_OVERLAP = 150;
+export const KNOWLEDGE_SHORT_DOCUMENT_THRESHOLD = 600;
+
+const RECURSIVE_SPLIT_SEPARATORS = ["\n\n", "\n", "。", "！", "？", ".", "!", "?"];
 
 const DEFAULT_MAX_UPLOAD_SIZE_MB = 10;
 const DEFAULT_UPLOAD_DIR = "/app/uploads";
@@ -40,7 +44,7 @@ export type UploadedKnowledgeFile = {
 export class KnowledgeService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly ollamaService: OllamaService
+    private readonly embeddingService: EmbeddingService
   ) {}
 
   async uploadDocument(workspaceId: string, userId: string, file?: UploadedKnowledgeFile) {
@@ -98,7 +102,6 @@ export class KnowledgeService {
       where: { id: document.id },
       data: {
         extractionStatus: ExtractionStatus.PENDING,
-        extractedContent: null,
         errorMessage: null
       },
       select: documentSummarySelect
@@ -150,7 +153,6 @@ export class KnowledgeService {
       where: { id: document.id },
       data: {
         extractionStatus: ExtractionStatus.PROCESSING,
-        extractedContent: null,
         errorMessage: null
       }
     });
@@ -163,17 +165,64 @@ export class KnowledgeService {
         throw new Error("文档未提取到有效文本");
       }
 
+      const contentHash = createHash("sha256").update(extractedContent).digest("hex");
+      const duplicateDocument = await this.prisma.knowledgeDocument.findFirst({
+        where: {
+          workspaceId: document.workspaceId,
+          contentHash,
+          extractionStatus: ExtractionStatus.READY,
+          id: { not: document.id }
+        },
+        select: { id: true }
+      });
+
+      if (duplicateDocument) {
+        await this.prisma.knowledgeDocument.update({
+          where: { id: document.id },
+          data: {
+            extractionStatus: ExtractionStatus.READY,
+            extractedContent,
+            contentHash,
+            errorMessage: null
+          }
+        });
+        return;
+      }
+
+      const existingDocument = await this.prisma.knowledgeDocument.findUnique({
+        where: { id: document.id },
+        select: { contentHash: true }
+      });
+
+      if (existingDocument?.contentHash === contentHash) {
+        const existingChunkCount = await this.prisma.knowledgeChunk.count({
+          where: { documentId: document.id }
+        });
+
+        if (existingChunkCount > 0) {
+          await this.prisma.knowledgeDocument.update({
+            where: { id: document.id },
+            data: {
+              extractionStatus: ExtractionStatus.READY,
+              extractedContent,
+              errorMessage: null
+            }
+          });
+          return;
+        }
+      }
+
       const chunks = splitIntoChunks(extractedContent);
       const chunkRecords = [];
 
       for (const [chunkIndex, content] of chunks.entries()) {
-        const embedding = await this.ollamaService.embed(content);
+        const embedding = await this.embeddingService.embed(content);
         chunkRecords.push({
           documentId: document.id,
           workspaceId: document.workspaceId,
           content,
           chunkIndex,
-          embedding
+          embedding: embedding ?? []
         });
       }
 
@@ -192,6 +241,7 @@ export class KnowledgeService {
         data: {
           extractionStatus: ExtractionStatus.READY,
           extractedContent,
+          contentHash,
           errorMessage: null
         }
       });
@@ -341,16 +391,58 @@ export function splitIntoChunks(content: string, chunkSize = KNOWLEDGE_CHUNK_SIZ
     return [];
   }
 
+  if (normalizedContent.length <= KNOWLEDGE_SHORT_DOCUMENT_THRESHOLD) {
+    return [normalizedContent];
+  }
+
+  const segments = recursiveSplit(normalizedContent, chunkSize, RECURSIVE_SPLIT_SEPARATORS);
   const chunks: string[] = [];
-  const step = chunkSize - overlap;
+  let current = "";
 
-  for (let start = 0; start < normalizedContent.length; start += step) {
-    const chunk = normalizedContent.slice(start, start + chunkSize).trim();
-
-    if (chunk) {
-      chunks.push(chunk);
+  for (const segment of segments) {
+    if (current && (current.length + segment.length) > chunkSize) {
+      chunks.push(current.trim());
+      const overlapText = current.slice(Math.max(0, current.length - overlap));
+      current = `${overlapText}${segment}`;
+    } else {
+      current += segment;
     }
   }
 
-  return chunks;
+  if (current.trim()) {
+    chunks.push(current.trim());
+  }
+
+  return chunks.filter((chunk) => chunk.length > 0);
+}
+
+function recursiveSplit(text: string, chunkSize: number, separators: string[]): string[] {
+  if (text.length <= chunkSize) {
+    return [text];
+  }
+
+  const [separator, ...remainingSeparators] = separators;
+
+  if (!separator) {
+    const segments: string[] = [];
+
+    for (let start = 0; start < text.length; start += chunkSize) {
+      segments.push(text.slice(start, start + chunkSize));
+    }
+
+    return segments;
+  }
+
+  const parts = text.split(separator).filter((part) => part.length > 0);
+
+  if (parts.length <= 1) {
+    return recursiveSplit(text, chunkSize, remainingSeparators);
+  }
+
+  return parts.flatMap((part, index) => {
+    const withSeparator = index < parts.length - 1 ? `${part}${separator}` : part;
+    return withSeparator.length > chunkSize
+      ? recursiveSplit(withSeparator, chunkSize, remainingSeparators)
+      : [withSeparator];
+  });
 }

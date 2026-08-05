@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { AgentType, ExtractionStatus, MemoryType, MessageSenderType, MessageStatus } from "@prisma/client";
 import { MemoryService } from "../../memory/memory.service";
-import { OllamaService } from "../../ollama.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import { KnowledgeRepository } from "../../repositories/knowledge.repository";
 import { hasAgentProviderConfig, parseAgentProviderConfigRef } from "../../agents/agent-provider-config";
+import { EmbeddingService } from "../embedding.service";
 import { AIProvider, ChatCompletionMessage, ChatStreamEvent } from "../providers/ai-provider";
 import { AnthropicProvider } from "../providers/anthropic.provider";
 import { OpenAICompatibleProvider } from "../providers/openai-compatible.provider";
@@ -25,7 +25,7 @@ export class DefaultChatEngine implements AgentEngine {
     private readonly prisma: PrismaService,
     private readonly knowledgeRepository: KnowledgeRepository,
     private readonly memoryService: MemoryService,
-    private readonly ollamaService: OllamaService,
+    private readonly embeddingService: EmbeddingService,
     private readonly openAICompatibleProvider: OpenAICompatibleProvider,
     private readonly anthropicProvider: AnthropicProvider
   ) {}
@@ -175,7 +175,12 @@ export class DefaultChatEngine implements AgentEngine {
   }
 
   private async buildKnowledgeSnippets(workspaceId: string, latestUserMessage: string) {
-    const queryEmbedding = await this.ollamaService.embed(latestUserMessage);
+    const queryEmbedding = await this.embeddingService.embed(latestUserMessage);
+
+    if (!queryEmbedding) {
+      return [];
+    }
+
     const chunks = await this.knowledgeRepository.searchSimilarChunks(workspaceId, queryEmbedding);
 
     return chunks.map((chunk, index) => `[${index + 1}] 来源：${chunk.filename}\n${chunk.content}`);

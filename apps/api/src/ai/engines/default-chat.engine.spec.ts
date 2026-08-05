@@ -1,9 +1,9 @@
 import { AgentType, MessageSenderType, MessageStatus } from "@prisma/client";
 import { Test } from "@nestjs/testing";
 import { MemoryService } from "../../memory/memory.service";
-import { OllamaService } from "../../ollama.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import { KnowledgeRepository } from "../../repositories/knowledge.repository";
+import { EmbeddingService } from "../embedding.service";
 import { AnthropicProvider } from "../providers/anthropic.provider";
 import { OpenAICompatibleProvider } from "../providers/openai-compatible.provider";
 import { DefaultChatEngine } from "./default-chat.engine";
@@ -32,7 +32,7 @@ describe("DefaultChatEngine", () => {
   const memoryService = {
     listPromptMemories: jest.fn()
   };
-  const ollamaService = {
+  const embeddingService = {
     embed: jest.fn()
   };
 
@@ -139,7 +139,7 @@ describe("DefaultChatEngine", () => {
     prisma.knowledgeDocument.findFirst.mockResolvedValue({
       id: "document-1"
     });
-    ollamaService.embed.mockResolvedValue([1, 0]);
+    embeddingService.embed.mockResolvedValue([1, 0]);
     knowledgeRepository.searchSimilarChunks.mockResolvedValue([{
       chunkId: "chunk-1",
       documentId: "document-1",
@@ -160,7 +160,7 @@ describe("DefaultChatEngine", () => {
     const systemPrompt = openAICompatibleProvider.stream.mock.calls[0][0].messages[0].content as string;
     expect(systemPrompt).toContain("记忆上下文");
     expect(systemPrompt).toContain("guide.md");
-    expect(ollamaService.embed).toHaveBeenCalledWith("@AI 总结文档");
+    expect(embeddingService.embed).toHaveBeenCalledWith("@AI 总结文档");
   });
 
   it("passes provider config to the openai-compatible provider for non-anthropic agents", async () => {
@@ -227,8 +227,8 @@ describe("DefaultChatEngine", () => {
         provide: MemoryService,
         useValue: memoryService
       }, {
-        provide: OllamaService,
-        useValue: ollamaService
+        provide: EmbeddingService,
+        useValue: embeddingService
       }, {
         provide: OpenAICompatibleProvider,
         useValue: openAICompatibleProvider

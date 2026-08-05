@@ -2,7 +2,7 @@
 
 import { DeleteOutlined, PlusOutlined, RobotOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Form, Input, Modal, Popconfirm, Select, Space, Tag, Typography } from "antd";
+import { App, Button, Collapse, Form, Input, Modal, Popconfirm, Select, Space, Tag, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { ApiError, apiFetch, unwrapItems } from "../lib/api";
 import { useAuthStore } from "../stores/auth";
@@ -26,6 +26,8 @@ type AgentItem = {
     model?: string | null;
     hasApiKey?: boolean;
   } | null;
+  embeddingModel?: string | null;
+  embeddingBaseUrl?: string | null;
   emoji?: string | null;
   role?: string | null;
   description?: string | null;
@@ -42,6 +44,8 @@ type AgentFormValues = {
   role: string;
   description: string;
   systemPrompt: string;
+  embeddingModel: string;
+  embeddingBaseUrl: string;
 };
 
 type CreateAgentValues = {
@@ -71,42 +75,48 @@ const providerPresets = [
     label: "OpenAI",
     type: "OPENAI_COMPATIBLE" as AgentType,
     baseUrl: "https://api.openai.com/v1",
-    model: "gpt-4o-mini"
+    model: "gpt-4o-mini",
+    hint: "需要 API Key"
   },
   {
     key: "deepseek",
     label: "DeepSeek",
     type: "OPENAI_COMPATIBLE" as AgentType,
     baseUrl: "https://api.deepseek.com/v1",
-    model: "deepseek-chat"
+    model: "deepseek-chat",
+    hint: "需要 API Key"
   },
   {
     key: "ollama",
     label: "Ollama",
     type: "OLLAMA" as AgentType,
     baseUrl: "http://127.0.0.1:11434/v1",
-    model: "qwen3:8b"
+    model: "qwen3:8b",
+    hint: "需要本地运行 ollama"
   },
   {
     key: "claude",
     label: "Claude",
     type: "ANTHROPIC" as AgentType,
     baseUrl: "https://api.anthropic.com",
-    model: "claude-sonnet-4-20250514"
+    model: "claude-sonnet-4-20250514",
+    hint: "需要 API Key"
   },
   {
     key: "openclaw",
     label: "OpenClaw",
     type: "OPENCLAW" as AgentType,
     baseUrl: "http://localhost:3456/v1",
-    model: "openclaw-7b"
+    model: "openclaw-7b",
+    hint: "需要本地运行 OpenClaw"
   },
   {
     key: "hermes",
     label: "Hermes",
     type: "HERMES" as AgentType,
     baseUrl: "http://localhost:8714/v1",
-    model: "hermes-3-llama-3.1-8b"
+    model: "hermes-3-llama-3.1-8b",
+    hint: "需要本地运行 Hermes"
   }
 ] as const;
 
@@ -322,7 +332,9 @@ function AgentConfigCard({
           emoji: agent.emoji ?? "",
           role: agent.role ?? "",
           description: agent.description ?? "",
-          systemPrompt: agent.systemPrompt ?? ""
+          systemPrompt: agent.systemPrompt ?? "",
+          embeddingModel: agent.embeddingModel ?? "",
+          embeddingBaseUrl: agent.embeddingBaseUrl ?? ""
         }}
         onFinish={(values) =>
           onSave({
@@ -341,6 +353,7 @@ function AgentConfigCard({
               <Button
                 key={preset.key}
                 size="small"
+                title={preset.hint}
                 onClick={() => {
                   handleTypeChange(preset.type);
                   form.setFieldsValue({
@@ -351,6 +364,9 @@ function AgentConfigCard({
                 }}
               >
                 {preset.label}
+                <Typography.Text type="secondary" style={{ marginLeft: 4, fontSize: 12 }}>
+                  ({preset.hint})
+                </Typography.Text>
               </Button>
             ))}
           </Space>
@@ -397,6 +413,34 @@ function AgentConfigCard({
         <Form.Item label="systemPrompt" name="systemPrompt">
           <Input.TextArea placeholder="留空使用默认 system prompt" autoSize={{ minRows: 2, maxRows: 6 }} />
         </Form.Item>
+
+        <Collapse
+          ghost
+          items={[
+            {
+              key: "embedding",
+              label: "Embedding 配置（可选，默认跟随 chat provider）",
+              children: (
+                <>
+                  <Form.Item
+                    label="embeddingBaseUrl"
+                    name="embeddingBaseUrl"
+                    tooltip="留空则跟随 chat provider 的 baseUrl（或本地 Ollama）"
+                  >
+                    <Input placeholder="例如 https://api.openai.com/v1" />
+                  </Form.Item>
+                  <Form.Item
+                    label="embeddingModel"
+                    name="embeddingModel"
+                    tooltip="留空则使用默认 embedding 模型"
+                  >
+                    <Input placeholder="例如 text-embedding-3-small 或 nomic-embed-text" />
+                  </Form.Item>
+                </>
+              )
+            }
+          ]}
+        />
 
         <Button type="primary" loading={isSaving} onClick={() => form.submit()}>
           保存配置
@@ -457,7 +501,9 @@ function AgentsContent() {
           emoji: values.emoji?.trim() ?? "",
           role: values.role?.trim() ?? "",
           description: values.description?.trim() ?? "",
-          systemPrompt: values.systemPrompt?.trim() ?? ""
+          systemPrompt: values.systemPrompt?.trim() ?? "",
+          embeddingModel: values.embeddingModel?.trim() ?? "",
+          embeddingBaseUrl: values.embeddingBaseUrl?.trim() ?? ""
         }
       });
     },
@@ -595,7 +641,7 @@ function AgentsContent() {
           <div className={styles.agentGrid}>
             {agents.map((agent) => (
               <AgentConfigCard
-                key={`${agent.id}:${agent.type}:${agent.providerConfig?.baseUrl ?? ""}:${agent.providerConfig?.model ?? ""}:${agent.providerConfig?.hasApiKey ? 1 : 0}:${agent.emoji ?? ""}:${agent.role ?? ""}:${agent.description ?? ""}:${agent.systemPrompt ?? ""}`}
+                key={`${agent.id}:${agent.type}:${agent.providerConfig?.baseUrl ?? ""}:${agent.providerConfig?.model ?? ""}:${agent.providerConfig?.hasApiKey ? 1 : 0}:${agent.emoji ?? ""}:${agent.role ?? ""}:${agent.description ?? ""}:${agent.systemPrompt ?? ""}:${agent.embeddingModel ?? ""}:${agent.embeddingBaseUrl ?? ""}`}
                 agent={agent}
                 isSaving={saveMutation.isPending && saveMutation.variables?.agentId === agent.id}
                 isDeleting={deleteMutation.isPending && deleteMutation.variables === agent.id}

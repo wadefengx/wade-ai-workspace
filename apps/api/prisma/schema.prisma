@@ -143,6 +143,8 @@ model Agent {
   type              AgentType @default(OPENAI_COMPATIBLE)
   engineType        String
   providerConfigRef String?
+  embeddingModel    String?
+  embeddingBaseUrl  String?
   capabilitiesJson  Json?
   isDefault         Boolean   @default(false)
   emoji             String?
@@ -163,6 +165,7 @@ model KnowledgeDocument {
   storageKey       String
   extractionStatus ExtractionStatus @default(PENDING)
   extractedContent String?
+  contentHash      String?
   errorMessage     String?
   createdBy        String           @db.ObjectId
   createdAt        DateTime         @default(now())
@@ -171,6 +174,7 @@ model KnowledgeDocument {
   chunks           KnowledgeChunk[]
 
   @@index([workspaceId])
+  @@index([workspaceId, contentHash])
 }
 
 model KnowledgeChunk {

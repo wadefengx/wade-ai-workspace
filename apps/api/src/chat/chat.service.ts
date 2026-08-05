@@ -331,7 +331,7 @@ export class ChatService {
       data: {
         workspaceId,
         name: "Workspace AI",
-        type: AgentType.OLLAMA,
+        type: AgentType.OPENAI_COMPATIBLE,
         engineType: "default-chat",
         isDefault: true
       }

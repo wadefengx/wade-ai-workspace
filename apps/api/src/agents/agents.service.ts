@@ -26,6 +26,8 @@ export class AgentsService {
         engineType: true,
         isDefault: true,
         providerConfigRef: true,
+        embeddingModel: true,
+        embeddingBaseUrl: true,
         emoji: true,
         role: true,
         description: true,
@@ -47,6 +49,8 @@ export class AgentsService {
         type: dto.type,
         engineType: "default-chat",
         providerConfigRef: serializeAgentProviderConfig(dto.providerConfig ?? {}),
+        embeddingModel: dto.embeddingModel,
+        embeddingBaseUrl: dto.embeddingBaseUrl,
         emoji: dto.emoji,
         role: dto.role,
         description: dto.description,
@@ -59,6 +63,8 @@ export class AgentsService {
         engineType: true,
         isDefault: true,
         providerConfigRef: true,
+        embeddingModel: true,
+        embeddingBaseUrl: true,
         emoji: true,
         role: true,
         description: true,
@@ -81,6 +87,8 @@ export class AgentsService {
         engineType: true,
         isDefault: true,
         providerConfigRef: true,
+        embeddingModel: true,
+        embeddingBaseUrl: true,
         emoji: true,
         role: true,
         description: true,
@@ -101,7 +109,9 @@ export class AgentsService {
       dto.emoji === undefined &&
       dto.role === undefined &&
       dto.description === undefined &&
-      dto.systemPrompt === undefined
+      dto.systemPrompt === undefined &&
+      dto.embeddingModel === undefined &&
+      dto.embeddingBaseUrl === undefined
     ) {
       return this.toResponse(agent);
     }
@@ -117,7 +127,9 @@ export class AgentsService {
         ...(dto.emoji !== undefined ? { emoji: dto.emoji } : {}),
         ...(dto.role !== undefined ? { role: dto.role } : {}),
         ...(dto.description !== undefined ? { description: dto.description } : {}),
-        ...(dto.systemPrompt !== undefined ? { systemPrompt: dto.systemPrompt } : {})
+        ...(dto.systemPrompt !== undefined ? { systemPrompt: dto.systemPrompt } : {}),
+        ...(dto.embeddingModel !== undefined ? { embeddingModel: dto.embeddingModel } : {}),
+        ...(dto.embeddingBaseUrl !== undefined ? { embeddingBaseUrl: dto.embeddingBaseUrl } : {})
       },
       select: {
         id: true,
@@ -126,6 +138,8 @@ export class AgentsService {
         engineType: true,
         isDefault: true,
         providerConfigRef: true,
+        embeddingModel: true,
+        embeddingBaseUrl: true,
         emoji: true,
         role: true,
         description: true,
@@ -233,6 +247,8 @@ export class AgentsService {
     engineType: string;
     isDefault: boolean;
     providerConfigRef: string | null;
+    embeddingModel?: string | null;
+    embeddingBaseUrl?: string | null;
     emoji?: string | null;
     role?: string | null;
     description?: string | null;
@@ -246,6 +262,8 @@ export class AgentsService {
       engineType: agent.engineType,
       isDefault: agent.isDefault,
       providerConfig: summarizeAgentProviderConfig(parseAgentProviderConfigRef(agent.providerConfigRef)),
+      embeddingModel: agent.embeddingModel ?? null,
+      embeddingBaseUrl: agent.embeddingBaseUrl ?? null,
       emoji: agent.emoji ?? null,
       role: agent.role ?? null,
       description: agent.description ?? null,

@@ -52,6 +52,8 @@ describe("AgentsService", () => {
         model: "qwen3:8b",
         hasApiKey: true
       },
+      embeddingModel: null,
+      embeddingBaseUrl: null,
       emoji: null,
       role: null,
       description: null,
@@ -92,6 +94,8 @@ describe("AgentsService", () => {
         model: "claude-3-5-sonnet-latest",
         hasApiKey: true
       },
+      embeddingModel: null,
+      embeddingBaseUrl: null,
       emoji: null,
       role: null,
       description: null,
@@ -146,6 +150,8 @@ describe("AgentsService", () => {
         model: "qwen3:8b",
         hasApiKey: true
       },
+      embeddingModel: null,
+      embeddingBaseUrl: null,
       emoji: null,
       role: null,
       description: null,
@@ -203,6 +209,8 @@ describe("AgentsService", () => {
       providerConfig: {
         hasApiKey: false
       },
+      embeddingModel: null,
+      embeddingBaseUrl: null,
       emoji: null,
       role: null,
       description: null,
@@ -238,6 +246,8 @@ describe("AgentsService", () => {
         model: "qwen3:8b",
         hasApiKey: false
       },
+      embeddingModel: null,
+      embeddingBaseUrl: null,
       emoji: null,
       role: null,
       description: null,

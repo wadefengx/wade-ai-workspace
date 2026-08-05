@@ -4,9 +4,13 @@ import { Test } from "@nestjs/testing";
 import { access, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { OllamaService } from "../ollama.service";
+import { EmbeddingService } from "../ai/embedding.service";
 import { PrismaService } from "../prisma/prisma.service";
-import { KNOWLEDGE_CHUNK_OVERLAP, KNOWLEDGE_CHUNK_SIZE, KnowledgeService, splitIntoChunks } from "./knowledge.service";
+import {
+  KNOWLEDGE_SHORT_DOCUMENT_THRESHOLD,
+  KnowledgeService,
+  splitIntoChunks
+} from "./knowledge.service";
 
 describe("KnowledgeService", () => {
   const prisma = {
@@ -14,19 +18,21 @@ describe("KnowledgeService", () => {
       create: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       update: jest.fn(),
       delete: jest.fn()
     },
     knowledgeChunk: {
       create: jest.fn(),
-      deleteMany: jest.fn()
+      deleteMany: jest.fn(),
+      count: jest.fn()
     },
     workspaceMember: {
       findFirst: jest.fn()
     },
     $transaction: jest.fn()
   };
-  const ollamaService = {
+  const embeddingService = {
     embed: jest.fn()
   };
   let originalUploadDir: string | undefined;
@@ -35,6 +41,7 @@ describe("KnowledgeService", () => {
     jest.clearAllMocks();
     originalUploadDir = process.env.UPLOAD_DIR;
     delete process.env.UPLOAD_DIR;
+    prisma.knowledgeDocument.findFirst.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -52,8 +59,8 @@ describe("KnowledgeService", () => {
         provide: PrismaService,
         useValue: prisma
       }, {
-        provide: OllamaService,
-        useValue: ollamaService
+        provide: EmbeddingService,
+        useValue: embeddingService
       }, KnowledgeService]
     }).compile();
     const service = module.get(KnowledgeService);
@@ -67,40 +74,48 @@ describe("KnowledgeService", () => {
     expect(prisma.knowledgeDocument.create).not.toHaveBeenCalled();
   });
 
-  it("splits extracted content into overlapping chunks", () => {
-    const content = "a".repeat(KNOWLEDGE_CHUNK_SIZE + (KNOWLEDGE_CHUNK_SIZE - KNOWLEDGE_CHUNK_OVERLAP) + 10);
+  it("does not split short documents", () => {
+    const content = "a".repeat(KNOWLEDGE_SHORT_DOCUMENT_THRESHOLD - 10);
 
-    expect(splitIntoChunks(content)).toEqual([
-      "a".repeat(KNOWLEDGE_CHUNK_SIZE),
-      "a".repeat(KNOWLEDGE_CHUNK_SIZE),
-      "a".repeat(KNOWLEDGE_CHUNK_OVERLAP + 10)
-    ]);
+    expect(splitIntoChunks(content)).toEqual([content]);
   });
 
-  it("marks the document failed when embedding fails", async () => {
+  it("splits long documents into multiple overlapping chunks", () => {
+    const content = Array.from({ length: 20 }, (_, index) => `第${index}段落内容重复填充文字。`.repeat(30)).join("\n\n");
+
+    const chunks = splitIntoChunks(content);
+
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks.join("")).toContain(chunks[0]!.slice(0, 20));
+  });
+
+  it("degrades gracefully and still marks the document ready when embedding fails", async () => {
     const uploadDir = await mkdtemp(join(tmpdir(), "knowledge-service-"));
     const storageKey = "workspace-1/doc.txt";
 
     process.env.UPLOAD_DIR = uploadDir;
     await mkdir(join(uploadDir, "workspace-1"), { recursive: true });
     await writeFile(join(uploadDir, storageKey), "hello world");
-    prisma.knowledgeDocument.findUnique.mockResolvedValue({
+    prisma.knowledgeDocument.findUnique.mockResolvedValueOnce({
       id: "document-1",
       workspaceId: "workspace-1",
       mimeType: "text/plain",
       storageKey
     });
+    prisma.knowledgeDocument.findUnique.mockResolvedValueOnce({
+      contentHash: null
+    });
     prisma.knowledgeDocument.update.mockResolvedValue(undefined);
     prisma.knowledgeChunk.deleteMany.mockResolvedValue({ count: 0 });
-    ollamaService.embed.mockRejectedValue(new Error("embed failed"));
+    embeddingService.embed.mockResolvedValue(null);
 
     const module = await Test.createTestingModule({
       providers: [{
         provide: PrismaService,
         useValue: prisma
       }, {
-        provide: OllamaService,
-        useValue: ollamaService
+        provide: EmbeddingService,
+        useValue: embeddingService
       }, KnowledgeService]
     }).compile();
     const service = module.get(KnowledgeService);
@@ -111,16 +126,96 @@ describe("KnowledgeService", () => {
       where: { id: "document-1" },
       data: {
         extractionStatus: ExtractionStatus.PROCESSING,
-        extractedContent: null,
         errorMessage: null
       }
     });
-    expect(prisma.knowledgeDocument.update).toHaveBeenNthCalledWith(2, {
+    expect(prisma.knowledgeDocument.update).toHaveBeenLastCalledWith({
+      where: { id: "document-1" },
+      data: {
+        extractionStatus: ExtractionStatus.READY,
+        extractedContent: "hello world",
+        contentHash: expect.any(String),
+        errorMessage: null
+      }
+    });
+  });
+
+  it("skips reindexing when a document with the same content hash is already ready", async () => {
+    const uploadDir = await mkdtemp(join(tmpdir(), "knowledge-dedup-"));
+    const storageKey = "workspace-1/doc.txt";
+
+    process.env.UPLOAD_DIR = uploadDir;
+    await mkdir(join(uploadDir, "workspace-1"), { recursive: true });
+    await writeFile(join(uploadDir, storageKey), "hello world");
+    prisma.knowledgeDocument.findUnique.mockResolvedValueOnce({
+      id: "document-2",
+      workspaceId: "workspace-1",
+      mimeType: "text/plain",
+      storageKey
+    });
+    prisma.knowledgeDocument.update.mockResolvedValue(undefined);
+    prisma.knowledgeDocument.findFirst.mockResolvedValue({ id: "document-1" });
+
+    const module = await Test.createTestingModule({
+      providers: [{
+        provide: PrismaService,
+        useValue: prisma
+      }, {
+        provide: EmbeddingService,
+        useValue: embeddingService
+      }, KnowledgeService]
+    }).compile();
+    const service = module.get(KnowledgeService);
+
+    await service.processDocument("document-2");
+
+    expect(embeddingService.embed).not.toHaveBeenCalled();
+    expect(prisma.knowledgeChunk.create).not.toHaveBeenCalled();
+    expect(prisma.knowledgeDocument.update).toHaveBeenLastCalledWith({
+      where: { id: "document-2" },
+      data: {
+        extractionStatus: ExtractionStatus.READY,
+        extractedContent: "hello world",
+        contentHash: expect.any(String),
+        errorMessage: null
+      }
+    });
+  });
+
+  it("marks the document failed when text extraction fails", async () => {
+    const uploadDir = await mkdtemp(join(tmpdir(), "knowledge-extract-"));
+    const storageKey = "workspace-1/doc.pdf";
+
+    process.env.UPLOAD_DIR = uploadDir;
+    await mkdir(join(uploadDir, "workspace-1"), { recursive: true });
+    prisma.knowledgeDocument.findUnique.mockResolvedValue({
+      id: "document-1",
+      workspaceId: "workspace-1",
+      mimeType: "application/pdf",
+      storageKey
+    });
+    prisma.knowledgeDocument.update.mockResolvedValue(undefined);
+    prisma.knowledgeChunk.deleteMany.mockResolvedValue({ count: 0 });
+
+    const module = await Test.createTestingModule({
+      providers: [{
+        provide: PrismaService,
+        useValue: prisma
+      }, {
+        provide: EmbeddingService,
+        useValue: embeddingService
+      }, KnowledgeService]
+    }).compile();
+    const service = module.get(KnowledgeService);
+
+    await service.processDocument("document-1");
+
+    expect(prisma.knowledgeDocument.update).toHaveBeenLastCalledWith({
       where: { id: "document-1" },
       data: {
         extractionStatus: ExtractionStatus.FAILED,
         extractedContent: null,
-        errorMessage: "embed failed"
+        errorMessage: expect.any(String)
       }
     });
   });
@@ -156,8 +251,8 @@ describe("KnowledgeService", () => {
         provide: PrismaService,
         useValue: prisma
       }, {
-        provide: OllamaService,
-        useValue: ollamaService
+        provide: EmbeddingService,
+        useValue: embeddingService
       }, KnowledgeService]
     }).compile();
     const service = module.get(KnowledgeService);
