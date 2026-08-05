@@ -7,12 +7,13 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 ## Context loading order
 
 1. This `AGENTS.md`.
-2. `.ai/organization/` for team model, routing, communication, and role contracts.
-3. `.ai/runtime/` for context, prompt, model, tool, and coding policy.
-4. Relevant `.ai/specs/` files for active scope; legacy `specs/` stays readable during migration.
-5. Relevant `.ai/skills/` files for proven execution patterns; legacy `skills/` stays readable during migration.
-6. `.ai/memory/` for durable facts, decisions, conventions, and known issues.
-7. `.ai/architecture/`, `.ai/knowledge/`, and `.ai/harness/` when the task needs deeper reference or validation assets.
+2. `.ai/runtime/AI_INSTRUCTION_V2.md` — **Runtime Operating Model 2.0**(Goal-First / Skill 触发 / 动态 Subagent / Verification Iron Law / Self-Evolution Loop / Governance)。与本文档冲突时以 v2 为准。
+3. `.ai/organization/` for team model, routing, communication, and role contracts.
+4. `.ai/runtime/` for context, prompt, model, tool, and coding policy.
+5. Relevant `.ai/specs/` files for active scope; legacy `specs/` stays readable during migration.
+6. Relevant `.ai/skills/` files for proven execution patterns; legacy `skills/` stays readable during migration.
+7. `.ai/memory/` for durable facts, decisions, conventions, and known issues.
+8. `.ai/architecture/`, `.ai/knowledge/`, and `.ai/harness/` when the task needs deeper reference or validation assets.
 
 ## AI lifecycle
 
