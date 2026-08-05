@@ -93,9 +93,9 @@ services:
     ports:
       - "${WEB_PORT:-3000}:3000"
     volumes:
-      - .:/app
       - web_node_modules:/app/node_modules
       - web_next:/app/apps/web/.next
+      - .:/app
     depends_on:
       api:
         condition: service_healthy
