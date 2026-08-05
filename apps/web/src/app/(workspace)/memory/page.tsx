@@ -1,5 +1,7 @@
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { MemoryPage } from "../../../components/memory-page";
+
+const MemoryPage = dynamic(() => import("../../../components/memory-page").then((mod) => mod.MemoryPage));
 
 export default function Page() {
   return (

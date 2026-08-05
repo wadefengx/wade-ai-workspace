@@ -1,5 +1,7 @@
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { SettingsPage } from "../../../components/settings-page";
+
+const SettingsPage = dynamic(() => import("../../../components/settings-page").then((mod) => mod.SettingsPage));
 
 export default function Page() {
   return (

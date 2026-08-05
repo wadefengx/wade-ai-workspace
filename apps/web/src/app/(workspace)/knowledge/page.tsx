@@ -1,5 +1,9 @@
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { KnowledgePage } from "../../../components/knowledge-page";
+
+const KnowledgePage = dynamic(() =>
+  import("../../../components/knowledge-page").then((mod) => mod.KnowledgePage)
+);
 
 export default function Page() {
   return (

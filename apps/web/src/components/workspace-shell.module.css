@@ -14,7 +14,7 @@
   width: var(--sidebar-width);
   flex: 0 0 var(--sidebar-width);
   flex-direction: column;
-  padding: var(--space-lg, 24px) var(--space-md, 16px);
+  padding: 28px 20px;
   border-right: 1px solid var(--line);
   background: var(--surface-subtle);
   overflow-y: auto;
@@ -27,7 +27,7 @@
 
 .sidebarCollapsed {
   --sidebar-width: 64px;
-  padding-inline: var(--space-sm, 8px);
+  padding-inline: 12px;
 }
 
 .sidebarHeader {
@@ -386,13 +386,13 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 32px 24px 24px;
+  padding: 32px 32px 24px;
 }
 
 .messageList {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
   width: min(780px, 100%);
 }
 

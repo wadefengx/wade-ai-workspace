@@ -1,5 +1,7 @@
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { AgentsPage } from "../../../components/agents-page";
+
+const AgentsPage = dynamic(() => import("../../../components/agents-page").then((mod) => mod.AgentsPage));
 
 export default function Page() {
   return (

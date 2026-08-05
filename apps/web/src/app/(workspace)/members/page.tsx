@@ -1,5 +1,7 @@
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { MembersPage } from "../../../components/members-page";
+
+const MembersPage = dynamic(() => import("../../../components/members-page").then((mod) => mod.MembersPage));
 
 export default function Page() {
   return (

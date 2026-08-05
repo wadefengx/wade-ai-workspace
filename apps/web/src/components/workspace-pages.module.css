@@ -1,6 +1,10 @@
 .pageStack {
   display: grid;
-  gap: var(--space-md, 16px);
+  gap: 32px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 48px;
 }
 
 .pageScrollBody {
@@ -15,6 +19,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-md, 16px);
+  margin-bottom: 32px;
 }
 
 .pageCard {

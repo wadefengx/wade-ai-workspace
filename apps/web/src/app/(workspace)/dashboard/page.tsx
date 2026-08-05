@@ -1,5 +1,9 @@
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { DashboardPage } from "../../../components/dashboard-page";
+
+const DashboardPage = dynamic(() =>
+  import("../../../components/dashboard-page").then((mod) => mod.DashboardPage)
+);
 
 export default function Page() {
   return (

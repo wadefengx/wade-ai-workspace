@@ -2,7 +2,6 @@
 
 import { LoadingOutlined } from "@ant-design/icons";
 import { Button, Typography } from "antd";
-import { encode } from "plantuml-encoder";
 import { useEffect, useId, useMemo, useState, type ComponentPropsWithoutRef } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import shellStyles from "./workspace-shell.module.css";
@@ -128,13 +127,31 @@ function MermaidBlock({ code }: { code: string }) {
 }
 
 function PlantUmlBlock({ code }: { code: string }) {
-  const plantUmlUrl = useMemo(() => `https://www.plantuml.com/plantuml/svg/${encode(code)}`, [code]);
+  const [plantUmlUrl, setPlantUmlUrl] = useState<string>("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const buildUrl = async () => {
+      const { encode } = await import("plantuml-encoder");
+
+      if (!cancelled) {
+        setPlantUmlUrl(`https://www.plantuml.com/plantuml/svg/${encode(code)}`);
+      }
+    };
+
+    void buildUrl();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [code]);
 
   return (
     <div className={shellStyles.markdownDiagram}>
       <div className={shellStyles.markdownDiagramCard}>
         <div className={shellStyles.markdownDiagramActions}>
-          <Button href={plantUmlUrl} target="_blank" rel="noreferrer" type="link">
+          <Button href={plantUmlUrl} target="_blank" rel="noreferrer" type="link" disabled={!plantUmlUrl}>
             在 PlantUML 服务器打开 ↗
           </Button>
           <Typography.Text type="secondary">当前版本提供外链预览，原始源码仍可展开查看。</Typography.Text>

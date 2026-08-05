@@ -1,5 +1,7 @@
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import { SpecsPage } from "../../../components/specs-page";
+
+const SpecsPage = dynamic(() => import("../../../components/specs-page").then((mod) => mod.SpecsPage));
 
 export default function Page() {
   return (

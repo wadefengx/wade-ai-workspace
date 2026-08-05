@@ -111,9 +111,9 @@ function WorkspaceLayoutContent({ children }: Readonly<{ children: ReactNode }>)
         <WorkspaceNavigation />
         <motion.div
           key={pathname}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.18 }}
           style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", overflow: "hidden" }}
         >
           {children}
