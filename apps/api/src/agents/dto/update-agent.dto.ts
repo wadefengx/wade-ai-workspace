@@ -39,4 +39,24 @@ export class UpdateAgentDto {
   @ValidateNested()
   @Type(() => UpdateAgentProviderConfigDto)
   providerConfig?: UpdateAgentProviderConfigDto;
+
+  @ApiProperty({ description: "专家 emoji 头像", example: "🧠", required: false })
+  @IsOptional()
+  @IsString({ message: "emoji 必须是字符串" })
+  emoji?: string;
+
+  @ApiProperty({ description: "专家角色名", example: "资深前端工程师", required: false })
+  @IsOptional()
+  @IsString({ message: "role 必须是字符串" })
+  role?: string;
+
+  @ApiProperty({ description: "专家能力描述", example: "擅长 React/性能优化", required: false })
+  @IsOptional()
+  @IsString({ message: "description 必须是字符串" })
+  description?: string;
+
+  @ApiProperty({ description: "专家 system prompt", required: false })
+  @IsOptional()
+  @IsString({ message: "systemPrompt 必须是字符串" })
+  systemPrompt?: string;
 }

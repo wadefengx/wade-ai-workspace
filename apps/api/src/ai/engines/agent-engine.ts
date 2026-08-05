@@ -5,6 +5,7 @@ export type AgentExecutionInput = {
   channelId: string;
   userId: string;
   latestUserMessage?: string;
+  agentId?: string;
   abortSignal?: AbortSignal;
 };
 

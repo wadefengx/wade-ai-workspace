@@ -25,7 +25,12 @@ export class AgentsService {
         type: true,
         engineType: true,
         isDefault: true,
-        providerConfigRef: true
+        providerConfigRef: true,
+        emoji: true,
+        role: true,
+        description: true,
+        systemPrompt: true,
+        harness: true
       }
     });
 
@@ -41,7 +46,11 @@ export class AgentsService {
         name: dto.name,
         type: dto.type,
         engineType: "default-chat",
-        providerConfigRef: serializeAgentProviderConfig(dto.providerConfig ?? {})
+        providerConfigRef: serializeAgentProviderConfig(dto.providerConfig ?? {}),
+        emoji: dto.emoji,
+        role: dto.role,
+        description: dto.description,
+        systemPrompt: dto.systemPrompt
       },
       select: {
         id: true,
@@ -49,7 +58,12 @@ export class AgentsService {
         type: true,
         engineType: true,
         isDefault: true,
-        providerConfigRef: true
+        providerConfigRef: true,
+        emoji: true,
+        role: true,
+        description: true,
+        systemPrompt: true,
+        harness: true
       }
     });
 
@@ -66,7 +80,12 @@ export class AgentsService {
         type: true,
         engineType: true,
         isDefault: true,
-        providerConfigRef: true
+        providerConfigRef: true,
+        emoji: true,
+        role: true,
+        description: true,
+        systemPrompt: true,
+        harness: true
       }
     });
 
@@ -76,7 +95,14 @@ export class AgentsService {
 
     await this.ensureWorkspaceMember(agent.workspaceId, userId);
 
-    if (dto.name === undefined && dto.providerConfig === undefined) {
+    if (
+      dto.name === undefined &&
+      dto.providerConfig === undefined &&
+      dto.emoji === undefined &&
+      dto.role === undefined &&
+      dto.description === undefined &&
+      dto.systemPrompt === undefined
+    ) {
       return this.toResponse(agent);
     }
 
@@ -87,7 +113,11 @@ export class AgentsService {
         ...(dto.name !== undefined ? { name: dto.name } : {}),
         ...(dto.providerConfig !== undefined
           ? { providerConfigRef: serializeAgentProviderConfig(nextProviderConfig) }
-          : {})
+          : {}),
+        ...(dto.emoji !== undefined ? { emoji: dto.emoji } : {}),
+        ...(dto.role !== undefined ? { role: dto.role } : {}),
+        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.systemPrompt !== undefined ? { systemPrompt: dto.systemPrompt } : {})
       },
       select: {
         id: true,
@@ -95,7 +125,12 @@ export class AgentsService {
         type: true,
         engineType: true,
         isDefault: true,
-        providerConfigRef: true
+        providerConfigRef: true,
+        emoji: true,
+        role: true,
+        description: true,
+        systemPrompt: true,
+        harness: true
       }
     });
 
@@ -198,6 +233,11 @@ export class AgentsService {
     engineType: string;
     isDefault: boolean;
     providerConfigRef: string | null;
+    emoji?: string | null;
+    role?: string | null;
+    description?: string | null;
+    systemPrompt?: string | null;
+    harness?: string;
   }) {
     return {
       id: agent.id,
@@ -205,7 +245,12 @@ export class AgentsService {
       type: agent.type,
       engineType: agent.engineType,
       isDefault: agent.isDefault,
-      providerConfig: summarizeAgentProviderConfig(parseAgentProviderConfigRef(agent.providerConfigRef))
+      providerConfig: summarizeAgentProviderConfig(parseAgentProviderConfigRef(agent.providerConfigRef)),
+      emoji: agent.emoji ?? null,
+      role: agent.role ?? null,
+      description: agent.description ?? null,
+      systemPrompt: agent.systemPrompt ?? null,
+      harness: agent.harness ?? "OLLAMA"
     };
   }
 }

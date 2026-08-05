@@ -31,23 +31,40 @@ export class DefaultChatEngine implements AgentEngine {
   ) {}
 
   async *stream(input: AgentExecutionInput): AsyncIterable<ChatStreamEvent> {
-    const [messages, defaultAgent] = await Promise.all([
+    const [messages, targetAgent] = await Promise.all([
       this.buildPromptMessages(input),
-      this.prisma.agent.findFirst({
-        where: {
-          workspaceId: input.workspaceId,
-          isDefault: true
-        },
-        select: {
-          type: true,
-          providerConfigRef: true
-        }
-      })
+      input.agentId
+        ? this.prisma.agent.findUnique({
+            where: { id: input.agentId },
+            select: {
+              type: true,
+              providerConfigRef: true,
+              systemPrompt: true
+            }
+          })
+        : this.prisma.agent.findFirst({
+            where: {
+              workspaceId: input.workspaceId,
+              isDefault: true
+            },
+            select: {
+              type: true,
+              providerConfigRef: true,
+              systemPrompt: true
+            }
+          })
     ]);
-    const providerConfig = defaultAgent?.providerConfigRef
-      ? parseAgentProviderConfigRef(defaultAgent.providerConfigRef)
+    const providerConfig = targetAgent?.providerConfigRef
+      ? parseAgentProviderConfigRef(targetAgent.providerConfigRef)
       : undefined;
-    const provider = this.resolveProvider(defaultAgent?.type);
+    const provider = this.resolveProvider(targetAgent?.type);
+
+    if (targetAgent?.systemPrompt?.trim()) {
+      messages[0] = {
+        role: "system",
+        content: targetAgent.systemPrompt.trim()
+      };
+    }
 
     for await (const event of provider.stream({
       messages,

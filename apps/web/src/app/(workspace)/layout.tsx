@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, type ReactNode } from "react";
 import { FullScreenSpinner, useRequireAuth } from "../../components/auth-status";
 import {
+  fetchAgents,
   fetchChannels,
   fetchMembers,
   fetchWorkspaces,
@@ -54,8 +55,15 @@ function WorkspaceLayoutContent({ children }: Readonly<{ children: ReactNode }>)
     enabled: !!workspaceId
   });
 
+  const agentsQuery = useQuery({
+    queryKey: workspaceKeys.agents(workspaceId),
+    queryFn: () => fetchAgents(workspaceId as string),
+    enabled: !!workspaceId
+  });
+
   const channels = useMemo(() => channelsQuery.data ?? [], [channelsQuery.data]);
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
+  const agents = useMemo(() => agentsQuery.data ?? [], [agentsQuery.data]);
   const selectedWorkspace = useMemo(
     () => workspaces.find((workspace) => workspace.id === workspaceId) ?? null,
     [workspaceId, workspaces]
@@ -104,7 +112,9 @@ function WorkspaceLayoutContent({ children }: Readonly<{ children: ReactNode }>)
         selectedChannelId,
         selectedChannel,
         members,
-        membersLoading: membersQuery.isLoading
+        membersLoading: membersQuery.isLoading,
+        agents,
+        agentsLoading: agentsQuery.isLoading
       }}
     >
       <Layout className={styles.shell}>

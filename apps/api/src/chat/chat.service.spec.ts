@@ -41,17 +41,7 @@ describe("ChatService", () => {
     });
     prisma.message.create
       .mockResolvedValueOnce({
-        id: "user-message-1",
-        workspaceId: "workspace-1",
-        channelId: "channel-1",
-        senderType: MessageSenderType.USER,
-        senderId: "user-1",
-        content: "@AI hello",
-        status: MessageStatus.COMPLETED,
-        createdAt: new Date("2024-01-01T00:00:00.000Z"),
-        updatedAt: new Date("2024-01-01T00:00:00.000Z")
-      })
-      .mockResolvedValueOnce({
+      
         id: "agent-message-1",
         workspaceId: "workspace-1",
         channelId: "channel-1",
@@ -94,17 +84,7 @@ describe("ChatService", () => {
       type: "done",
       messageId: "agent-message-1"
     }]);
-    expect(prisma.message.create).toHaveBeenNthCalledWith(1, {
-      data: {
-        workspaceId: "workspace-1",
-        channelId: "channel-1",
-        senderType: MessageSenderType.USER,
-        senderId: "user-1",
-        content: "@AI hello",
-        status: MessageStatus.COMPLETED
-      }
-    });
-    expect(prisma.message.create).toHaveBeenNthCalledWith(2, {
+        expect(prisma.message.create).toHaveBeenNthCalledWith(1, {
       data: {
         workspaceId: "workspace-1",
         channelId: "channel-1",
@@ -144,17 +124,7 @@ describe("ChatService", () => {
     });
     prisma.message.create
       .mockResolvedValueOnce({
-        id: "user-message-1",
-        workspaceId: "workspace-1",
-        channelId: "channel-1",
-        senderType: MessageSenderType.USER,
-        senderId: "user-1",
-        content: "@AI hello",
-        status: MessageStatus.COMPLETED,
-        createdAt: new Date("2024-01-01T00:00:00.000Z"),
-        updatedAt: new Date("2024-01-01T00:00:00.000Z")
-      })
-      .mockResolvedValueOnce({
+      
         id: "agent-message-1",
         workspaceId: "workspace-1",
         channelId: "channel-1",
@@ -215,17 +185,7 @@ describe("ChatService", () => {
     });
     prisma.message.create
       .mockResolvedValueOnce({
-        id: "user-message-1",
-        workspaceId: "workspace-1",
-        channelId: "channel-1",
-        senderType: MessageSenderType.USER,
-        senderId: "user-1",
-        content: "@AI hello",
-        status: MessageStatus.COMPLETED,
-        createdAt: new Date("2024-01-01T00:00:00.000Z"),
-        updatedAt: new Date("2024-01-01T00:00:00.000Z")
-      })
-      .mockResolvedValueOnce({
+      
         id: "agent-message-1",
         workspaceId: "workspace-1",
         channelId: "channel-1",

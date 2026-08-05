@@ -51,7 +51,12 @@ describe("AgentsService", () => {
         baseUrl: "http://ollama.local/v1",
         model: "qwen3:8b",
         hasApiKey: true
-      }
+      },
+      emoji: null,
+      role: null,
+      description: null,
+      systemPrompt: null,
+      harness: "OLLAMA"
     }]);
   });
 
@@ -86,7 +91,12 @@ describe("AgentsService", () => {
       providerConfig: {
         model: "claude-3-5-sonnet-latest",
         hasApiKey: true
-      }
+      },
+      emoji: null,
+      role: null,
+      description: null,
+      systemPrompt: null,
+      harness: "OLLAMA"
     });
   });
 
@@ -135,7 +145,12 @@ describe("AgentsService", () => {
         baseUrl: "http://provider.old/v1",
         model: "qwen3:8b",
         hasApiKey: true
-      }
+      },
+      emoji: null,
+      role: null,
+      description: null,
+      systemPrompt: null,
+      harness: "OLLAMA"
     });
   });
 
@@ -187,7 +202,12 @@ describe("AgentsService", () => {
       isDefault: true,
       providerConfig: {
         hasApiKey: false
-      }
+      },
+      emoji: null,
+      role: null,
+      description: null,
+      systemPrompt: null,
+      harness: "OLLAMA"
     });
   });
 
@@ -217,7 +237,12 @@ describe("AgentsService", () => {
         baseUrl: "http://provider.old/v1",
         model: "qwen3:8b",
         hasApiKey: false
-      }
+      },
+      emoji: null,
+      role: null,
+      description: null,
+      systemPrompt: null,
+      harness: "OLLAMA"
     });
     expect(prisma.agent.update).not.toHaveBeenCalled();
   });

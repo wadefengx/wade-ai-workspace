@@ -169,11 +169,9 @@ export class ChatService {
   }
 
   async *streamAgentReply(input: StreamAgentReplyInput): AsyncIterable<ChatSseEvent> {
-    const agent = await this.ensureDefaultAgent(input.workspaceId);
-    await this.createMessage(input.workspaceId, input.channelId, input.userId, {
-      content: input.content
-    });
-
+    const targetAgent = (await this.resolveMentionedAgent(input.workspaceId, input.content)) ?? (await this.ensureDefaultAgent(input.workspaceId));
+    const agent = targetAgent;
+    // ponytail: 用户消息由前端 POST /messages 持久化,stream 只创建 AI 回复消息,避免双写
     const agentMessage = await this.prisma.message.create({
       data: {
         workspaceId: input.workspaceId,
@@ -199,6 +197,7 @@ export class ChatService {
         channelId: input.channelId,
         userId: input.userId,
         latestUserMessage: input.content,
+        agentId: agent.id,
         abortSignal: input.abortSignal
       })) {
         if (event.type === "token") {
@@ -280,6 +279,39 @@ export class ChatService {
         }
       }]
     };
+  }
+
+  /**
+   * 若消息文本中 @ 到某个具体 Agent(按名称匹配,非 @AI/@All),返回该 Agent;否则返回 null 走默认 Agent。
+   */
+  private async resolveMentionedAgent(workspaceId: string, content: string): Promise<Agent | null> {
+    const mentionMatches = content.match(/@([^\s@]+)/g);
+
+    if (!mentionMatches || mentionMatches.length === 0) {
+      return null;
+    }
+
+    const mentionedNames = mentionMatches
+      .map((mention) => mention.slice(1).trim())
+      .filter((name) => name && name.toUpperCase() !== "AI" && name.toUpperCase() !== "ALL");
+
+    if (mentionedNames.length === 0) {
+      return null;
+    }
+
+    const agents = await this.prisma.agent.findMany({
+      where: { workspaceId }
+    });
+
+    for (const name of mentionedNames) {
+      const matchedAgent = agents.find((agent) => agent.name === name);
+
+      if (matchedAgent) {
+        return matchedAgent;
+      }
+    }
+
+    return null;
   }
 
   private async ensureDefaultAgent(workspaceId: string): Promise<Agent> {

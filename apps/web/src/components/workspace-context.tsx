@@ -31,6 +31,18 @@ export type Member = {
   avatarUrl?: string | null;
 };
 
+export type AgentSummary = {
+  id: string;
+  name: string;
+  type: string;
+  isDefault: boolean;
+  emoji?: string | null;
+  role?: string | null;
+  description?: string | null;
+  systemPrompt?: string | null;
+  harness?: string;
+};
+
 export type WorkspaceContextValue = {
   workspaceId: string | null;
   workspaces: Workspace[];
@@ -42,12 +54,15 @@ export type WorkspaceContextValue = {
   selectedChannel: Channel | null;
   members: Member[];
   membersLoading: boolean;
+  agents: AgentSummary[];
+  agentsLoading: boolean;
 };
 
 export const workspaceKeys = {
   all: ["workspaces"] as const,
   channels: (workspaceId: string | null) => ["workspaces", workspaceId, "channels"] as const,
-  members: (workspaceId: string | null) => ["workspaces", workspaceId, "members"] as const
+  members: (workspaceId: string | null) => ["workspaces", workspaceId, "members"] as const,
+  agents: (workspaceId: string | null) => ["workspaces", workspaceId, "agents"] as const
 };
 
 type CreateWorkspaceInput = {
@@ -63,19 +78,22 @@ type WorkspaceStoreState = {
   workspaces: Workspace[];
   members: Member[];
   channels: Channel[];
+  agents: AgentSummary[];
   workspaceId: string | null;
   selectedChannelId: string | null;
   workspacesLoading: boolean;
   membersLoading: boolean;
   channelsLoading: boolean;
+  agentsLoading: boolean;
   fetchWorkspaces: () => Promise<Workspace[]>;
   fetchMembers: (workspaceId: string) => Promise<Member[]>;
   fetchChannels: (workspaceId: string) => Promise<Channel[]>;
+  fetchAgents: (workspaceId: string) => Promise<AgentSummary[]>;
   selectWorkspace: (workspaceId: string | null) => void;
   selectChannel: (channelId: string | null) => void;
   createWorkspace: (input: CreateWorkspaceInput) => Promise<Workspace>;
   createChannel: (workspaceId: string, input: CreateChannelInput) => Promise<Channel>;
-  invalidate: (scope?: "all" | "workspaces" | "members" | "channels") => void;
+  invalidate: (scope?: "all" | "workspaces" | "members" | "channels" | "agents") => void;
   sync: (value: WorkspaceContextValue) => void;
 };
 
@@ -104,11 +122,13 @@ function pickStoreFields(value: WorkspaceContextValue) {
     workspaces: value.workspaces,
     members: value.members,
     channels: value.channels,
+    agents: value.agents,
     workspaceId: value.workspaceId,
     selectedChannelId: value.selectedChannelId,
     workspacesLoading: value.workspacesLoading,
     membersLoading: value.membersLoading,
-    channelsLoading: value.channelsLoading
+    channelsLoading: value.channelsLoading,
+    agentsLoading: value.agentsLoading
   };
 }
 
@@ -122,6 +142,10 @@ async function requestChannels(workspaceId: string) {
 
 async function requestMembers(workspaceId: string) {
   return unwrapItems(await apiFetch<Member[] | { items: Member[] }>(`/workspaces/${workspaceId}/members`));
+}
+
+async function requestAgents(workspaceId: string) {
+  return unwrapItems(await apiFetch<AgentSummary[] | { items: AgentSummary[] }>(`/workspaces/${workspaceId}/agents`));
 }
 
 async function requestCreateWorkspace({ name, icon }: CreateWorkspaceInput) {
@@ -151,6 +175,10 @@ export async function fetchChannels(workspaceId: string) {
 
 export async function fetchMembers(workspaceId: string) {
   return requestMembers(workspaceId);
+}
+
+export async function fetchAgents(workspaceId: string) {
+  return requestAgents(workspaceId);
 }
 
 export async function createWorkspace(input: CreateWorkspaceInput) {
@@ -186,6 +214,18 @@ function createWorkspaceContextStore(initialValue: WorkspaceContextValue) {
         return members;
       } catch (error) {
         set({ membersLoading: false });
+        throw error;
+      }
+    },
+    async fetchAgents(workspaceId) {
+      set({ agentsLoading: true });
+
+      try {
+        const agents = await requestAgents(workspaceId);
+        set({ agents, agentsLoading: false });
+        return agents;
+      } catch (error) {
+        set({ agentsLoading: false });
         throw error;
       }
     },
@@ -240,15 +280,22 @@ function createWorkspaceContextStore(initialValue: WorkspaceContextValue) {
         return;
       }
 
+      if (scope === "agents") {
+        set({ agents: [], agentsLoading: false });
+        return;
+      }
+
       set({
         workspaces: [],
         members: [],
         channels: [],
+        agents: [],
         workspaceId: null,
         selectedChannelId: null,
         workspacesLoading: false,
         membersLoading: false,
-        channelsLoading: false
+        channelsLoading: false,
+        agentsLoading: false
       });
     },
     sync(value) {
@@ -291,7 +338,9 @@ export function useWorkspaceContext() {
     selectedChannelId: state.selectedChannelId,
     selectedChannel: state.channels.find((channel) => channel.id === state.selectedChannelId) ?? null,
     members: state.members,
-    membersLoading: state.membersLoading
+    membersLoading: state.membersLoading,
+    agents: state.agents,
+    agentsLoading: state.agentsLoading
   })));
 }
 

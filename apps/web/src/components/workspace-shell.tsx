@@ -28,7 +28,7 @@ import {
   type ComponentRef
 } from "react";
 import { FullScreenSpinner } from "./auth-status";
-import { useWorkspaceContext, workspaceKeys } from "./workspace-context";
+import { useWorkspaceContext, workspaceKeys, type AgentSummary } from "./workspace-context";
 import { ApiError, apiFetch, resolveApiUrl } from "../lib/api";
 import { formatDateTime } from "../lib/datetime";
 import { streamSse } from "../lib/sse";
@@ -158,6 +158,40 @@ function pickFirstString(...values: Array<string | undefined>) {
   return values.find((value) => typeof value === "string" && value.trim().length > 0) ?? null;
 }
 
+/**
+ * 判断一条消息是否应该触发 AI 流式回复:
+ * - 含 @<agent name>(匹配某个 Agent) → 触发,交由后端按该 agent 回复。
+ * - 含 @AI 或不含任何 @ → 触发默认 Agent。
+ * - 仅含 @<成员名>(非 AI、非任何 agent) → 不触发,只保存消息。
+ */
+function resolveShouldTriggerAi(content: string, agents: AgentSummary[], members: { name: string }[]) {
+  const mentionMatches = content.match(/@([^\s@]+)/g);
+
+  if (!mentionMatches || mentionMatches.length === 0) {
+    return true;
+  }
+
+  const mentionedNames = mentionMatches.map((mention) => mention.slice(1));
+
+  if (mentionedNames.some((name) => name.toUpperCase() === "AI")) {
+    return true;
+  }
+
+  if (mentionedNames.some((name) => agents.some((agent) => agent.name === name))) {
+    return true;
+  }
+
+  const onlyMemberMentions = mentionedNames.every(
+    (name) => name.toUpperCase() === "ALL" || members.some((member) => member.name === name)
+  );
+
+  if (onlyMemberMentions) {
+    return false;
+  }
+
+  return true;
+}
+
 function getStatusLabel(message: Pick<ChatMessage, "senderType" | "status">) {
   if (message.status === "FAILED") {
     return "FAILED";
@@ -206,22 +240,87 @@ function createLocalMessage(partial: Omit<LocalChatMessage, "id"> & { idPrefix: 
   } satisfies LocalChatMessage;
 }
 
-function renderMessageContent(content: string) {
-  return content.split(/(@All)/g).map((part, index) => {
-    if (part !== "@All") {
-      return <span key={`${part}-${index}`}>{part}</span>;
+function renderMessageContent(content: string, agents: AgentSummary[]) {
+  const pattern = /(@All|@AI|@[^\s@]+)/g;
+
+  return content.split(pattern).map((part, index) => {
+    if (part === "@All") {
+      return (
+        <Tag
+          key={`mention-all-${index}`}
+          color="purple"
+          style={{ marginInline: 0, paddingInline: 8, borderRadius: 999 }}
+        >
+          @All
+        </Tag>
+      );
     }
 
-    return (
-      <Tag
-        key={`mention-${index}`}
-        color="purple"
-        style={{ marginInline: 0, paddingInline: 8, borderRadius: 999 }}
-      >
-        @All
-      </Tag>
-    );
+    if (part === "@AI") {
+      return (
+        <Tag
+          key={`mention-ai-${index}`}
+          color="purple"
+          style={{ marginInline: 0, paddingInline: 8, borderRadius: 999 }}
+        >
+          @AI
+        </Tag>
+      );
+    }
+
+    if (part.startsWith("@") && part.length > 1) {
+      const name = part.slice(1);
+      const matchedAgent = agents.find((agent) => agent.name === name);
+
+      if (matchedAgent) {
+        return (
+          <ExpertMentionTag key={`mention-agent-${index}`} agent={matchedAgent} />
+        );
+      }
+    }
+
+    return <span key={`${part}-${index}`}>{part}</span>;
   });
+}
+
+function ExpertMentionTag({ agent }: { agent: AgentSummary }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+      trigger="click"
+      content={<AgentInfoPanel agent={agent} />}
+    >
+      <Tag
+        color="geekblue"
+        style={{ marginInline: 0, paddingInline: 8, borderRadius: 999, cursor: "pointer" }}
+      >
+        {agent.emoji ? `${agent.emoji} ` : ""}@{agent.name}
+      </Tag>
+    </Popover>
+  );
+}
+
+function AgentInfoPanel({ agent }: { agent: AgentSummary }) {
+  return (
+    <div style={{ maxWidth: 240 }}>
+      <Typography.Text strong>
+        {agent.emoji ? `${agent.emoji} ` : ""}
+        {agent.name}
+      </Typography.Text>
+      {agent.role ? (
+        <div>
+          <Typography.Text type="secondary">{agent.role}</Typography.Text>
+        </div>
+      ) : null}
+      <div style={{ marginTop: 8 }}>
+        <Typography.Text type="secondary">我能做什么：</Typography.Text>
+        <div>{agent.description || "暂无描述"}</div>
+      </div>
+    </div>
+  );
 }
 
 export function WorkspaceShell() {
@@ -229,7 +328,7 @@ export function WorkspaceShell() {
   const screens = Grid.useBreakpoint();
   const queryClient = useQueryClient();
   const { message } = App.useApp();
-  const { workspaceId, selectedWorkspace, selectedChannel, selectedChannelId, members } = useWorkspaceContext();
+  const { workspaceId, selectedWorkspace, selectedChannel, selectedChannelId, members, agents } = useWorkspaceContext();
   const accessToken = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const [draftState, setDraftState] = useState<{ channelId: string | null; value: string }>({
@@ -524,7 +623,7 @@ export function WorkspaceShell() {
 
       setIsSending(true);
 
-      const shouldTriggerAi = content.includes("@AI");
+      const shouldTriggerAi = resolveShouldTriggerAi(content, agents, members);
       const createdAt = new Date().toISOString();
       const localUserMessageId = options?.streamOnly
         ? null
@@ -644,7 +743,9 @@ export function WorkspaceShell() {
       }
     },
     [
+      agents,
       isSending,
+      members,
       message,
       patchLocalMessage,
       refetchCurrentMessages,
@@ -740,13 +841,18 @@ export function WorkspaceShell() {
     () => [
       { label: "All members", value: "@All", icon: <TeamOutlined /> },
       { label: "AI Agent", value: "@AI", icon: <RobotOutlined /> },
+      ...agents.map((agent) => ({
+        label: `${agent.emoji ? `${agent.emoji} ` : ""}${agent.name}`,
+        value: `@${agent.name}`,
+        icon: <RobotOutlined />
+      })),
       ...members.map((member) => ({
         label: member.name,
         value: `@${member.name}`,
         icon: <UserOutlined />
       }))
     ],
-    [members]
+    [agents, members]
   );
 
   const handleMentionSelect = useCallback((value: string) => {
@@ -979,7 +1085,7 @@ export function WorkspaceShell() {
                                       </div>
                                     </>
                                   ) : (
-                                    <div className={styles.messageText}>{renderMessageContent(chatMessage.content)}</div>
+                                    <div className={styles.messageText}>{renderMessageContent(chatMessage.content, agents)}</div>
                                   )}
 
                                   {isFailed ? (
@@ -1120,7 +1226,7 @@ export function WorkspaceShell() {
                           disabled={!selectedChannel || isSending}
                           placeholder={
                             selectedChannel
-                              ? `在 #${selectedChannel.name} 中发送消息，输入 @ 可提及 AI 或成员`
+                              ? "发送消息与 AI 对话，@专家指定专家"
                               : "先选择频道"
                           }
                           onChange={(value) => {
@@ -1181,7 +1287,7 @@ export function WorkspaceShell() {
                     }}
                   </Suggestion>
                   <Typography.Text type="secondary" className={styles.composerHint}>
-                    输入 <strong>@</strong> 提及 AI 或成员，<strong>@AI</strong> 触发流式回答，Shift + Enter 换行。
+                    输入 <strong>@专家</strong> 指定专家回复，无 @ 默认由 AI 回复，<strong>@成员</strong> 仅提及不触发 AI，Shift + Enter 换行。
                   </Typography.Text>
                 </div>
               </div>

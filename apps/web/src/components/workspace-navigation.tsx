@@ -874,11 +874,11 @@ export function WorkspaceNavigation() {
                                 channel.id === selectedChannelId ? styles.channelButtonActive : ""
                               } ${sidebarCollapsed ? styles.channelButtonCollapsed : ""}`}
                               type="text"
-                              aria-label={`打开频道 # ${channel.name}`}
+                              aria-label={`打开频道 ${channel.name}`}
                               onClick={() => router.push(buildWorkspaceHref("/", workspaceId, { channelId: channel.id }))}
                             >
                               <MessageOutlined />
-                              {!sidebarCollapsed ? <span className={styles.channelLabel}># {channel.name}</span> : null}
+                              {!sidebarCollapsed ? <span className={styles.channelLabel}>{channel.name}</span> : null}
                             </Button>
                           );
 
@@ -887,7 +887,7 @@ export function WorkspaceNavigation() {
                           }
 
                           return (
-                            <Tooltip key={channel.id} title={`# ${channel.name}`} placement="right">
+                            <Tooltip key={channel.id} title={channel.name} placement="right">
                               {button}
                             </Tooltip>
                           );

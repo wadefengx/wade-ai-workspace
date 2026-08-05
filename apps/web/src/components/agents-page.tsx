@@ -26,6 +26,11 @@ type AgentItem = {
     model?: string | null;
     hasApiKey?: boolean;
   } | null;
+  emoji?: string | null;
+  role?: string | null;
+  description?: string | null;
+  systemPrompt?: string | null;
+  harness?: string;
 };
 
 type AgentFormValues = {
@@ -33,11 +38,19 @@ type AgentFormValues = {
   baseUrl: string;
   model: string;
   apiKey: string;
+  emoji: string;
+  role: string;
+  description: string;
+  systemPrompt: string;
 };
 
 type CreateAgentValues = {
   name: string;
   type: AgentType;
+  emoji?: string;
+  role?: string;
+  description?: string;
+  systemPrompt?: string;
 };
 
 const agentKeys = {
@@ -96,6 +109,58 @@ const providerPresets = [
     model: "hermes-3-llama-3.1-8b"
   }
 ] as const;
+
+const expertPresets = [
+  {
+    key: "default",
+    emoji: "🤖",
+    name: "默认助手",
+    role: "通用助手",
+    description: "回答通用问题，协助日常沟通与信息检索。",
+    systemPrompt: "你是工作区默认 AI 助手，请提供准确、简洁、有帮助的中文回答。"
+  },
+  {
+    key: "architect",
+    emoji: "🧠",
+    name: "架构师",
+    role: "资深架构师",
+    description: "负责系统设计、技术选型、架构评审与重构建议。",
+    systemPrompt: "你是一名资深系统架构师，擅长权衡可扩展性、可维护性与成本，给出结构化的架构建议。"
+  },
+  {
+    key: "designer",
+    emoji: "🎨",
+    name: "设计师",
+    role: "产品/UI 设计师",
+    description: "负责交互设计、视觉规范与用户体验优化建议。",
+    systemPrompt: "你是一名产品与 UI 设计师，擅长交互设计、视觉规范与可用性优化，请给出具体可执行的设计建议。"
+  },
+  {
+    key: "frontend",
+    emoji: "🔧",
+    name: "前端工程师",
+    role: "资深前端工程师",
+    description: "擅长 React/Next.js/性能优化与前端工程化。",
+    systemPrompt: "你是一名资深前端工程师，擅长 React、Next.js、性能优化与前端工程化，请给出可落地的代码级建议。"
+  },
+  {
+    key: "backend",
+    emoji: "⚙️",
+    name: "后端工程师",
+    role: "资深后端工程师",
+    description: "擅长服务端架构、数据库设计与 API 实现。",
+    systemPrompt: "你是一名资深后端工程师，擅长服务端架构、数据库设计与 API 实现，请给出严谨、可落地的方案。"
+  },
+  {
+    key: "qa",
+    emoji: "✅",
+    name: "QA工程师",
+    role: "QA 测试工程师",
+    description: "负责测试用例设计、缺陷分析与质量保障建议。",
+    systemPrompt: "你是一名 QA 测试工程师，擅长测试用例设计、缺陷分析与质量保障，请给出严谨全面的测试建议。"
+  }
+] as const;
+
 
 function getTypeLabel(type: AgentType) {
   return typeOptions.find((option) => option.value === type)?.label ?? type;
@@ -213,11 +278,18 @@ function AgentConfigCard({
     <div className={styles.agentConfigCard}>
       <div className={`${styles.agentConfigHeader} ${styles.summaryCardHeader}`}>
         <div className={styles.helperStack}>
-          <Typography.Title level={5}>{agent.name}</Typography.Title>
-          <Typography.Text type="secondary">{agent.engineType} · 配置保存后即时生效。</Typography.Text>
+          <Typography.Title level={5}>
+            {agent.emoji ? `${agent.emoji} ` : ""}
+            {agent.name}
+          </Typography.Title>
+          <Typography.Text type="secondary">
+            {agent.role ? `${agent.role} · ` : ""}
+            {agent.engineType} · 配置保存后即时生效。
+          </Typography.Text>
         </div>
         <Space wrap>
           {agent.isDefault ? <Tag color="blue">DEFAULT</Tag> : null}
+          <Tag color="default">harness: {agent.harness ?? "OLLAMA"}</Tag>
           <Popconfirm
             title="删除 Agent？"
             description="删除后不会保留当前 Workspace 的自定义 Provider 配置。"
@@ -246,7 +318,11 @@ function AgentConfigCard({
           type: agent.type,
           baseUrl: agent.providerConfig?.baseUrl ?? "",
           model: agent.providerConfig?.model ?? "",
-          apiKey: ""
+          apiKey: "",
+          emoji: agent.emoji ?? "",
+          role: agent.role ?? "",
+          description: agent.description ?? "",
+          systemPrompt: agent.systemPrompt ?? ""
         }}
         onFinish={(values) =>
           onSave({
@@ -306,6 +382,22 @@ function AgentConfigCard({
           </Form.Item>
         ) : null}
 
+        <Form.Item label="emoji" name="emoji">
+          <Input placeholder="例如 🧠" maxLength={8} />
+        </Form.Item>
+
+        <Form.Item label="role（角色名）" name="role">
+          <Input placeholder="例如 资深前端工程师" />
+        </Form.Item>
+
+        <Form.Item label="description（我能做什么）" name="description">
+          <Input.TextArea placeholder="简要描述该专家能做什么" autoSize={{ minRows: 2, maxRows: 4 }} />
+        </Form.Item>
+
+        <Form.Item label="systemPrompt" name="systemPrompt">
+          <Input.TextArea placeholder="留空使用默认 system prompt" autoSize={{ minRows: 2, maxRows: 6 }} />
+        </Form.Item>
+
         <Button type="primary" loading={isSaving} onClick={() => form.submit()}>
           保存配置
         </Button>
@@ -361,7 +453,11 @@ function AgentsContent() {
         method: "PATCH",
         body: {
           type: values.type,
-          providerConfig
+          providerConfig,
+          emoji: values.emoji?.trim() ?? "",
+          role: values.role?.trim() ?? "",
+          description: values.description?.trim() ?? "",
+          systemPrompt: values.systemPrompt?.trim() ?? ""
         }
       });
     },
@@ -422,15 +518,22 @@ function AgentsContent() {
           <div key={agent.id} className={styles.summaryCard}>
             <div className={styles.summaryCardHeader}>
               <div className={styles.summaryMeta}>
-                <Typography.Text strong>{agent.name}</Typography.Text>
-                <Typography.Text type="secondary">{agent.engineType}</Typography.Text>
+                <Typography.Text strong>
+                  {agent.emoji ? `${agent.emoji} ` : ""}
+                  {agent.name}
+                </Typography.Text>
+                <Typography.Text type="secondary">{agent.role || agent.engineType}</Typography.Text>
               </div>
               {agent.isDefault ? <Tag color="blue">DEFAULT</Tag> : null}
             </div>
             <div className={styles.metaRow}>
               <Tag color={getTypeTagColor(agent.type)}>{getTypeLabel(agent.type)}</Tag>
+              <Tag color="default">harness: {agent.harness ?? "OLLAMA"}</Tag>
               {providerConfig.hasApiKey ? <Tag color="success">API Key 已保存</Tag> : null}
             </div>
+            {agent.description ? (
+              <Typography.Text type="secondary">{agent.description}</Typography.Text>
+            ) : null}
             <div className={styles.agentMeta}>
               <Typography.Text type="secondary">baseUrl：{providerConfig.baseUrl?.trim() || "使用默认值"}</Typography.Text>
               <Typography.Text type="secondary">model：{providerConfig.model?.trim() || "使用默认值"}</Typography.Text>
@@ -492,7 +595,7 @@ function AgentsContent() {
           <div className={styles.agentGrid}>
             {agents.map((agent) => (
               <AgentConfigCard
-                key={`${agent.id}:${agent.type}:${agent.providerConfig?.baseUrl ?? ""}:${agent.providerConfig?.model ?? ""}:${agent.providerConfig?.hasApiKey ? 1 : 0}`}
+                key={`${agent.id}:${agent.type}:${agent.providerConfig?.baseUrl ?? ""}:${agent.providerConfig?.model ?? ""}:${agent.providerConfig?.hasApiKey ? 1 : 0}:${agent.emoji ?? ""}:${agent.role ?? ""}:${agent.description ?? ""}:${agent.systemPrompt ?? ""}`}
                 agent={agent}
                 isSaving={saveMutation.isPending && saveMutation.variables?.agentId === agent.id}
                 isDeleting={deleteMutation.isPending && deleteMutation.variables === agent.id}
@@ -521,14 +624,47 @@ function AgentsContent() {
         <Form
           form={createForm}
           layout="vertical"
-          initialValues={{ name: "", type: "OPENAI_COMPATIBLE" }}
+          initialValues={{ name: "", type: "OPENAI_COMPATIBLE", emoji: "", role: "", description: "", systemPrompt: "" }}
           onFinish={(values) => createMutation.mutate(values)}
         >
+          <Form.Item label="专家预设">
+            <Space wrap>
+              {expertPresets.map((preset) => (
+                <Button
+                  key={preset.key}
+                  size="small"
+                  onClick={() => {
+                    createForm.setFieldsValue({
+                      name: preset.name,
+                      emoji: preset.emoji,
+                      role: preset.role,
+                      description: preset.description,
+                      systemPrompt: preset.systemPrompt
+                    });
+                  }}
+                >
+                  {preset.emoji} {preset.name}
+                </Button>
+              ))}
+            </Space>
+          </Form.Item>
           <Form.Item label="名称" name="name" rules={[{ required: true, message: "请输入 Agent 名称" }]}>
             <Input placeholder="例如 DeepSeek Assistant" />
           </Form.Item>
           <Form.Item label="type" name="type" rules={[{ required: true, message: "请选择 Agent 类型" }]}>
             <Select options={typeOptions} />
+          </Form.Item>
+          <Form.Item label="emoji" name="emoji">
+            <Input placeholder="例如 🧠" maxLength={8} />
+          </Form.Item>
+          <Form.Item label="role（角色名）" name="role">
+            <Input placeholder="例如 资深前端工程师" />
+          </Form.Item>
+          <Form.Item label="description（我能做什么）" name="description">
+            <Input.TextArea placeholder="简要描述该专家能做什么" autoSize={{ minRows: 2, maxRows: 4 }} />
+          </Form.Item>
+          <Form.Item label="systemPrompt" name="systemPrompt">
+            <Input.TextArea placeholder="留空使用默认 system prompt" autoSize={{ minRows: 2, maxRows: 6 }} />
           </Form.Item>
         </Form>
       </Modal>
