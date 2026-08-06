@@ -10,6 +10,7 @@ export type Workspace = {
   id: string;
   name: string;
   icon?: string | null;
+  defaultAgentId?: string | null;
   createdAt?: string;
 };
 

@@ -12,4 +12,9 @@ export class UpdateWorkspaceDto {
   @IsString({ message: "工作区图标必须是字符串" })
   @MaxLength(50, { message: "工作区图标长度不能超过50个字符" })
   icon?: string;
+
+  @ApiPropertyOptional({ description: "默认 Agent ID，留空则清除默认 Agent", example: "65f0000000000000000000aa" })
+  @IsOptional()
+  @IsString({ message: "defaultAgentId 必须是字符串" })
+  defaultAgentId?: string | null;
 }

@@ -51,6 +51,13 @@ enum MemoryType {
   PROJECT
 }
 
+enum MemoryLevel {
+  L0_CONVERSATION
+  L1_ATOM
+  L2_SCENARIO
+  L3_PERSONA
+}
+
 model User {
   id                String            @id @default(auto()) @map("_id") @db.ObjectId
   name              String
@@ -78,12 +85,13 @@ model RefreshToken {
 }
 
 model Workspace {
-  id          String            @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  icon        String?
-  createdById String            @db.ObjectId
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id            String            @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  icon          String?
+  createdById   String            @db.ObjectId
+  defaultAgentId String?          @db.ObjectId
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
   createdBy   User              @relation("WorkspaceCreator", fields: [createdById], references: [id])
   members     WorkspaceMember[]
   channels    Channel[]
@@ -192,19 +200,26 @@ model KnowledgeChunk {
 }
 
 model Memory {
-  id              String     @id @default(auto()) @map("_id") @db.ObjectId
-  workspaceId     String     @db.ObjectId
-  userId          String?    @db.ObjectId
-  type            MemoryType
-  content         String
-  sourceMessageId String?    @db.ObjectId
-  confidence      Float?
-  enabled         Boolean    @default(true)
-  createdBy       String     @db.ObjectId
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  workspace       Workspace  @relation(fields: [workspaceId], references: [id])
-  user            User?      @relation("MemoryOwner", fields: [userId], references: [id])
+  id               String      @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId      String      @db.ObjectId
+  userId           String?     @db.ObjectId
+  level            MemoryLevel @default(L1_ATOM)
+  type             MemoryType
+  content          String
+  embedding        Float[]
+  sourceMessageId  String?     @db.ObjectId
+  sourceMessageIds String[]
+  parentMemoryId   String?     @db.ObjectId
+  confidence       Float?
+  priority         Int?        @default(0)
+  enabled          Boolean     @default(true)
+  createdBy        String      @db.ObjectId
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  workspace        Workspace   @relation(fields: [workspaceId], references: [id])
+  user             User?       @relation("MemoryOwner", fields: [userId], references: [id])
 
   @@index([workspaceId, type, enabled])
+  @@index([workspaceId, level])
+  @@index([workspaceId, userId, level])
 }

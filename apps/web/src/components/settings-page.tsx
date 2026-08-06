@@ -84,7 +84,7 @@ function SettingsContent() {
   const user = useAuthStore((state) => state.user);
   const themeMode = useThemeStore((state) => state.theme);
   const setTheme = useThemeStore((state) => state.setTheme);
-  const { workspaceId, selectedWorkspace, members, membersLoading } = useWorkspacePageContext();
+  const { workspaceId, selectedWorkspace, members, membersLoading, agents } = useWorkspacePageContext();
   const [transferTargetUserId, setTransferTargetUserId] = useState<string>();
   const [deleteWorkspaceArmed, setDeleteWorkspaceArmed] = useState(false);
   const [userSearchInput, setUserSearchInput] = useState("");
@@ -165,6 +165,30 @@ function SettingsContent() {
     },
     onError: (error) => {
       message.error(error instanceof ApiError ? error.message : "更新 Workspace 失败");
+    }
+  });
+
+  const setDefaultAgentMutation = useMutation({
+    mutationFn: (defaultAgentId: string | null) => {
+      if (!workspaceId || !selectedWorkspace) {
+        throw new Error("缺少 Workspace");
+      }
+
+      return apiFetch(`/workspaces/${workspaceId}`, {
+        method: "PATCH",
+        body: {
+          name: selectedWorkspace.name,
+          icon: resolveWorkspaceIconName(selectedWorkspace),
+          defaultAgentId
+        }
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: workspaceKeys.all });
+      message.success("默认 Agent 已更新");
+    },
+    onError: (error) => {
+      message.error(error instanceof ApiError ? error.message : "更新默认 Agent 失败");
     }
   });
 
@@ -404,6 +428,26 @@ function SettingsContent() {
               <Button icon={<EditOutlined />} onClick={() => setWorkspaceDrawerOpen(true)}>
                 编辑
               </Button>
+            </div>
+            <div className={styles.settingsRow}>
+              <div className={styles.helperStack}>
+                <Typography.Text strong>默认 Agent</Typography.Text>
+                <Typography.Text type="secondary">对话未 @ 指定 Agent 时，优先使用该 Agent。</Typography.Text>
+              </div>
+              <Select
+                style={{ minWidth: 240 }}
+                placeholder="使用系统默认 Agent"
+                allowClear
+                value={selectedWorkspace?.defaultAgentId ?? undefined}
+                loading={setDefaultAgentMutation.isPending}
+                disabled={!workspaceId}
+                options={agents.map((agent) => ({
+                  label: `${agent.emoji ? `${agent.emoji} ` : ""}${agent.name}`,
+                  value: agent.id
+                }))}
+                onChange={(value) => setDefaultAgentMutation.mutate(value ?? null)}
+                onClear={() => setDefaultAgentMutation.mutate(null)}
+              />
             </div>
           </div>
 

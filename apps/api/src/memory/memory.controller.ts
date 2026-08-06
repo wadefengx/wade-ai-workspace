@@ -51,4 +51,14 @@ export class MemoryController {
   deleteMemory(@Param("memoryId") memoryId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.memoryService.deleteMemory(memoryId, user.id);
   }
+
+  @Post("channels/:channelId/memories/extract")
+  @ApiOperation({ summary: "从频道对话抽取分层记忆(L1 原子 → L2 场景)" })
+  @ApiBearerAuth()
+  extractFromConversation(
+    @Param("channelId") channelId: string,
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    return this.memoryService.extractFromConversation(channelId, user.id);
+  }
 }

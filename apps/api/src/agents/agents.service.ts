@@ -8,6 +8,7 @@ import {
   serializeAgentProviderConfig,
   summarizeAgentProviderConfig
 } from "./agent-provider-config";
+
 import { CreateAgentDto } from "./dto/create-agent.dto";
 import { UpdateAgentDto } from "./dto/update-agent.dto";
 
@@ -176,6 +177,95 @@ export class AgentsService {
     });
 
     return { id: agentId };
+  }
+
+  async testConnection(agentId: string, userId: string) {
+    const agent = await this.prisma.agent.findUnique({
+      where: { id: agentId },
+      select: {
+        id: true,
+        workspaceId: true,
+        type: true,
+        providerConfigRef: true
+      }
+    });
+
+    if (!agent) {
+      throw new NotFoundException("Agent 不存在");
+    }
+
+    await this.ensureWorkspaceMember(agent.workspaceId, userId);
+
+    const providerConfig = parseAgentProviderConfigRef(agent.providerConfigRef);
+
+    try {
+      if (agent.type === AgentType.ANTHROPIC) {
+        return await this.testAnthropicConnection(providerConfig);
+      }
+
+      return await this.testOpenAICompatibleConnection(providerConfig);
+    } catch (error) {
+      return {
+        ok: false,
+        message: error instanceof Error ? error.message : "连接测试失败"
+      };
+    }
+  }
+
+  private async testOpenAICompatibleConnection(config: AgentProviderConfig) {
+    const baseUrl = (config.baseUrl || process.env.AI_PROVIDER_BASE_URL || "http://ollama:11434/v1").replace(/\/$/, "");
+    const endpoint = baseUrl.endsWith("/chat/completions") ? baseUrl : `${baseUrl}/chat/completions`;
+    const model = config.model || process.env.AI_PROVIDER_MODEL || "gpt-4o-mini";
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+
+    if (config.apiKey) {
+      headers.Authorization = `Bearer ${config.apiKey}`;
+    }
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model,
+        stream: false,
+        messages: [{ role: "user", content: "ping" }],
+        max_tokens: 1
+      })
+    });
+
+    if (!response.ok) {
+      const bodyText = await response.text();
+      return { ok: false, message: bodyText || `连接失败，状态码 ${response.status}` };
+    }
+
+    return { ok: true, message: "连接成功" };
+  }
+
+  private async testAnthropicConnection(config: AgentProviderConfig) {
+    const baseUrl = (config.baseUrl || "https://api.anthropic.com").replace(/\/$/, "");
+    const endpoint = baseUrl.endsWith("/messages") ? baseUrl : `${baseUrl.endsWith("/v1") ? baseUrl : `${baseUrl}/v1`}/messages`;
+    const model = config.model || "claude-3-5-sonnet-latest";
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "anthropic-version": "2023-06-01",
+        ...(config.apiKey ? { "x-api-key": config.apiKey } : {})
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 1,
+        messages: [{ role: "user", content: "ping" }]
+      })
+    });
+
+    if (!response.ok) {
+      const bodyText = await response.text();
+      return { ok: false, message: bodyText || `连接失败，状态码 ${response.status}` };
+    }
+
+    return { ok: true, message: "连接成功" };
   }
 
   private mergeProviderConfig(providerConfigRef: string | null, patch?: UpdateAgentDto["providerConfig"]) {

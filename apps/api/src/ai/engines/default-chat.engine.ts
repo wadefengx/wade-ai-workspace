@@ -5,7 +5,7 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { KnowledgeRepository } from "../../repositories/knowledge.repository";
 import { hasAgentProviderConfig, parseAgentProviderConfigRef } from "../../agents/agent-provider-config";
 import { EmbeddingService } from "../embedding.service";
-import { AIProvider, ChatCompletionMessage, ChatStreamEvent } from "../providers/ai-provider";
+import { AIProvider, ChatCitation, ChatCompletionMessage, ChatStreamEvent } from "../providers/ai-provider";
 import { AnthropicProvider } from "../providers/anthropic.provider";
 import { OpenAICompatibleProvider } from "../providers/openai-compatible.provider";
 import { AgentCapability, AgentEngine, AgentExecutionInput } from "./agent-engine";
@@ -31,7 +31,7 @@ export class DefaultChatEngine implements AgentEngine {
   ) {}
 
   async *stream(input: AgentExecutionInput): AsyncIterable<ChatStreamEvent> {
-    const [messages, targetAgent] = await Promise.all([
+    const [{ messages, citations }, targetAgent] = await Promise.all([
       this.buildPromptMessages(input),
       input.agentId
         ? this.prisma.agent.findUnique({
@@ -64,6 +64,10 @@ export class DefaultChatEngine implements AgentEngine {
         role: "system",
         content: targetAgent.systemPrompt.trim()
       };
+    }
+
+    if (citations.length > 0) {
+      yield { type: "citations", citations };
     }
 
     for await (const event of provider.stream({
@@ -120,9 +124,18 @@ export class DefaultChatEngine implements AgentEngine {
       .find((message) => message.senderType === MessageSenderType.USER)
       ?.content;
     const memoryEntries = this.buildMemoryEntries(memories);
-    const knowledgeSnippets = searchableDocument && latestUserMessage
-      ? await this.buildKnowledgeSnippets(input.workspaceId, latestUserMessage)
+    const knowledgeChunks = searchableDocument && latestUserMessage
+      ? await this.buildKnowledgeChunks(input.workspaceId, latestUserMessage)
       : [];
+    const knowledgeSnippets = knowledgeChunks.map(
+      (chunk, index) => `[^${index + 1}]: 来源：${chunk.filename}（第 ${chunk.chunkIndex + 1} 段）\n${chunk.content}`
+    );
+    const citations: ChatCitation[] = knowledgeChunks.map((chunk, index) => ({
+      index: index + 1,
+      filename: chunk.filename,
+      chunkIndex: chunk.chunkIndex,
+      content: chunk.content
+    }));
     const promptMessages: ChatCompletionMessage[] = [{
       role: "system",
       content: this.buildSystemPrompt(memoryEntries, knowledgeSnippets)
@@ -135,7 +148,7 @@ export class DefaultChatEngine implements AgentEngine {
       });
     }
 
-    return promptMessages;
+    return { messages: promptMessages, citations };
   }
 
   private buildSystemPrompt(memoryEntries: string[], knowledgeSnippets: string[]) {
@@ -146,7 +159,12 @@ export class DefaultChatEngine implements AgentEngine {
     }
 
     if (knowledgeSnippets.length > 0) {
-      sections.push(`参考资料:\n${knowledgeSnippets.join("\n\n")}`);
+      sections.push(
+        [
+          `参考资料(引用编号与 [^n] 一一对应,请在使用某条资料的内容时,在对应句子末尾标注 [^n],n 为下方编号,不要编造引用):`,
+          knowledgeSnippets.join("\n\n")
+        ].join("\n")
+      );
     }
 
     return sections.join("\n\n");
@@ -174,16 +192,14 @@ export class DefaultChatEngine implements AgentEngine {
       .filter((entry): entry is string => Boolean(entry));
   }
 
-  private async buildKnowledgeSnippets(workspaceId: string, latestUserMessage: string) {
+  private async buildKnowledgeChunks(workspaceId: string, latestUserMessage: string) {
     const queryEmbedding = await this.embeddingService.embed(latestUserMessage);
 
     if (!queryEmbedding) {
       return [];
     }
 
-    const chunks = await this.knowledgeRepository.searchSimilarChunks(workspaceId, queryEmbedding);
-
-    return chunks.map((chunk, index) => `[${index + 1}] 来源：${chunk.filename}\n${chunk.content}`);
+    return this.knowledgeRepository.searchSimilarChunks(workspaceId, queryEmbedding);
   }
 
   private truncateContent(content: string) {

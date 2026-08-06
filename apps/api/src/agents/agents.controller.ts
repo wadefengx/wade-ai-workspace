@@ -45,6 +45,13 @@ export class AgentsController {
     return this.agentsService.updateAgent(agentId, user.id, dto);
   }
 
+  @Post("agents/:agentId/test")
+  @ApiOperation({ summary: "测试 Agent Provider 连接" })
+  @ApiBearerAuth()
+  testConnection(@Param("agentId") agentId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.agentsService.testConnection(agentId, user.id);
+  }
+
   @Delete("agents/:agentId")
   @ApiOperation({ summary: "删除 Agent" })
   @ApiBearerAuth()

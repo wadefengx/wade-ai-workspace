@@ -10,6 +10,9 @@ describe("ChatService", () => {
       findFirst: jest.fn(),
       create: jest.fn()
     },
+    workspace: {
+      findUnique: jest.fn().mockResolvedValue(null)
+    },
     message: {
       create: jest.fn(),
       update: jest.fn(),

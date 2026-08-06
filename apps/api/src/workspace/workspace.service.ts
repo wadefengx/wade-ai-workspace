@@ -72,17 +72,30 @@ export class WorkspaceService {
   async updateWorkspace(workspaceId: string, userId: string, dto: UpdateWorkspaceDto) {
     await this.ensureOwnerOrGlobalAdmin(workspaceId, userId);
 
+    if (dto.defaultAgentId) {
+      const agent = await this.prisma.agent.findFirst({
+        where: { id: dto.defaultAgentId, workspaceId },
+        select: { id: true }
+      });
+
+      if (!agent) {
+        throw new BadRequestException("默认 Agent 必须属于当前工作区");
+      }
+    }
+
     return this.prisma.workspace.update({
       where: { id: workspaceId },
       data: {
         name: dto.name,
-        icon: dto.icon
+        icon: dto.icon,
+        ...(dto.defaultAgentId !== undefined ? { defaultAgentId: dto.defaultAgentId || null } : {})
       },
       select: {
         id: true,
         name: true,
         icon: true,
         createdById: true,
+        defaultAgentId: true,
         createdAt: true,
         updatedAt: true
       }

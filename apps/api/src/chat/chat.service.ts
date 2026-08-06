@@ -1,6 +1,7 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { Agent, AgentType, MessageStatus, MessageSenderType } from "@prisma/client";
 import { AGENT_ENGINE, AgentEngine } from "../ai/engines/agent-engine";
+import { ChatCitation } from "../ai/providers/ai-provider";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateMessageDto } from "./dto/create-message.dto";
 import { ListChannelMessagesQueryDto } from "./dto/list-channel-messages-query.dto";
@@ -10,6 +11,10 @@ export type ChatSseEvent =
   | {
       type: "token";
       content: string;
+    }
+  | {
+      type: "citations";
+      citations: ChatCitation[];
     }
   | {
       type: "done";
@@ -169,7 +174,9 @@ export class ChatService {
   }
 
   async *streamAgentReply(input: StreamAgentReplyInput): AsyncIterable<ChatSseEvent> {
-    const targetAgent = (await this.resolveMentionedAgent(input.workspaceId, input.content)) ?? (await this.ensureDefaultAgent(input.workspaceId));
+    const targetAgent = (await this.resolveMentionedAgent(input.workspaceId, input.content))
+      ?? (await this.resolveWorkspaceDefaultAgent(input.workspaceId))
+      ?? (await this.ensureDefaultAgent(input.workspaceId));
     const agent = targetAgent;
     // ponytail: 用户消息由前端 POST /messages 持久化,stream 只创建 AI 回复消息,避免双写
     const agentMessage = await this.prisma.message.create({
@@ -205,6 +212,14 @@ export class ChatService {
           yield {
             type: "token",
             content: event.content
+          };
+          continue;
+        }
+
+        if (event.type === "citations") {
+          yield {
+            type: "citations",
+            citations: event.citations
           };
           continue;
         }
@@ -312,6 +327,23 @@ export class ChatService {
     }
 
     return null;
+  }
+
+  private async resolveWorkspaceDefaultAgent(workspaceId: string): Promise<Agent | null> {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { defaultAgentId: true }
+    });
+
+    if (!workspace?.defaultAgentId) {
+      return null;
+    }
+
+    const agent = await this.prisma.agent.findFirst({
+      where: { id: workspace.defaultAgentId, workspaceId }
+    });
+
+    return agent ?? null;
   }
 
   private async ensureDefaultAgent(workspaceId: string): Promise<Agent> {

@@ -252,16 +252,20 @@ function AgentConfigCard({
   agent,
   isSaving,
   isDeleting,
+  isTesting,
   canManageAgents,
   onSave,
-  onDelete
+  onDelete,
+  onTest
 }: {
   agent: AgentItem;
   isSaving: boolean;
   isDeleting: boolean;
+  isTesting: boolean;
   canManageAgents: boolean;
   onSave: (payload: { agentId: string; values: AgentFormValues }) => void;
   onDelete: (agentId: string) => void;
+  onTest: (agentId: string) => void;
 }) {
   const [form] = Form.useForm<AgentFormValues>();
   const [agentType, setAgentType] = useState<AgentType>(agent.type);
@@ -445,6 +449,13 @@ function AgentConfigCard({
         <Button type="primary" loading={isSaving} onClick={() => form.submit()}>
           保存配置
         </Button>
+        <Button
+          style={{ marginLeft: 8 }}
+          loading={isTesting}
+          onClick={() => onTest(agent.id)}
+        >
+          测试连接
+        </Button>
       </Form>
     </div>
   );
@@ -553,6 +564,23 @@ function AgentsContent() {
     }
   });
 
+  const testMutation = useMutation({
+    mutationFn: (agentId: string) =>
+      apiFetch<{ ok: boolean; message: string }>(`/agents/${agentId}/test`, {
+        method: "POST"
+      }),
+    onSuccess: (result) => {
+      if (result.ok) {
+        message.success(result.message || "连接成功");
+      } else {
+        message.error(result.message || "连接失败");
+      }
+    },
+    onError: (error) => {
+      message.error(error instanceof ApiError ? error.message : "测试连接失败");
+    }
+  });
+
   const agents = useMemo(() => agentsQuery.data ?? [], [agentsQuery.data]);
 
   const summaryCards = useMemo(
@@ -645,9 +673,11 @@ function AgentsContent() {
                 agent={agent}
                 isSaving={saveMutation.isPending && saveMutation.variables?.agentId === agent.id}
                 isDeleting={deleteMutation.isPending && deleteMutation.variables === agent.id}
+                isTesting={testMutation.isPending && testMutation.variables === agent.id}
                 canManageAgents={canManageAgents}
                 onSave={(payload) => saveMutation.mutate(payload)}
                 onDelete={(agentId) => deleteMutation.mutate(agentId)}
+                onTest={(agentId) => testMutation.mutate(agentId)}
               />
             ))}
           </div>

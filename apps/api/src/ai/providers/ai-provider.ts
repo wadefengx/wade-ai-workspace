@@ -13,10 +13,21 @@ export type AIProviderStreamInput = {
   };
 };
 
+export type ChatCitation = {
+  index: number;
+  filename: string;
+  chunkIndex: number;
+  content: string;
+};
+
 export type ChatStreamEvent =
   | {
       type: "token";
       content: string;
+    }
+  | {
+      type: "citations";
+      citations: ChatCitation[];
     }
   | {
       type: "done";

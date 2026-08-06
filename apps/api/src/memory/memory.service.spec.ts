@@ -1,6 +1,8 @@
 import { BadRequestException, ForbiddenException } from "@nestjs/common";
-import { MemoryType, UserRole, WorkspaceRole } from "@prisma/client";
+import { MemoryLevel, MemoryType, UserRole, WorkspaceRole } from "@prisma/client";
 import { Test } from "@nestjs/testing";
+import { EmbeddingService } from "../ai/embedding.service";
+import { AI_PROVIDER } from "../ai/providers/ai-provider";
 import { PrismaService } from "../prisma/prisma.service";
 import { MemoryService } from "./memory.service";
 
@@ -45,6 +47,12 @@ describe("MemoryService", () => {
       providers: [{
         provide: PrismaService,
         useValue: prisma
+      }, {
+        provide: EmbeddingService,
+        useValue: { embed: jest.fn().mockResolvedValue([0.1, 0.2]) }
+      }, {
+        provide: AI_PROVIDER,
+        useValue: { stream: jest.fn().mockReturnValue([{ type: "token", content: "{}" }]) }
       }, MemoryService]
     }).compile();
     const service = module.get(MemoryService);
@@ -62,7 +70,7 @@ describe("MemoryService", () => {
           }
         }]
       },
-      orderBy: [{ type: "asc" }, { createdAt: "asc" }]
+      orderBy: [{ level: "asc" }, { createdAt: "asc" }]
     });
   });
 
@@ -81,6 +89,12 @@ describe("MemoryService", () => {
       providers: [{
         provide: PrismaService,
         useValue: prisma
+      }, {
+        provide: EmbeddingService,
+        useValue: { embed: jest.fn().mockResolvedValue([0.1, 0.2]) }
+      }, {
+        provide: AI_PROVIDER,
+        useValue: { stream: jest.fn().mockReturnValue([{ type: "token", content: "{}" }]) }
       }, MemoryService]
     }).compile();
     const service = module.get(MemoryService);
@@ -95,6 +109,7 @@ describe("MemoryService", () => {
         workspaceId: "workspace-1",
         type: MemoryType.PERSONAL,
         content: "remember this",
+        level: MemoryLevel.L1_ATOM,
         userId: "user-1",
         createdBy: "user-1"
       }
@@ -118,6 +133,12 @@ describe("MemoryService", () => {
       providers: [{
         provide: PrismaService,
         useValue: prisma
+      }, {
+        provide: EmbeddingService,
+        useValue: { embed: jest.fn().mockResolvedValue([0.1, 0.2]) }
+      }, {
+        provide: AI_PROVIDER,
+        useValue: { stream: jest.fn().mockReturnValue([{ type: "token", content: "{}" }]) }
       }, MemoryService]
     }).compile();
     const service = module.get(MemoryService);
@@ -127,7 +148,7 @@ describe("MemoryService", () => {
       where: {
         workspaceId: "workspace-1"
       },
-      orderBy: [{ type: "asc" }, { createdAt: "asc" }]
+      orderBy: [{ level: "asc" }, { createdAt: "asc" }]
     });
   });
 
@@ -151,6 +172,12 @@ describe("MemoryService", () => {
       providers: [{
         provide: PrismaService,
         useValue: prisma
+      }, {
+        provide: EmbeddingService,
+        useValue: { embed: jest.fn().mockResolvedValue([0.1, 0.2]) }
+      }, {
+        provide: AI_PROVIDER,
+        useValue: { stream: jest.fn().mockReturnValue([{ type: "token", content: "{}" }]) }
       }, MemoryService]
     }).compile();
     const service = module.get(MemoryService);
@@ -180,6 +207,12 @@ describe("MemoryService", () => {
       providers: [{
         provide: PrismaService,
         useValue: prisma
+      }, {
+        provide: EmbeddingService,
+        useValue: { embed: jest.fn().mockResolvedValue([0.1, 0.2]) }
+      }, {
+        provide: AI_PROVIDER,
+        useValue: { stream: jest.fn().mockReturnValue([{ type: "token", content: "{}" }]) }
       }, MemoryService]
     }).compile();
     const service = module.get(MemoryService);
@@ -193,6 +226,12 @@ describe("MemoryService", () => {
       providers: [{
         provide: PrismaService,
         useValue: prisma
+      }, {
+        provide: EmbeddingService,
+        useValue: { embed: jest.fn().mockResolvedValue([0.1, 0.2]) }
+      }, {
+        provide: AI_PROVIDER,
+        useValue: { stream: jest.fn().mockReturnValue([{ type: "token", content: "{}" }]) }
       }, MemoryService]
     }).compile();
     const service = module.get(MemoryService);
