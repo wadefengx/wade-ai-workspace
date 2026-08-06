@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, No
 import { MemoryLevel, MemoryType, Prisma, WorkspaceRole } from "@prisma/client";
 import { isGlobalAdmin } from "../common/auth/global-admin";
 import { AIProvider, AI_PROVIDER, ChatCompletionMessage } from "../ai/providers/ai-provider";
+import { parseAgentProviderConfigRef } from "../agents/agent-provider-config";
 import { EmbeddingService } from "../ai/embedding.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateMemoryDto } from "./dto/create-memory.dto";
@@ -102,6 +103,13 @@ export class MemoryService {
       throw new NotFoundException("频道不存在");
     }
 
+    // 取 workspace 默认 agent 的 provider 配置,LLM 抽取必须走真实模型
+    const agentConfig = await this.resolveAgentConfig(channel.workspaceId);
+    if (!agentConfig) {
+      this.logger.warn("记忆抽取跳过:workspace 无可用默认 Agent(未配置 provider)");
+      return { success: false, extractedCount: 0, storedCount: 0, sceneNames: [], reason: "NO_AGENT_CONFIG" };
+    }
+
     const recentMessages = await this.prisma.message.findMany({
       where: { channelId, senderType: "USER" },
       orderBy: { createdAt: "desc" },
@@ -119,7 +127,7 @@ export class MemoryService {
       const response = await this.collectProviderResponse([
         { role: "system", content: EXTRACTION_SYSTEM_PROMPT },
         { role: "user", content: prompt }
-      ]);
+      ], agentConfig);
 
       const parsed = this.parseExtractionResponse(response);
       if (!parsed) {
@@ -164,7 +172,7 @@ export class MemoryService {
       }
 
       if (stored.length > 0) {
-        await this.aggregateScenarios(channel.workspaceId, stored, userId);
+        await this.aggregateScenarios(channel.workspaceId, stored, userId, agentConfig);
       }
 
       return { success: true, extractedCount: parsed.scenes?.length ?? 0, storedCount: stored.length, sceneNames };
@@ -174,14 +182,37 @@ export class MemoryService {
     }
   }
 
+  /** 解析 workspace 默认 agent 的 provider 配置(LLM 抽取用) */
+  private async resolveAgentConfig(workspaceId: string): Promise<{ baseUrl?: string; apiKey?: string; model?: string } | null> {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { defaultAgentId: true }
+    });
+
+    const agent = workspace?.defaultAgentId
+      ? await this.prisma.agent.findUnique({ where: { id: workspace.defaultAgentId } })
+      : await this.prisma.agent.findFirst({ where: { workspaceId, isDefault: true } });
+
+    if (!agent) {
+      return null;
+    }
+
+    const config = parseAgentProviderConfigRef(agent.providerConfigRef);
+    if (!config.baseUrl || !config.apiKey) {
+      return null;
+    }
+
+    return config;
+  }
+
   /** L2 场景聚合:把同批 L1 按主题聚类为场景记忆 */
-  private async aggregateScenarios(workspaceId: string, memories: Array<{ id: string; content: string; type: MemoryType; level: MemoryLevel; priority: number }>, userId: string) {
+  private async aggregateScenarios(workspaceId: string, memories: Array<{ id: string; content: string; type: MemoryType; level: MemoryLevel; priority: number }>, userId: string, agentConfig: { baseUrl?: string; apiKey?: string; model?: string }) {
     try {
       const summary = memories.map((m, i) => `${i + 1}. ${m.content.slice(0, 120)}`).join("\n");
       const response = await this.collectProviderResponse([
         { role: "system", content: SCENARIO_SYSTEM_PROMPT },
         { role: "user", content: `请把以下原子记忆聚合为 1-2 个场景主题:\n${summary}` }
-      ]);
+      ], agentConfig);
 
       const scenes = this.parseScenarioResponse(response);
       for (const scene of scenes) {
@@ -249,9 +280,9 @@ export class MemoryService {
     return dot / (Math.sqrt(normA) * Math.sqrt(normB));
   }
 
-  private async collectProviderResponse(messages: ChatCompletionMessage[]): Promise<string> {
+  private async collectProviderResponse(messages: ChatCompletionMessage[], agentConfig: { baseUrl?: string; apiKey?: string; model?: string }): Promise<string> {
     let full = "";
-    for await (const event of this.aiProvider.stream({ messages })) {
+    for await (const event of this.aiProvider.stream({ messages, provider: agentConfig })) {
       if (event.type === "token") {
         full += event.content;
       }
