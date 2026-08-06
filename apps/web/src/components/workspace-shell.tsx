@@ -40,6 +40,13 @@ type MessageSenderType = "USER" | "AGENT";
 type MessageStatus = "PENDING" | "STREAMING" | "COMPLETED" | "FAILED";
 type MessageFeedback = "like" | "dislike" | null;
 
+type Citation = {
+  index: number;
+  filename: string;
+  chunkIndex: number;
+  content: string;
+};
+
 type ChatMessage = {
   id: string;
   channelId: string;
@@ -59,6 +66,7 @@ type LocalChatMessage = ChatMessage & {
   thinkingContent?: string;
   agentName?: string | null;
   modelName?: string | null;
+  citations?: Citation[];
 };
 
 type ChannelMessagesResponse = {
@@ -67,7 +75,7 @@ type ChannelMessagesResponse = {
 };
 
 type StreamEventPayload = {
-  type: "token" | "done" | "error" | "reasoning" | "thinking" | string;
+  type: "token" | "done" | "error" | "reasoning" | "thinking" | "citations" | string;
   content?: string;
   messageId?: string;
   message?: string;
@@ -77,6 +85,7 @@ type StreamEventPayload = {
   agent?: string;
   agentName?: string;
   model?: string;
+  citations?: Citation[];
 };
 
 type StreamStatusState = {
@@ -530,6 +539,14 @@ export function WorkspaceShell() {
                 status: "STREAMING"
               }));
               scrollToBottomIfNeeded();
+            }
+
+            if (payload.type === "citations" && payload.citations) {
+              patchLocalMessage(localAgentMessageId, (current) => ({
+                ...current,
+                citations: payload.citations
+              }));
+              return;
             }
 
             if (payload.type === "token" && payload.content) {
@@ -1248,6 +1265,26 @@ export function WorkspaceShell() {
                             handleSubmit();
                           }}
                           onKeyDown={(event) => {
+                            if (event.key === " " && suggestionOpenRef.current) {
+                              // Suggestion 底层 Cascader 弹层会吞掉空格键 → 手动关闭弹层并插入空格
+                              suggestionOpenRef.current = false;
+                              onTrigger(false);
+                              const textarea = composerRef.current?.inputElement as HTMLTextAreaElement | null;
+                              const currentValue = textarea?.value ?? draft;
+                              const position = textarea?.selectionStart ?? currentValue.length;
+                              const next = `${currentValue.slice(0, position)} ${currentValue.slice(position)}`;
+                              setDraftState({
+                                channelId: selectedChannelId,
+                                value: next
+                              });
+                              event.preventDefault();
+                              requestAnimationFrame(() => {
+                                textarea?.focus();
+                                const cursor = position + 1;
+                                textarea?.setSelectionRange(cursor, cursor);
+                              });
+                              return;
+                            }
                             onKeyDown?.(event);
                           }}
                           suffix={(defaultActions) => (
