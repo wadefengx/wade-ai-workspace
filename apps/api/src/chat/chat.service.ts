@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { Agent, AgentType, MessageStatus, MessageSenderType } from "@prisma/client";
+import { parseAgentProviderConfigRef } from "../agents/agent-provider-config";
 import { AGENT_ENGINE, AgentEngine } from "../ai/engines/agent-engine";
 import { ChatCitation } from "../ai/providers/ai-provider";
 import { PrismaService } from "../prisma/prisma.service";
@@ -19,6 +20,9 @@ export type ChatSseEvent =
   | {
       type: "done";
       messageId: string;
+      agentName?: string;
+      modelName?: string | null;
+      harness?: string;
     }
   | {
       type: "error";
@@ -246,7 +250,10 @@ export class ChatService {
 
       yield {
         type: "done",
-        messageId: agentMessage.id
+        messageId: agentMessage.id,
+        agentName: agent?.name,
+        modelName: this.resolveAgentModel(agent),
+        harness: agent?.harness ?? "OLLAMA"
       };
     } catch (error) {
       await this.markFailed(agentMessage.id, fullContent);
@@ -255,9 +262,16 @@ export class ChatService {
         return;
       }
 
+      const rawMessage = this.normalizeError(error);
+      const harness = agent?.harness ?? "OLLAMA";
+      const harnessHint = HARNESS_START_HINT[harness as keyof typeof HARNESS_START_HINT];
+      const message = harnessHint && this.isConnectionError(rawMessage)
+        ? `${rawMessage}。${harnessHint}`
+        : rawMessage;
+
       yield {
         type: "error",
-        message: this.normalizeError(error)
+        message
       };
     }
   }
@@ -391,4 +405,28 @@ export class ChatService {
   private isAbortError(error: unknown) {
     return error instanceof DOMException && error.name === "AbortError";
   }
+
+  private resolveAgentModel(agent: { providerConfigRef?: string | null } | null | undefined): string | null {
+    if (!agent?.providerConfigRef) {
+      return null;
+    }
+    try {
+      const config = parseAgentProviderConfigRef(agent.providerConfigRef);
+      return config.model ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private isConnectionError(message: string) {
+    return /ECONNREFUSED|fetch failed|connect|network|unreachable/i.test(message);
+  }
 }
+
+const HARNESS_START_HINT: Record<string, string> = {
+  HERMES: "请先启动 Hermes harness:hermes serve --port 9119",
+  OPENCLAW: "请先启动 OpenClaw harness:openclaw gateway",
+  OLLAMA: "请先启动本地模型:ollama serve",
+  OPENAI: "请检查 API Key 配置是否有效",
+  ANTHROPIC: "请检查 API Key 配置是否有效"
+};

@@ -85,7 +85,10 @@ describe("ChatService", () => {
       content: "Hello"
     }, {
       type: "done",
-      messageId: "agent-message-1"
+      messageId: "agent-message-1",
+      agentName: "Workspace AI",
+      modelName: null,
+      harness: "OLLAMA"
     }]);
         expect(prisma.message.create).toHaveBeenNthCalledWith(1, {
       data: {

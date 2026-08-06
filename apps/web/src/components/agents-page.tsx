@@ -39,11 +39,12 @@ type AgentFormValues = {
   type: AgentType;
   baseUrl: string;
   model: string;
-  apiKey: string;
+  apiKey?: string;
   emoji: string;
   role: string;
   description: string;
   systemPrompt: string;
+  harness: string;
   embeddingModel: string;
   embeddingBaseUrl: string;
 };
@@ -55,6 +56,7 @@ type CreateAgentValues = {
   role?: string;
   description?: string;
   systemPrompt?: string;
+  harness?: string;
 };
 
 const agentKeys = {
@@ -76,6 +78,7 @@ const providerPresets = [
     type: "OPENAI_COMPATIBLE" as AgentType,
     baseUrl: "https://api.openai.com/v1",
     model: "gpt-4o-mini",
+    harness: "OPENAI",
     hint: "需要 API Key"
   },
   {
@@ -84,6 +87,7 @@ const providerPresets = [
     type: "OPENAI_COMPATIBLE" as AgentType,
     baseUrl: "https://api.deepseek.com/v1",
     model: "deepseek-chat",
+    harness: "OPENAI",
     hint: "需要 API Key"
   },
   {
@@ -92,6 +96,7 @@ const providerPresets = [
     type: "OLLAMA" as AgentType,
     baseUrl: "http://127.0.0.1:11434/v1",
     model: "qwen3:8b",
+    harness: "OLLAMA",
     hint: "需要本地运行 ollama"
   },
   {
@@ -100,23 +105,26 @@ const providerPresets = [
     type: "ANTHROPIC" as AgentType,
     baseUrl: "https://api.anthropic.com",
     model: "claude-sonnet-4-20250514",
+    harness: "ANTHROPIC",
     hint: "需要 API Key"
   },
   {
     key: "openclaw",
     label: "OpenClaw",
     type: "OPENCLAW" as AgentType,
-    baseUrl: "http://localhost:3456/v1",
+    baseUrl: "http://localhost:18789/v1",
     model: "openclaw-7b",
-    hint: "需要本地运行 OpenClaw"
+    harness: "OPENCLAW",
+    hint: "需要本地运行 OpenClaw (openclaw gateway)"
   },
   {
     key: "hermes",
     label: "Hermes",
     type: "HERMES" as AgentType,
-    baseUrl: "http://localhost:8714/v1",
+    baseUrl: "http://localhost:9119/v1",
     model: "hermes-3-llama-3.1-8b",
-    hint: "需要本地运行 Hermes"
+    harness: "HERMES",
+    hint: "需要本地运行 Hermes (hermes serve)"
   }
 ] as const;
 
@@ -363,7 +371,8 @@ function AgentConfigCard({
                   form.setFieldsValue({
                     type: preset.type,
                     baseUrl: preset.baseUrl,
-                    model: preset.model
+                    model: preset.model,
+                    harness: preset.harness ?? "OLLAMA"
                   });
                 }}
               >
@@ -416,6 +425,19 @@ function AgentConfigCard({
 
         <Form.Item label="systemPrompt" name="systemPrompt">
           <Input.TextArea placeholder="留空使用默认 system prompt" autoSize={{ minRows: 2, maxRows: 6 }} />
+        </Form.Item>
+
+        <Form.Item label="harness（运行环境）" name="harness" initialValue="OLLAMA">
+          <Select
+            placeholder="选择 harness 运行环境"
+            options={[
+              { label: "OLLAMA（本地）", value: "OLLAMA" },
+              { label: "OPENAI（API）", value: "OPENAI" },
+              { label: "ANTHROPIC（API）", value: "ANTHROPIC" },
+              { label: "HERMES（hermes serve :9119）", value: "HERMES" },
+              { label: "OPENCLAW（openclaw gateway :18789）", value: "OPENCLAW" }
+            ]}
+          />
         </Form.Item>
 
         <Collapse
@@ -485,7 +507,7 @@ function AgentsContent() {
     mutationFn: ({ agentId, values }: { agentId: string; values: AgentFormValues }) => {
       const trimmedBaseUrl = values.baseUrl.trim();
       const trimmedModel = values.model.trim();
-      const trimmedApiKey = values.apiKey.trim();
+      const trimmedApiKey = (values.apiKey ?? "").trim();
       const providerConfig: {
         baseUrl?: string;
         model?: string;

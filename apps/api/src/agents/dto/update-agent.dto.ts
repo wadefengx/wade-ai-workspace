@@ -20,6 +20,10 @@ class UpdateAgentProviderConfigDto {
 }
 
 export class UpdateAgentDto {
+  @ApiProperty({ description: "harness 运行环境", example: "OLLAMA", required: false })
+  @IsOptional()
+  @IsString({ message: "harness 必须是字符串" })
+  harness?: string;
   @ApiProperty({ description: "Agent 展示名称", example: "Workspace AI", required: false })
   @IsOptional()
   @IsString({ message: "名称必须是字符串" })

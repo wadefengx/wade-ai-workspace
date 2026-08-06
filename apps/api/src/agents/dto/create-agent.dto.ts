@@ -65,6 +65,11 @@ export class CreateAgentDto {
   @IsString({ message: "systemPrompt 必须是字符串" })
   systemPrompt?: string;
 
+  @ApiProperty({ description: "harness 运行环境", example: "OLLAMA", required: false })
+  @IsOptional()
+  @IsString({ message: "harness 必须是字符串" })
+  harness?: string;
+
   @ApiProperty({ description: "Embedding 模型名称，留空跟随 chat provider", required: false })
   @IsOptional()
   @IsString({ message: "embeddingModel 必须是字符串" })

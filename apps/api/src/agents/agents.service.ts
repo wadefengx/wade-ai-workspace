@@ -55,7 +55,8 @@ export class AgentsService {
         emoji: dto.emoji,
         role: dto.role,
         description: dto.description,
-        systemPrompt: dto.systemPrompt
+        systemPrompt: dto.systemPrompt,
+        harness: dto.harness
       },
       select: {
         id: true,
@@ -111,6 +112,7 @@ export class AgentsService {
       dto.role === undefined &&
       dto.description === undefined &&
       dto.systemPrompt === undefined &&
+      dto.harness === undefined &&
       dto.embeddingModel === undefined &&
       dto.embeddingBaseUrl === undefined
     ) {
@@ -129,6 +131,7 @@ export class AgentsService {
         ...(dto.role !== undefined ? { role: dto.role } : {}),
         ...(dto.description !== undefined ? { description: dto.description } : {}),
         ...(dto.systemPrompt !== undefined ? { systemPrompt: dto.systemPrompt } : {}),
+        ...(dto.harness !== undefined ? { harness: dto.harness } : {}),
         ...(dto.embeddingModel !== undefined ? { embeddingModel: dto.embeddingModel } : {}),
         ...(dto.embeddingBaseUrl !== undefined ? { embeddingBaseUrl: dto.embeddingBaseUrl } : {})
       },

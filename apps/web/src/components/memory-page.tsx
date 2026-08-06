@@ -2,7 +2,7 @@
 
 import { DeleteOutlined, EditOutlined, InboxOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Form, Input, Modal, Popconfirm, Select, Space, Switch, Typography } from "antd";
+import { App, Button, Form, Input, Modal, Popconfirm, Select, Space, Switch, Tag, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { WorkspacePageFrame } from "./workspace-page-frame";
 import { useWorkspacePageContext } from "./workspace-context";
@@ -12,11 +12,14 @@ import { ApiError, apiFetch, unwrapItems } from "../lib/api";
 import { formatDateTime } from "../lib/datetime";
 
 type MemoryType = "PERSONAL" | "TEAM" | "PROJECT";
+type MemoryLevel = "L0_CONVERSATION" | "L1_ATOM" | "L2_SCENARIO" | "L3_PERSONA";
 
 type MemoryItem = {
   id: string;
   type: MemoryType;
+  level: MemoryLevel;
   content: string;
+  priority?: number | null;
   enabled: boolean;
   createdAt: string;
 };
@@ -35,28 +38,34 @@ const memoryKeys = {
 };
 
 const memoryGroups: Array<{
-  type: MemoryType;
+  level: MemoryLevel;
   title: string;
   description: string;
   emptyText: string;
 }> = [
   {
-    type: "PERSONAL",
-    title: "个人记忆",
-    description: "仅自己可见，仅会注入你的个人上下文。",
-    emptyText: "还没有个人记忆。"
+    level: "L3_PERSONA",
+    title: "L3 · 用户画像",
+    description: "从对话中提炼的用户偏好与习惯，对话时全量注入。",
+    emptyText: "还没有画像记忆。"
   },
   {
-    type: "TEAM",
-    title: "团队记忆",
-    description: "当前 Workspace 全体成员可见。",
-    emptyText: "还没有团队记忆。"
+    level: "L2_SCENARIO",
+    title: "L2 · 场景",
+    description: "同一主题的原子记忆聚合，按相关度注入。",
+    emptyText: "还没有场景记忆。"
   },
   {
-    type: "PROJECT",
-    title: "项目记忆",
-    description: "适合沉淀项目背景、约束与长期约定。",
-    emptyText: "还没有项目记忆。"
+    level: "L1_ATOM",
+    title: "L1 · 原子事实",
+    description: "单条可独立理解的事实，按需下钻检索。",
+    emptyText: "还没有原子记忆。"
+  },
+  {
+    level: "L0_CONVERSATION",
+    title: "L0 · 对话原文",
+    description: "原始对话记录，作为上层记忆的溯源证据。",
+    emptyText: "还没有对话记录。"
   }
 ];
 
@@ -149,7 +158,7 @@ function MemoryContent() {
 
     return memoryGroups.map((group) => ({
       ...group,
-      items: items.filter((item) => item.type === group.type)
+      items: items.filter((item) => item.level === group.level)
     }));
   }, [memoriesQuery.data]);
 
@@ -179,10 +188,11 @@ function MemoryContent() {
               rules={[{ required: true, message: "请选择记忆类型" }]}
             >
               <Select
-                options={memoryGroups.map((group) => ({
-                  label: group.title,
-                  value: group.type
-                }))}
+                options={[
+                  { label: "个人记忆（仅自己可见）", value: "PERSONAL" },
+                  { label: "团队记忆（全体成员）", value: "TEAM" },
+                  { label: "项目记忆（长期约定）", value: "PROJECT" }
+                ]}
               />
             </Form.Item>
             <Form.Item
@@ -210,7 +220,7 @@ function MemoryContent() {
         </div>
       ) : (
         groupedMemories.map((group) => (
-          <div key={group.type} className={styles.pageCard}>
+          <div key={group.level} className={styles.pageCard}>
             <div className={styles.sectionHeader}>
               <div>
                 <Typography.Title level={5}>{group.title}</Typography.Title>
@@ -224,7 +234,15 @@ function MemoryContent() {
                   <div key={item.id} className={styles.memoryItem}>
                     <div className={styles.memoryBody}>
                       <Typography.Paragraph className={styles.memoryContent}>{item.content}</Typography.Paragraph>
-                      <Typography.Text type="secondary">{formatDateTime(item.createdAt)}</Typography.Text>
+                      <Space size={8} wrap>
+                        <Tag color={item.type === "PERSONAL" ? "purple" : item.type === "PROJECT" ? "geekblue" : "default"}>
+                          {item.type}
+                        </Tag>
+                        {typeof item.priority === "number" && item.priority > 0 ? (
+                          <Tag color="gold">优先级 {item.priority}</Tag>
+                        ) : null}
+                        <Typography.Text type="secondary">{formatDateTime(item.createdAt)}</Typography.Text>
+                      </Space>
                     </div>
 
                     <div className={styles.memoryActions}>

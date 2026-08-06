@@ -66,6 +66,7 @@ type LocalChatMessage = ChatMessage & {
   thinkingContent?: string;
   agentName?: string | null;
   modelName?: string | null;
+  harness?: string | null;
   citations?: Citation[];
 };
 
@@ -85,6 +86,7 @@ type StreamEventPayload = {
   agent?: string;
   agentName?: string;
   model?: string;
+  harness?: string;
   citations?: Citation[];
 };
 
@@ -567,6 +569,7 @@ export function WorkspaceShell() {
                 ...current,
                 agentName,
                 modelName: modelName ?? current.modelName,
+                harness: payload.harness ?? current.harness,
                 persistedId: payload.messageId ?? current.persistedId,
                 status: "COMPLETED"
               }));
@@ -1072,6 +1075,11 @@ export function WorkspaceShell() {
                                     <span className={styles.messageAuthor}>
                                       {isUserMessage ? user.name || "You" : chatMessage.agentName || "AI Agent"}
                                     </span>
+                                    {!isUserMessage && chatMessage.harness ? (
+                                      <Tag color="blue" style={{ marginLeft: 8, fontSize: 11, lineHeight: "18px" }}>
+                                        {chatMessage.harness}
+                                      </Tag>
+                                    ) : null}
                                     <span className={styles.messageTimestamp}>{formatMessageTime(chatMessage.createdAt)}</span>
                                     {statusLabel ? <span className={styles.messageStatus}>{statusLabel}</span> : null}
                                   </div>
