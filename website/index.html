@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wade AI Workspace — AI-Native Workspace for Teams</title>
+<meta name="description" content="AI-Native Workspace for Teams: expert agents, layered memory, RAG knowledge, and team collaboration in one place.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+<style>
+  :root {
+    --bg: #0b0b0f;
+    --bg-2: #111118;
+    --accent: #024ad8;
+    --accent-2: #5b7cfa;
+    --text: #f5f5f7;
+    --text-2: #86868b;
+    --hairline: rgba(255,255,255,0.08);
+    --radius: 20px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  /* Frosted nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    background: rgba(11,11,15,0.72);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .nav-inner {
+    max-width: 1080px; margin: 0 auto; padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo { font-weight: 700; font-size: 17px; letter-spacing: -0.2px; display: flex; align-items: center; gap: 8px; }
+  .logo span { font-size: 20px; }
+  .nav-links { display: flex; gap: 28px; font-size: 14px; }
+  .nav-links a { color: var(--text-2); text-decoration: none; transition: color .2s; }
+  .nav-links a:hover { color: var(--text); }
+  .btn {
+    display: inline-block; padding: 9px 20px; border-radius: 980px;
+    background: var(--accent); color: #fff; text-decoration: none;
+    font-size: 14px; font-weight: 600; transition: all .2s; border: none; cursor: pointer;
+  }
+  .btn:hover { background: #0a58e8; transform: translateY(-1px); }
+  .btn.ghost { background: transparent; border: 1px solid var(--hairline); color: var(--text); }
+  .btn.ghost:hover { background: rgba(255,255,255,0.06); }
+
+  /* Hero */
+  header.hero {
+    min-height: 92vh; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; text-align: center;
+    padding: 120px 24px 80px;
+    position: relative;
+  }
+  .glow {
+    position: absolute; width: 640px; height: 640px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(2,74,216,0.28) 0%, transparent 65%);
+    top: 20%; left: 50%; transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 980px;
+    background: rgba(2,74,216,0.12); border: 1px solid rgba(2,74,216,0.35);
+    color: var(--accent-2); font-size: 13px; font-weight: 500; margin-bottom: 28px;
+  }
+  h1 {
+    font-size: clamp(44px, 7vw, 84px); font-weight: 800; letter-spacing: -2px;
+    line-height: 1.05; margin-bottom: 20px;
+    background: linear-gradient(180deg, #fff 55%, var(--text-2));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .sub {
+    font-size: clamp(17px, 2.2vw, 22px); color: var(--text-2); max-width: 640px;
+    margin-bottom: 40px;
+  }
+  .cta-row { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  .stats {
+    display: flex; gap: 48px; margin-top: 64px; flex-wrap: wrap; justify-content: center;
+  }
+  .stat { text-align: center; }
+  .stat b { display: block; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+  .stat small { color: var(--text-2); font-size: 13px; }
+
+  /* Sections */
+  section { max-width: 1080px; margin: 0 auto; padding: 96px 24px; }
+  .section-tag { color: var(--accent-2); font-size: 13px; font-weight: 600; letter-spacing: 1px; margin-bottom: 12px; text-transform: uppercase; }
+  h2 { font-size: clamp(30px, 4vw, 48px); font-weight: 700; letter-spacing: -1px; margin-bottom: 16px; }
+  .lead { color: var(--text-2); font-size: 17px; max-width: 640px; margin-bottom: 48px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+  .card {
+    background: var(--bg-2); border: 1px solid var(--hairline); border-radius: var(--radius);
+    padding: 28px; transition: all .25s; position: relative; overflow: hidden;
+  }
+  .card:hover { transform: translateY(-3px); border-color: rgba(2,74,216,0.4); }
+  .card .emoji { font-size: 28px; margin-bottom: 14px; display: block; }
+  .card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .card p { color: var(--text-2); font-size: 14.5px; }
+
+  /* Architecture diagram */
+  .arch {
+    background: var(--bg-2); border: 1px solid var(--hairline); border-radius: var(--radius);
+    padding: 40px; font-family: "SF Mono", ui-monospace, monospace; font-size: 13px;
+    overflow-x: auto; white-space: pre; color: var(--text-2); line-height: 1.8;
+  }
+  .arch .hl { color: var(--accent-2); }
+
+  footer {
+    border-top: 1px solid var(--hairline); padding: 40px 24px; text-align: center;
+    color: var(--text-2); font-size: 13px;
+  }
+  footer a { color: var(--text-2); text-decoration: none; }
+  footer a:hover { color: var(--text); }
+
+  @media (max-width: 640px) {
+    .nav-links { display: none; }
+    .stats { gap: 24px; }
+    section { padding: 64px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="logo"><span>🧠</span> Wade AI Workspace</div>
+    <div class="nav-links">
+      <a href="#features">能力</a>
+      <a href="#architecture">架构</a>
+      <a href="#quickstart">快速开始</a>
+      <a href="https://github.com/wadefengx/wade-ai-workspace">GitHub</a>
+    </div>
+    <a class="btn" href="https://github.com/wadefengx/wade-ai-workspace">Star on GitHub</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="glow"></div>
+  <div class="badge">✦ AI-Native Workspace · Spec-Driven · Open Source</div>
+  <h1>让团队的工作区<br>成为活的软件工厂</h1>
+  <p class="sub">专家 Agent、分层记忆、RAG 知识库与团队协作,一个空间全部沉淀。AI 记住该记住的,人专注于判断与创造。</p>
+  <div class="cta-row">
+    <a class="btn" href="#quickstart">快速开始</a>
+    <a class="btn ghost" href="https://github.com/wadefengx/wade-ai-workspace">查看源码</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>16+</b><small>Spec-Driven Phases</small></div>
+    <div class="stat"><b>L0→L3</b><small>Layered Memory</small></div>
+    <div class="stat"><b>Any LLM</b><small>API Key or Local</small></div>
+    <div class="stat"><b>598KB</b><small>First-Screen JS</small></div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="section-tag">Features</div>
+  <h2>一个工作区,沉淀一切</h2>
+  <p class="lead">从对话到知识到记忆,AI 原生地融入团队协作的每一个环节。</p>
+  <div class="grid">
+    <div class="card"><span class="emoji">🧠</span><h3>专家 Agent</h3><p>无需 @AI 即可对话;@专家名 路由到指定专家。Agent 自带 emoji、角色、描述与 system prompt,可自由配置。</p></div>
+    <div class="card"><span class="emoji">🔌</span><h3>任意 LLM Provider</h3><p>DeepSeek / OpenAI / Anthropic / OpenAI 兼容端点,或本地 Ollama。一键预设 + 连接测试,Workspace 级默认 Agent。</p></div>
+    <div class="card"><span class="emoji">📚</span><h3>RAG 知识库</h3><p>递归切片 + Embedding + 向量检索。内容 hash 去重避免重复切片,回答以 [^n] 上标引用来源。</p></div>
+    <div class="card"><span class="emoji">🗂️</span><h3>分层记忆 L0→L3</h3><p>对话 → 原子事实 → 场景 → 画像,单次 LLM 结构化抽取。渐进式披露:画像引导召回,事实按需下钻。</p></div>
+    <div class="card"><span class="emoji">👥</span><h3>团队与 RBAC</h3><p>Workspace、频道、成员;全局管理员与 Workspace 角色双体系,权限清晰隔离。</p></div>
+    <div class="card"><span class="emoji">📊</span><h3>AI 组织仪表盘</h3><p>AI 组织总览、反馈看板、Specs 与 Skills 浏览,团队 AI 资产一目了然。</p></div>
+  </div>
+</section>
+
+<section id="architecture">
+  <div class="section-tag">Architecture</div>
+  <h2>技术栈</h2>
+  <p class="lead">前后端分离,Provider 抽象让 LLM 自由切换。</p>
+  <div class="arch"><span class="hl">Frontend</span>  Next.js 16 · React 18 · Ant Design X · styled-components
+<span class="hl">Backend</span>   NestJS · Prisma · MongoDB (replica set)
+<span class="hl">AI</span>        OpenAI-compatible Provider · Anthropic · Ollama (local)
+             EmbeddingService (API + local fallback)
+<span class="hl">Infra</span>     Docker Compose · Swagger · Spec-Driven specs/ (Phase 6→16)</div>
+</section>
+
+<section id="quickstart">
+  <div class="section-tag">Quick Start</div>
+  <h2>两分钟跑起来</h2>
+  <p class="lead">Docker Compose 一键启动:Web + API + MongoDB + 可选 Ollama。</p>
+  <div class="arch"><span class="hl">$</span> cp .env.example .env
+<span class="hl">$</span> docker compose up --build
+
+Web:      http://localhost:3000
+API:      http://localhost:3001/api/health
+Swagger:  http://localhost:3001/api/swagger</div>
+  <div style="margin-top: 32px; display: flex; gap: 14px; flex-wrap: wrap;">
+    <a class="btn" href="https://github.com/wadefengx/wade-ai-workspace/blob/main/README.md">阅读 README</a>
+    <a class="btn ghost" href="https://github.com/wadefengx/wade-ai-workspace/blob/main/README_CN.md">中文版</a>
+  </div>
+</section>
+
+<footer>
+  <p>Wade AI Workspace · <a href="https://github.com/wadefengx/wade-ai-workspace">GitHub</a> · <a href="https://github.com/wadefengx/wade-ai">wade-ai 知识库</a> · MIT License</p>
+</footer>
+
+</body>
+</html>

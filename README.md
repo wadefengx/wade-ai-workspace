@@ -1,67 +1,104 @@
 # Wade AI Workspace
 
-面向团队的 **AI Native Workspace / AI Organization Platform**:spec 驱动的 AIOS 组织层(organization / runtime / registry / specs / skills / memory / harness)、多角色 lane 开发、@AI 流式对话、知识库 RAG、成员与权限管理(RBAC)、AI Organization Dashboard 与 Feedback Dashboard。
+**AI-Native Workspace for Teams** — a spec-driven AIOS organization layer that turns a workspace into a living software factory: multi-role agents, layered memory, RAG knowledge, and team collaboration in one place.
 
-> 开发其他项目前,可先读取 **[wadefengx/wade-ai](https://github.com/wadefengx/wade-ai)**(AI 使用沉淀知识库:ponytail 哲学 + AI-Native 开发体系 `AI_DEV_INSTRUCTION.md`),快速获得 AI 协作的背景知识。
+[简体中文](./README_CN.md) · [Website](https://wadefengx.github.io/wade-ai-workspace/) · [Docs](./docs/architecture.md)
 
-## 启动
+---
+
+## ✨ Highlights
+
+| Capability | What it does |
+|---|---|
+| 🧠 **Expert Agents** | Chat with AI out of the box — no `@AI` needed. Mention an expert (`@架构师`) to route to its persona. Agents carry emoji, role, description, and a configurable system prompt. |
+| 🔌 **Any LLM Provider** | Bring your own API key (DeepSeek / OpenAI / Anthropic / any OpenAI-compatible endpoint) **or** point at a local model (Ollama). Per-workspace default agent, one-click provider presets, connection testing. |
+| 📚 **RAG Knowledge** | Upload documents → recursive chunking (512-token, 15% overlap) → embeddings → vector search. Content-hash dedup skips re-chunking identical files. Answers cite their sources with `[^n]` footnotes. |
+| 🗂️ **Layered Memory (L0→L3)** | Conversation → atomic facts → scenarios → persona, distilled by LLM in a single structured pass. Progressive disclosure: personas and scenes guide recall, atoms drill down on demand. Inspired by TencentDB Agent Memory. |
+| 👥 **Team & RBAC** | Workspaces, channels, members, global admin vs workspace roles (OWNER > ADMIN > MEMBER). |
+| 📊 **Dashboards** | AI Organization dashboard, feedback dashboard, specs & skills browsing. |
+
+## 🏗️ Tech Stack
+
+| Layer | Stack |
+|---|---|
+| Frontend | Next.js 16 · React 18 · TypeScript · Ant Design X · styled-components |
+| Backend | NestJS · Prisma · MongoDB (replica set) |
+| AI | OpenAI-compatible provider abstraction · Anthropic · Ollama (optional local) · EmbeddingService (API + local fallback) |
+| Infra | Docker Compose · Swagger (`/api/swagger`) |
+
+## 🚀 Quick Start
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-首次启动会初始化 MongoDB replica set、推送 Prisma schema、写入演示工作区并下载 Ollama 聊天与 embedding 模型。模型下载时间取决于网络。
+First boot initializes the MongoDB replica set, pushes the Prisma schema, seeds a demo workspace, and (optionally) pulls local Ollama models.
 
 - Web: http://localhost:3000
 - API health: http://localhost:3001/api/health
-- **API 文档(Swagger)**: http://localhost:3001/api/swagger
+- Swagger: http://localhost:3001/api/swagger
 
-## 测试账号
+### Test accounts
 
-| 账号 | 密码 | 角色 | 说明 |
-|------|------|------|------|
-| admin@wade.local | admin | 全局管理员 | 最高权限,可查看所有 Workspace 与数据 |
-| alice@wade.local | password123 | OWNER(Team Alpha) | 主演示账号,有频道/知识库/记忆数据 |
-| bob@wade.local | password123 | MEMBER(Team Alpha) | 普通成员,权限隔离演示 |
+| Account | Password | Role | Notes |
+|---|---|---|---|
+| admin@wade.local | admin | Global admin | Full access to every workspace |
+| alice@wade.local | password123 | OWNER (Team Alpha) | Main demo account, seeded data |
+| bob@wade.local | password123 | MEMBER (Team Alpha) | Permission-isolation demo |
 
-- 注册入口可创建新账号。
-- Workspace 内角色层级:OWNER > ADMIN > MEMBER。
-- 全局管理员系统角色为 `ADMIN`。
-
-## 常用命令
+### Common commands
 
 ```bash
-# 停止并保留数据
-docker compose down
-
-# 查看服务日志
-docker compose logs -f api web
-
-# 重置所有本地数据库、上传文件和模型缓存（不可恢复）
-docker compose down -v
-
-# 在 API 容器内执行 Prisma 操作
-docker compose exec api npm run prisma:push
-docker compose exec api npm run prisma:seed
-
-# 切换 Ollama 模型：修改 .env 后重新拉取
-docker compose run --rm ollama-init
+docker compose down            # stop, keep data
+docker compose logs -f api web # follow logs
+docker compose down -v         # reset everything (destructive)
+docker compose exec api npm run prisma:push   # apply schema
+docker compose exec api npm run prisma:seed   # reseed demo data
 ```
 
-所有运行时数据均位于 Docker 命名 volume；上传文件共享在 `uploads` volume，不依赖宿主机目录。
+## 🧠 Using AI
 
-## 质量检查
+1. **Pick an LLM**: open **Agents** → pick a preset (DeepSeek/OpenAI fill baseUrl + model for you) → paste an API key → **Test connection**. Or choose Ollama for a local model.
+2. **Set the workspace default**: in Workspace settings, choose which agent replies by default.
+3. **Chat**: just type. The workspace agent answers. `@expert` routes to that expert; knowledge-base hits are cited with `[^n]`.
+4. **Upload knowledge**: **Knowledge** page → upload docs → auto-chunked + embedded. Re-uploading the same file is skipped via content hash.
+5. **Watch memory grow**: after enough messages, trigger **extract** (or it runs automatically) — the channel's conversation is distilled into L1 atomic memories, L2 scenarios, and L3 persona in the **Memory** page.
+
+## 🗂️ Monorepo Layout
+
+```text
+apps/
+  web/    Next.js 16 frontend (App Router, AntD X, styled-components)
+  api/    NestJS API (Prisma + MongoDB, AI providers, RAG, memory pipeline)
+specs/    SDD specs — every phase has a SPEC before code (Phase 6 → 16)
+docs/     architecture & API contract notes
+infra/    docker-compose, container init
+skills/   AI collaboration skills (Runtime Operating Model v2)
+```
+
+## 🧭 Project History (Spec-Driven)
+
+Every phase is spec-first: `specs/SPEC-phaseNN-*.md` was written and approved **before** implementation.
+
+- **Phase 6-13** — team workspaces, channels, AI streaming, knowledge RAG, RBAC, dashboards, UX/perf overhaul (first-screen JS 1.8MB → 598KB)
+- **Phase 14** — expert agents (emoji/role/description, presets), default AI chat without `@AI`, `#` prefix removal
+- **Phase 15** — LLM provider-ization: EmbeddingService (API + local fallback), content-hash dedup, recursive chunking, Ollama decoupling
+- **Phase 16** — layered memory L0→L3 (TencentDB-style), per-workspace default agent, RAG citations, one-click provider presets
+
+## 🧑‍💻 Development
 
 ```bash
 npm install
-npm run lint
-npm run typecheck
-npm test
+npm run dev:web      # frontend :3000
+npm run dev:api      # API :3001
+npm run typecheck && npm run lint && npm test
 ```
 
-## 数据模型与回滚
+## 🤝 Related
 
-Prisma 使用 MongoDB provider。开发中执行 `npm run db:push` 将 schema 应用到本地数据库；MongoDB 不提供 Prisma migration 文件。schema 变更应先兼容读取旧字段、完成数据回填后再删除旧字段。开发环境若需完全回滚，可使用 `docker compose down -v` 后重新启动。
+- [wade-ai](https://github.com/wadefengx/wade-ai) — knowledge base of AI collaboration practice (ponytail philosophy, AI-native dev system). Read it before driving AI on other projects.
 
-详细设计见 `docs/architecture.md`、`docs/database.md` 和 `docs/api-contracts.md`。
+## License
+
+MIT
