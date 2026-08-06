@@ -1,42 +1,50 @@
-# 数据库设计（Phase 0）
+# 数据库设计(当前)
 
-使用 PostgreSQL 保存控制面数据。工作区内源码、缓存和构建产物属于容器卷，不进入业务表。
+MongoDB(replica set,数据库名 `wade_workspace`),通过 **Prisma ORM** 访问(`apps/api/prisma/schema.prisma`)。Schema 变更流程:`prisma generate` → `prisma db push`(开发期)或迁移文件(生产)。
 
 ## 数据模型
 
-### users
+### User / RefreshToken
+- **User**:id(ObjectId)、name、email(唯一)、passwordHash、role(`USER`/`ADMIN` 全局角色)、avatarUrl。
+- **RefreshToken**:id、userId、tokenHash、expiresAt,支持令牌轮换。
 
-- `id`：主键（UUID）
-- `email`：登录标识，唯一
-- `password_hash`：仅保存密码哈希
-- `created_at`、`updated_at`
+### Workspace / WorkspaceMember
+- **Workspace**:id、name、icon、createdById、**defaultAgentId**(Phase 16:该工作区对话默认使用的 Agent)。
+- **WorkspaceMember**:workspaceId + userId 唯一,role(`OWNER` > `ADMIN` > `MEMBER`)。
+- 全局角色(User.role)与 Workspace 角色(Member.role)是**两套体系**:全局 ADMIN 可看所有 Workspace。
 
-用户与工作区是一对多关系。认证实现可在后续替换为 OAuth，而不改变工作区归属关系。
+### Channel / Message
+- **Channel**:workspaceId、name、createdById。
+- **Message**:channelId、senderType(`USER`/`AGENT`)、status(`PENDING`/`STREAMING`/`COMPLETED`/`FAILED`)、content、feedback(`like`/`dislike`)、agentId(回复来源 Agent)。
 
-### workspaces
+### Agent(Phase 14/15)
+- type:`OLLAMA` / `OPENAI_COMPATIBLE` / `ANTHROPIC` / `OPENCLAW` / `HERMES`。
+- **providerConfigRef**(只写不回,API 返回 `hasApiKey` 摘要)、engineType、isDefault。
+- 专家化字段:emoji、role、description、systemPrompt、**harness**(默认 OLLAMA)。
+- **embeddingModel / embeddingBaseUrl**(Phase 15:Embedding 可独立配置)。
 
-- `id`：主键（UUID）
-- `owner_id`：外键，指向 `users.id`
-- `name`：用户可见名称
-- `status`：`creating`、`running`、`stopped`、`failed`、`deleting`
-- `container_id`：Docker 容器标识，可为空
-- `created_at`、`updated_at`、`last_active_at`
+### KnowledgeDocument / KnowledgeChunk(RAG)
+- **KnowledgeDocument**:workspaceId、filename、mimeType、storageKey、extractionStatus、**contentHash**(sha256,Phase 15 去重:同 workspace 同 hash 跳过 reindex)。
+- **KnowledgeChunk**:documentId、content、**embedding Float[]**、chunkIndex、tokenCount。
 
-状态存于数据库而非仅依赖 Docker 查询，使失败、删除和审计均可追踪；`container_id` 可在容器重建后更新。
+### Memory(Phase 16:分层记忆 L0→L3)
+- **level**:`L0_CONVERSATION` / `L1_ATOM` / `L2_SCENARIO` / `L3_PERSONA`。
+- type:`PERSONAL`(私有)/ `TEAM` / `PROJECT`(共享)。
+- **sourceMessageIds**(溯源链,可下钻到原始对话)、parentMemoryId(层级关联)、priority、confidence、enabled、**embedding**(L1 去重:余弦 > 0.92 跳过)。
 
-## 约束与索引
+## 关键设计
 
-- `users.email`：唯一索引，防止重复账号。
-- `workspaces.owner_id`：普通索引，覆盖“列出当前用户工作区”。
-- `workspaces(owner_id, updated_at DESC)`：复合索引，覆盖按最近更新排序的列表。
-- `workspaces.status`：仅在存在后台按状态批量回收需求时建立索引；Phase 0 可延后添加。
-- 外键使用 `ON DELETE CASCADE`，删除用户时删除其控制面工作区记录；容器和卷清理由应用层显式执行。
+1. **API Key 只写不回**:Agent 的 providerConfigRef 存储,响应只返回 `hasApiKey` 布尔,杜绝密钥泄露。
+2. **RAG 去重**:contentHash(文档)+ embedding 余弦(记忆),避免重复切片/重复抽取。
+3. **渐进式披露**(TencentDB-Agent-Memory 思路):L3 画像引导召回 → L2 场景 → L1 原子事实按需下钻,全链路可追溯。
 
-## 迁移策略
+## Schema 变更流程
 
-1. 使用版本化、顺序执行的迁移文件创建和变更 schema。
-2. 每次迁移必须包含可安全重复部署的前置检查，并在部署流水线中先执行迁移再发布 API。
-3. 破坏性变更采用“新增字段/双写/回填/切换读取/删除旧字段”多版本步骤，避免应用与数据库版本错配。
-4. 生产迁移前备份；大表索引使用在线方式创建，并记录迁移执行结果。
+```bash
+# 宿主(改 schema 后)
+npm run prisma:generate --workspace=@wade/api
+# 容器内(应用变更到 DB;node_modules 独立,两边都要 generate)
+docker exec ai-workspace-api-1 sh -c "cd /app/apps/api && npx prisma generate && npx prisma db push --accept-data-loss"
+```
 
-Phase 0 不存储令牌明文、容器日志或工作区文件内容。
+> 注意:宿主机与容器的 prisma client 是**独立两份**,只 regenerate 一边会漏。Prisma 不支持 Optional 列表(`Float[]?` → P1012),用 `Float[]` + 空数组。

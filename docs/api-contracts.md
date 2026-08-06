@@ -1,77 +1,71 @@
-# API 契约（Phase 0）
+# API 契约(当前)
 
-基路径为 `/api/v1`。请求和响应均为 `application/json`，时间使用 ISO 8601 UTC，资源 ID 使用 UUID。
+基路径 `/api`(NestJS 全局前缀)。JSON,时间 ISO 8601 UTC,ID 为 MongoDB ObjectId。完整 OpenAPI 见 Swagger:http://localhost:3001/api/swagger
 
-错误响应统一为：
+认证:注册/登录后返回 `accessToken`(Bearer);`/auth/refresh` 轮换。除健康检查与注册/登录外均需 `Authorization: Bearer <token>`。
 
-```json
-{ "error": { "code": "VALIDATION_ERROR", "message": "可读错误信息" } }
-```
+## 认证 `/api/auth`
 
-常用状态码：`400` 参数错误、`401` 未认证、`403` 无权限、`404` 不存在、`409` 状态冲突、`500` 服务错误。
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | /auth/register | `{email, password, name?}` → 201 |
+| POST | /auth/login | `{email, password}` → `{accessToken, user}` |
+| POST | /auth/refresh | `{refreshToken}` → 新 token 对 |
+| POST | /auth/logout | 使当前 refresh token 失效 |
+| GET | /auth/me | 当前用户信息 |
+| PATCH | /auth/password | `{oldPassword, newPassword}` |
+
+## Workspace `/api/workspaces`(需 WorkspaceMember 权限)
+
+- `GET /`、`POST /`(建 workspace)、`GET /:id`、`PATCH /:id`、`DELETE /:id`
+- `GET /:id/channels`、`POST /:id/channels`(建频道)
+- `GET /:id/members`、`POST /:id/members`、`PATCH /members/:memberId`、`DELETE /members/:memberId`
+- Workspace 响应含 **defaultAgentId**(Phase 16:对话默认 Agent)
+
+## 聊天 `/api/channels`
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | /channels/:id/messages | 消息历史(游标分页) |
+| POST | /channels/:id/messages | `{content, mentionIds?}` → 201 消息 |
+| PATCH | /channels/:id/messages/:msgId/feedback | `{feedback: like\|dislike\|null}` |
+| POST | /channels/:id/generate-title | AI 生成对话标题 |
+| POST | /channels/:id/ai/stream | **SSE 流式 AI 回复** |
+
+**SSE 事件**(stream):`token {content}` / `citations {citations: [{index, filename, chunkIndex, content}]}` / `reasoning` / `done` / `error {message}`。
+
+## Agents `/api`(Phase 14/15/16)
+
+- `GET /workspaces/:id/agents`、`POST /workspaces/:id/agents`、`PATCH /agents/:id`、`DELETE /agents/:id`
+- `POST /agents/:id/test` — **测试连接**(调 provider 验证 baseUrl/key/model)
+- Agent 字段:name、type(OLLAMA/OPENAI_COMPATIBLE/ANTHROPIC/OPENCLAW/HERMES)、engineType、emoji、role、description、systemPrompt、harness、providerConfigRef(只写不回,响应为 `hasApiKey`)、embeddingModel/embeddingBaseUrl
+
+## Knowledge(RAG)`/api`
+
+- `POST /workspaces/:id/knowledge`(上传文档,multipart)
+- `GET /workspaces/:id/knowledge`、`PATCH /knowledge/:docId`、`DELETE /knowledge/:docId`
+- `POST /knowledge/:docId/reindex`(重新切片;contentHash 相同跳过)
+
+## Memory(Phase 16 分层)`/api`
+
+- `GET /workspaces/:id/memories`、`POST /workspaces/:id/memories`(手建)
+- `PATCH /memories/:id`、`DELETE /memories/:id`
+- **`POST /channels/:id/memories/extract`** — 从频道对话抽取 L1 原子 → L2 场景(LLM JSON,失败降级返回 `{success:false}`)
+
+## Docs / Stats / Users
+
+- `GET /docs/specs`、`GET /docs/specs/:name`、`GET /docs/skills`、`GET /docs/skills/:name`(浏览 SDD 规格与技能)
+- `GET /stats/organization`(AI 组织仪表盘)、`GET /stats/feedback`
+- `GET /users`(用户管理,全局管理员)
 
 ## 健康检查
 
-### `GET /health`
+- `GET /api/health` → `{status: "ok"}`(仅 DB ping;ollama 为可选,不影响健康)
 
-无需认证。用于负载均衡和容器探针。
-
-成功：`200`
+## 错误格式
 
 ```json
-{ "status": "ok" }
+{ "statusCode": 400, "message": "可读错误信息", "error": "Bad Request" }
 ```
 
-依赖不可用时返回 `503`，并不得泄露连接串或内部拓扑。
-
-## 认证（计划接口）
-
-### `POST /auth/register`
-
-请求：`{ "email": "user@example.com", "password": "..." }`  
-成功：`201`，返回 `{ "user": { "id": "...", "email": "..." } }`。
-
-### `POST /auth/login`
-
-请求：`{ "email": "user@example.com", "password": "..." }`  
-成功：`200`，返回用户信息和会话凭据。凭据采用安全的 HttpOnly Cookie 或 Bearer token；具体实现确定前不得同时启用两种机制。
-
-### `POST /auth/logout`
-
-需要认证。成功：`204`，使当前会话失效。
-
-### `GET /auth/me`
-
-需要认证。成功：`200`，返回当前用户 `{ "id": "...", "email": "..." }`。
-
-## 工作区（计划接口）
-
-以下接口均需要认证，且只允许资源所有者访问。
-
-### `GET /workspaces`
-
-成功：`200`
-
-```json
-{ "items": [{ "id": "...", "name": "demo", "status": "running", "updatedAt": "..." }] }
-```
-
-### `POST /workspaces`
-
-请求：`{ "name": "demo" }`。成功：`201`，返回新工作区；初始状态为 `creating`。
-
-### `GET /workspaces/{workspaceId}`
-
-成功：`200`，返回工作区详情，包括 `id`、`name`、`status`、`createdAt`、`updatedAt` 和可选的连接信息。
-
-### `POST /workspaces/{workspaceId}/start`
-
-启动已停止工作区。成功：`202`，返回当前或过渡中的状态；运行中再次调用返回 `409` 或幂等的 `200`，实现需固定一种语义。
-
-### `POST /workspaces/{workspaceId}/stop`
-
-停止运行工作区。成功：`202`；非运行状态按与 start 相同的幂等规则处理。
-
-### `DELETE /workspaces/{workspaceId}`
-
-请求删除容器、卷及控制面记录。成功：`202`；删除处理中资源不可再启动。
+常用状态码:`400` 参数、`401` 未认证、`403` 无权限、`404` 不存在、`500` 服务错误。
