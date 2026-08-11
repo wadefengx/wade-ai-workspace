@@ -17,7 +17,7 @@ import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
 import { WorkspaceMemberGuard } from "../common/guards/workspace-member.guard";
 import { AuthenticatedUser } from "../common/types/authenticated-user";
 import { UpdateKnowledgeDocumentDto } from "./dto/update-knowledge-document.dto";
-import { KnowledgeService, UploadedKnowledgeFile } from "./knowledge.service";
+import { KnowledgeService, MAX_UPLOAD_SIZE_BYTES, UploadedKnowledgeFile } from "./knowledge.service";
 
 @ApiTags("knowledge")
 @Controller()
@@ -27,7 +27,7 @@ export class KnowledgeController {
 
   @Post("workspaces/:workspaceId/knowledge")
   @UseGuards(WorkspaceMemberGuard)
-  @UseInterceptors(FileInterceptor("file"))
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: MAX_UPLOAD_SIZE_BYTES } }))
   @ApiOperation({ summary: "Upload a knowledge document" })
   @ApiBearerAuth()
   @ApiConsumes("multipart/form-data")

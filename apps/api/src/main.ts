@@ -50,6 +50,7 @@ async function bootstrap() {
   SwaggerModule.setup("swagger", app, swaggerDocument, {
     useGlobalPrefix: true
   });
+  app.enableShutdownHooks();
   await app.listen(process.env.PORT ?? 3001, "0.0.0.0");
 }
 

@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { ExtractionStatus, Prisma } from "@prisma/client";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join } from "node:path";
 import { PDFParse } from "pdf-parse";
@@ -16,6 +16,14 @@ export const KNOWLEDGE_SHORT_DOCUMENT_THRESHOLD = 600;
 const RECURSIVE_SPLIT_SEPARATORS = ["\n\n", "\n", "。", "！", "？", ".", "!", "?"];
 
 const DEFAULT_MAX_UPLOAD_SIZE_MB = 10;
+
+// ponytail: read directly from env at decorator-eval time (before DI exists) — must match instance getter below.
+export function getMaxUploadSizeBytes() {
+  const rawValue = Number(process.env.MAX_UPLOAD_SIZE_MB ?? DEFAULT_MAX_UPLOAD_SIZE_MB);
+  const mb = Number.isFinite(rawValue) && rawValue > 0 ? rawValue : DEFAULT_MAX_UPLOAD_SIZE_MB;
+  return mb * 1024 * 1024;
+}
+export const MAX_UPLOAD_SIZE_BYTES = getMaxUploadSizeBytes();
 const DEFAULT_UPLOAD_DIR = "/app/uploads";
 const INVALID_FILENAME_PATTERN = /[<>:"/\\|?*\u0000-\u001F]/;
 const SUPPORTED_MIME_TYPES: Record<string, string[]> = {
@@ -349,7 +357,7 @@ export class KnowledgeService {
   }
 
   private buildStorageKey(workspaceId: string, filename: string) {
-    return join(workspaceId, `${Date.now()}-${filename}`);
+    return join(workspaceId, `${randomUUID()}-${filename}`);
   }
 
   private resolveStoragePath(storageKey: string) {
