@@ -23,7 +23,8 @@ export function resolveCorsOrigins() {
 }
 
 export function validateRuntimeConfiguration() {
-  if (process.env.NODE_ENV === "development") {
+  // ponytail: an unset NODE_ENV is the existing local host-development contract.
+  if (process.env.NODE_ENV === undefined || process.env.NODE_ENV === "development") {
     return;
   }
 

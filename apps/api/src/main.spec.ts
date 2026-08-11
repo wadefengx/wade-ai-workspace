@@ -39,6 +39,13 @@ describe("runtime configuration", () => {
     expect(() => validateRuntimeConfiguration()).toThrow("JWT_SECRET must be set");
   });
 
+  it("permits local startup when NODE_ENV is not set", () => {
+    delete process.env.NODE_ENV;
+    process.env.JWT_SECRET = "replace-with-a-long-random-secret";
+
+    expect(() => validateRuntimeConfiguration()).not.toThrow();
+  });
+
   it("permits the development JWT secret in development", () => {
     process.env.NODE_ENV = "development";
     process.env.JWT_SECRET = "development-only-change-me";
