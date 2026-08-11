@@ -1,7 +1,10 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 import { AgentType, UserRole, WorkspaceRole } from "@prisma/client";
 import { Test } from "@nestjs/testing";
 import { PrismaService } from "../prisma/prisma.service";
+import { UpdateAgentDto } from "./dto/update-agent.dto";
 import { AgentsService } from "./agents.service";
 
 describe("AgentsService", () => {
@@ -118,7 +121,7 @@ describe("AgentsService", () => {
         model: "qwen2.5:7b"
       })
     });
-    prisma.workspaceMember.findFirst.mockResolvedValue({ id: "member-1" });
+    prisma.workspaceMember.findFirst.mockResolvedValue({ role: WorkspaceRole.ADMIN });
     prisma.agent.update.mockResolvedValue({
       id: "agent-1",
       name: "Workspace AI Plus",
@@ -232,7 +235,7 @@ describe("AgentsService", () => {
         model: "qwen3:8b"
       })
     });
-    prisma.workspaceMember.findFirst.mockResolvedValue({ id: "member-1" });
+    prisma.workspaceMember.findFirst.mockResolvedValue({ role: WorkspaceRole.ADMIN });
     const service = await createService();
 
     await expect(service.updateAgent("agent-1", "user-1", {})).resolves.toEqual({
@@ -255,6 +258,87 @@ describe("AgentsService", () => {
       harness: "OLLAMA"
     });
     expect(prisma.agent.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid agent types in update payloads", async () => {
+    const errors = await validate(plainToInstance(UpdateAgentDto, {
+      type: "NOT_A_PROVIDER"
+    }));
+
+    expect(errors).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        property: "type",
+        constraints: expect.objectContaining({
+          isEnum: "Invalid agent type"
+        })
+      })
+    ]));
+  });
+
+  it("persists an agent type change together with configuration changes in one update", async () => {
+    prisma.agent.findUnique.mockResolvedValue({
+      id: "agent-1",
+      workspaceId: "workspace-1",
+      name: "Workspace AI",
+      type: AgentType.OLLAMA,
+      engineType: "default-chat",
+      isDefault: true,
+      providerConfigRef: JSON.stringify({ model: "qwen3:8b" })
+    });
+    prisma.workspaceMember.findFirst.mockResolvedValue({ role: WorkspaceRole.OWNER });
+    prisma.agent.update.mockResolvedValue({
+      id: "agent-1",
+      name: "Workspace AI",
+      type: AgentType.ANTHROPIC,
+      engineType: "default-chat",
+      isDefault: true,
+      providerConfigRef: JSON.stringify({ model: "claude-3-5-sonnet-latest" })
+    });
+    const service = await createService();
+
+    await expect(service.updateAgent("agent-1", "owner-1", {
+      type: AgentType.ANTHROPIC,
+      providerConfig: { model: "claude-3-5-sonnet-latest" }
+    })).resolves.toMatchObject({ type: AgentType.ANTHROPIC });
+
+    expect(prisma.agent.update).toHaveBeenCalledTimes(1);
+    expect(prisma.agent.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "agent-1" },
+      data: expect.objectContaining({
+        type: AgentType.ANTHROPIC,
+        providerConfigRef: JSON.stringify({ model: "claude-3-5-sonnet-latest" })
+      })
+    }));
+  });
+
+  it("blocks workspace members from managing or testing agents", async () => {
+    const service = await createService();
+    prisma.workspaceMember.findFirst.mockResolvedValue({ role: WorkspaceRole.MEMBER });
+
+    await expect(service.createAgent("workspace-1", "member-1", {
+      name: "Blocked Agent",
+      type: AgentType.OLLAMA
+    })).rejects.toBeInstanceOf(ForbiddenException);
+
+    prisma.agent.findUnique.mockResolvedValue({
+      id: "agent-1",
+      workspaceId: "workspace-1",
+      name: "Workspace AI",
+      type: AgentType.OLLAMA,
+      engineType: "default-chat",
+      isDefault: false,
+      providerConfigRef: null
+    });
+
+    await expect(service.updateAgent("agent-1", "member-1", {
+      name: "Blocked update"
+    })).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(service.deleteAgent("agent-1", "member-1")).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(service.testConnection("agent-1", "member-1")).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(prisma.agent.create).not.toHaveBeenCalled();
+    expect(prisma.agent.update).not.toHaveBeenCalled();
+    expect(prisma.agent.delete).not.toHaveBeenCalled();
   });
 
   it("rejects deleting the default agent", async () => {

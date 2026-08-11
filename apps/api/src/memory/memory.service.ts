@@ -93,9 +93,9 @@ export class MemoryService {
    * TencentDB-Agent-Memory implementation: L0 conversations → L1 atomic facts → L2 scenarios → L3 profiles.
    * Retrieve the latest N channel messages and use one LLM call (JSON) to extract scenario segments and atomic facts; deduplicate L1 entries by embedding cosine similarity.
    */
-  async extractFromConversation(channelId: string, userId: string) {
-    const channel = await this.prisma.channel.findUnique({
-      where: { id: channelId },
+  async extractFromConversation(workspaceId: string, channelId: string, userId: string) {
+    const channel = await this.prisma.channel.findFirst({
+      where: { id: channelId, workspaceId },
       select: { id: true, workspaceId: true }
     });
 

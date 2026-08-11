@@ -177,6 +177,21 @@ describe("StatsService", () => {
       }]
     });
   });
+
+  it("blocks workspace members from global organization and feedback dashboards", async () => {
+    prisma.workspaceMember.findFirst.mockResolvedValue({ id: "member-1" });
+    const service = new StatsService(prisma as never);
+
+    await expect(service.getOrganizationStats("user-1", UserRole.USER)).rejects.toThrow(
+      "You do not have access to organization statistics"
+    );
+    await expect(service.getFeedbackStats("user-1", UserRole.USER)).rejects.toThrow(
+      "You do not have access to organization statistics"
+    );
+
+    expect(prisma.message.groupBy).not.toHaveBeenCalled();
+    expect(prisma.message.aggregateRaw).not.toHaveBeenCalled();
+  });
 });
 
 function createFixtureWorkspace(files: Record<string, string>) {

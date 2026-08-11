@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { AgentType } from "@prisma/client";
 import { Type } from "class-transformer";
-import { IsOptional, IsString, MinLength, ValidateNested } from "class-validator";
+import { IsEnum, IsOptional, IsString, MinLength, ValidateNested } from "class-validator";
 
 class UpdateAgentProviderConfigDto {
   @ApiProperty({ description: "Provider base URL", example: "http://127.0.0.1:11434/v1", required: false })
@@ -20,6 +21,16 @@ class UpdateAgentProviderConfigDto {
 }
 
 export class UpdateAgentDto {
+  @ApiProperty({
+    description: "Agent type",
+    example: AgentType.ANTHROPIC,
+    required: false,
+    enum: AgentType
+  })
+  @IsOptional()
+  @IsEnum(AgentType, { message: "Invalid agent type" })
+  type?: AgentType;
+
   @ApiProperty({ description: "Harness runtime environment", example: "OLLAMA", required: false })
   @IsOptional()
   @IsString({ message: "harness must be a string" })

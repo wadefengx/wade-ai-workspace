@@ -103,10 +103,11 @@ export class AgentsService {
       throw new NotFoundException("Agent not found");
     }
 
-    await this.ensureWorkspaceMember(agent.workspaceId, userId);
+    await this.ensureWorkspaceManager(agent.workspaceId, userId);
 
     if (
       dto.name === undefined &&
+      dto.type === undefined &&
       dto.providerConfig === undefined &&
       dto.emoji === undefined &&
       dto.role === undefined &&
@@ -124,6 +125,7 @@ export class AgentsService {
       where: { id: agentId },
       data: {
         ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.type !== undefined ? { type: dto.type } : {}),
         ...(dto.providerConfig !== undefined
           ? { providerConfigRef: serializeAgentProviderConfig(nextProviderConfig) }
           : {}),
@@ -197,7 +199,7 @@ export class AgentsService {
       throw new NotFoundException("Agent not found");
     }
 
-    await this.ensureWorkspaceMember(agent.workspaceId, userId);
+    await this.ensureWorkspaceManager(agent.workspaceId, userId);
 
     const providerConfig = parseAgentProviderConfigRef(agent.providerConfigRef);
 

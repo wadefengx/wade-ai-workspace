@@ -213,18 +213,7 @@ export class StatsService {
       return;
     }
 
-    const membership = await this.prisma.workspaceMember.findFirst({
-      where: {
-        userId
-      },
-      select: {
-        id: true
-      }
-    });
-
-    if (!membership) {
-      throw new ForbiddenException("You do not have access to organization statistics");
-    }
+    throw new ForbiddenException("You do not have access to organization statistics");
   }
 
   private countAssets(repoRoot: string) {

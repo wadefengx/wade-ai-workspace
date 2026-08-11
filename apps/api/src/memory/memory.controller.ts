@@ -1,7 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import {
+  ChannelAccessRequest,
+  ChannelMemberGuard,
+  requireChannelAccess
+} from "../common/guards/channel-member.guard";
 import { WorkspaceMemberGuard } from "../common/guards/workspace-member.guard";
 import { AuthenticatedUser } from "../common/types/authenticated-user";
 import { CreateMemoryDto } from "./dto/create-memory.dto";
@@ -53,12 +58,16 @@ export class MemoryController {
   }
 
   @Post("channels/:channelId/memories/extract")
+  @UseGuards(ChannelMemberGuard)
   @ApiOperation({ summary: "Extract layered memories from channel conversations (L1 atomic → L2 scenarios)" })
   @ApiBearerAuth()
   extractFromConversation(
+    @Req() request: ChannelAccessRequest,
     @Param("channelId") channelId: string,
     @CurrentUser() user: AuthenticatedUser
   ) {
-    return this.memoryService.extractFromConversation(channelId, user.id);
+    const channelAccess = requireChannelAccess(request);
+
+    return this.memoryService.extractFromConversation(channelAccess.workspaceId, channelId, user.id);
   }
 }

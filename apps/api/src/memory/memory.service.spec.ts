@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { MemoryLevel, MemoryType, UserRole, WorkspaceRole } from "@prisma/client";
 import { Test } from "@nestjs/testing";
 import { EmbeddingService } from "../ai/embedding.service";
@@ -19,6 +19,10 @@ describe("MemoryService", () => {
       findUnique: jest.fn()
     },
     workspaceMember: {
+      findFirst: jest.fn()
+    },
+    channel: {
+      findUnique: jest.fn(),
       findFirst: jest.fn()
     }
   };
@@ -237,5 +241,36 @@ describe("MemoryService", () => {
     const service = module.get(MemoryService);
 
     await expect(service.updateMemory("memory-1", "user-1", {})).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("scopes channel lookup to the authorized workspace before extraction", async () => {
+    prisma.channel.findFirst.mockResolvedValue(null);
+    const module = await Test.createTestingModule({
+      providers: [{
+        provide: PrismaService,
+        useValue: prisma
+      }, {
+        provide: EmbeddingService,
+        useValue: { embed: jest.fn() }
+      }, {
+        provide: AI_PROVIDER,
+        useValue: { stream: jest.fn() }
+      }, MemoryService]
+    }).compile();
+    const service = module.get(MemoryService);
+
+    await expect(service.extractFromConversation("workspace-1", "channel-other", "user-1"))
+      .rejects.toBeInstanceOf(NotFoundException);
+
+    expect(prisma.channel.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: "channel-other",
+        workspaceId: "workspace-1"
+      },
+      select: {
+        id: true,
+        workspaceId: true
+      }
+    });
   });
 });

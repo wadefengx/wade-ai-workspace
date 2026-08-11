@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "../auth/auth.module";
 import { WorkspaceMemberGuard } from "../common/guards/workspace-member.guard";
+import { ChannelMemberGuard } from "../common/guards/channel-member.guard";
 import { EmbeddingService } from "../ai/embedding.service";
 import { AI_PROVIDER } from "../ai/providers/ai-provider";
 import { OpenAICompatibleProvider } from "../ai/providers/openai-compatible.provider";
@@ -13,6 +14,7 @@ import { MemoryService } from "./memory.service";
   providers: [
     MemoryService,
     WorkspaceMemberGuard,
+    ChannelMemberGuard,
     EmbeddingService,
     OpenAICompatibleProvider,
     {
