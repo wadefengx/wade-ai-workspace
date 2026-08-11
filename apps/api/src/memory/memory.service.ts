@@ -137,6 +137,14 @@ export class MemoryService {
       const stored: Array<{ id: string; content: string; type: MemoryType; level: MemoryLevel; priority: number }> = [];
       const sceneNames: string[] = [];
 
+      // ponytail: fetch the existing L1 set once per call instead of re-querying per candidate memory.
+      const existingL1 = await this.prisma.memory.findMany({
+        where: { workspaceId: channel.workspaceId, level: MemoryLevel.L1_ATOM },
+        select: { id: true, content: true, embedding: true },
+        take: 100
+      });
+      const dedupCandidates = existingL1.filter((e) => Array.isArray(e.embedding) && (e.embedding as number[]).length > 0) as Array<{ id: string; content: string; embedding: number[] }>;
+
       for (const scene of parsed.scenes ?? []) {
         const sceneName = String(scene.scene_name ?? "Untitled scenario").slice(0, 80);
         sceneNames.push(sceneName);
@@ -147,7 +155,7 @@ export class MemoryService {
             continue;
           }
 
-          const deduped = await this.isDuplicateL1(channel.workspaceId, content);
+          const deduped = await this.isDuplicateL1(content, dedupCandidates);
           if (deduped) {
             continue;
           }
@@ -168,6 +176,10 @@ export class MemoryService {
             }
           });
           stored.push({ id: record.id, content, type, level: MemoryLevel.L1_ATOM, priority });
+          // ponytail: keep newly stored memories visible to dedup within this same batch.
+          if (embedding.length > 0) {
+            dedupCandidates.push({ id: record.id, content, embedding });
+          }
         }
       }
 
@@ -237,16 +249,10 @@ export class MemoryService {
     }
   }
 
-  /** L1 deduplication: skip entries that are semantically similar to existing workspace entries (embedding cosine similarity > threshold). */
-  private async isDuplicateL1(workspaceId: string, content: string): Promise<boolean> {
+  /** L1 deduplication: skip entries that are semantically similar to existing candidates (embedding cosine similarity > threshold). */
+  private async isDuplicateL1(content: string, candidates: Array<{ id: string; content: string; embedding: number[] }>): Promise<boolean> {
     try {
-      const existing = await this.prisma.memory.findMany({
-        where: { workspaceId, level: MemoryLevel.L1_ATOM },
-        select: { id: true, content: true, embedding: true },
-        take: 100
-      });
-
-      if (existing.length === 0) {
+      if (candidates.length === 0) {
         return false;
       }
 
@@ -255,7 +261,6 @@ export class MemoryService {
         return false;
       }
 
-      const candidates = existing.filter((e) => Array.isArray(e.embedding) && (e.embedding as number[]).length > 0) as Array<{ id: string; content: string; embedding: number[] }>;
       return candidates.some((e) => this.cosineSimilarity(queryEmbedding, e.embedding) > L1_DEDUP_THRESHOLD);
     } catch {
       return false;

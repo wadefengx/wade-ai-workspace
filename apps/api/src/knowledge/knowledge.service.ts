@@ -234,16 +234,10 @@ export class KnowledgeService {
         });
       }
 
-      await this.prisma.knowledgeChunk.deleteMany({
-        where: {
-          documentId: document.id
-        }
-      });
-      await Promise.all(
-        chunkRecords.map((chunk) => this.prisma.knowledgeChunk.create({
-          data: chunk
-        }))
-      );
+      await this.prisma.$transaction([
+        this.prisma.knowledgeChunk.deleteMany({ where: { documentId: document.id } }),
+        ...chunkRecords.map((chunk) => this.prisma.knowledgeChunk.create({ data: chunk }))
+      ]);
       await this.prisma.knowledgeDocument.update({
         where: { id: document.id },
         data: {

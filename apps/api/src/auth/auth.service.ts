@@ -1,7 +1,10 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
+  OnModuleDestroy,
+  OnModuleInit,
   UnauthorizedException
 } from "@nestjs/common";
 import { Prisma, User, UserRole } from "@prisma/client";
@@ -20,13 +23,40 @@ import * as crypto from "node:crypto";
 const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN_DAYS = 30;
 const REFRESH_TOKEN_EXPIRED_MESSAGE = "Session has expired; please sign in again";
+const EXPIRED_TOKEN_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(AuthService.name);
+  private sweepInterval?: NodeJS.Timeout;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService
   ) {}
+
+  onModuleInit() {
+    // ponytail: setInterval instead of @nestjs/schedule — one job, no new dependency needed.
+    this.sweepInterval = setInterval(() => {
+      void this.sweepExpiredRefreshTokens();
+    }, EXPIRED_TOKEN_SWEEP_INTERVAL_MS);
+    this.sweepInterval.unref();
+  }
+
+  onModuleDestroy() {
+    clearInterval(this.sweepInterval);
+  }
+
+  async sweepExpiredRefreshTokens() {
+    const { count } = await this.prisma.refreshToken.deleteMany({
+      where: { expiresAt: { lte: new Date() } }
+    });
+    if (count > 0) {
+      this.logger.log(`Swept ${count} expired refresh token(s)`);
+    }
+    return count;
+  }
+
 
   async register(dto: RegisterDto) {
     const existingUser = await this.prisma.user.findUnique({

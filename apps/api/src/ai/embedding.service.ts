@@ -14,6 +14,12 @@ const DEFAULT_OPENAI_EMBEDDING_MODEL = "text-embedding-3-small";
 export class EmbeddingService {
   private readonly logger = new Logger(EmbeddingService.name);
 
+  // ponytail: strip anything matching the configured key so an echoing endpoint can't leak it into logs.
+  private redact(text: string, apiKey?: string) {
+    const truncated = text.slice(0, 500);
+    return apiKey ? truncated.split(apiKey).join("[REDACTED]") : truncated;
+  }
+
   async embed(input: string, config?: EmbeddingProviderConfig): Promise<number[] | null> {
     try {
       if (config?.baseUrl && config?.apiKey) {
@@ -43,7 +49,8 @@ export class EmbeddingService {
     });
 
     if (!response.ok) {
-      throw new Error(await response.text() || `Embedding request failed with status ${response.status}`);
+      const body = await response.text();
+      throw new Error(this.redact(body, config.apiKey) || `Embedding request failed with status ${response.status}`);
     }
 
     const payload = await response.json() as {
