@@ -32,11 +32,23 @@ describe("runtime configuration", () => {
   it("rejects a missing or placeholder JWT secret outside development", () => {
     process.env.NODE_ENV = "production";
     process.env.JWT_SECRET = "replace-with-a-long-random-secret";
+    process.env.CREDENTIAL_ENCRYPTION_KEY = "a-real-production-key";
 
     expect(() => validateRuntimeConfiguration()).toThrow("JWT_SECRET must be set");
 
     delete process.env.JWT_SECRET;
     expect(() => validateRuntimeConfiguration()).toThrow("JWT_SECRET must be set");
+  });
+
+  it("rejects a missing or placeholder credential encryption key outside development", () => {
+    process.env.NODE_ENV = "production";
+    process.env.JWT_SECRET = "a-real-production-secret";
+    process.env.CREDENTIAL_ENCRYPTION_KEY = "replace-with-a-long-random-secret";
+
+    expect(() => validateRuntimeConfiguration()).toThrow("CREDENTIAL_ENCRYPTION_KEY must be set");
+
+    delete process.env.CREDENTIAL_ENCRYPTION_KEY;
+    expect(() => validateRuntimeConfiguration()).toThrow("CREDENTIAL_ENCRYPTION_KEY must be set");
   });
 
   it("permits local startup when NODE_ENV is not set", () => {

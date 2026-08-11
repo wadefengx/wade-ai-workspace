@@ -26,8 +26,8 @@ export function resolveCorsOrigins() {
 }
 
 export function validateRuntimeConfiguration() {
-  // ponytail: an unset NODE_ENV is the existing local host-development contract.
-  if (process.env.NODE_ENV === undefined || process.env.NODE_ENV === "development") {
+  // ponytail: an unset NODE_ENV is the existing local host-development contract; "test" is jest's own default.
+  if (process.env.NODE_ENV === undefined || process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
     return;
   }
 
@@ -35,6 +35,12 @@ export function validateRuntimeConfiguration() {
 
   if (!jwtSecret || JWT_SECRET_PLACEHOLDERS.has(jwtSecret)) {
     throw new Error("JWT_SECRET must be set to a non-placeholder value outside development");
+  }
+
+  const credentialKey = process.env.CREDENTIAL_ENCRYPTION_KEY?.trim();
+
+  if (!credentialKey || JWT_SECRET_PLACEHOLDERS.has(credentialKey)) {
+    throw new Error("CREDENTIAL_ENCRYPTION_KEY must be set to a non-placeholder value outside development");
   }
 }
 

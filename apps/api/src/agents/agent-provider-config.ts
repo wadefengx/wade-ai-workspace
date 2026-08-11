@@ -1,3 +1,5 @@
+import { decryptSecret, encryptSecret } from "../common/crypto/secret-cipher";
+
 export type AgentProviderConfig = {
   baseUrl?: string;
   apiKey?: string;
@@ -31,7 +33,7 @@ export function parseAgentProviderConfigRef(providerConfigRef?: string | null): 
 
   return {
     baseUrl: readOptionalString(config.baseUrl),
-    apiKey: readOptionalString(config.apiKey),
+    apiKey: decryptSecret(readOptionalString(config.apiKey)),
     model: readOptionalString(config.model)
   };
 }
@@ -39,7 +41,7 @@ export function parseAgentProviderConfigRef(providerConfigRef?: string | null): 
 export function serializeAgentProviderConfig(config: AgentProviderConfig) {
   const normalizedConfig = {
     baseUrl: readOptionalString(config.baseUrl),
-    apiKey: readOptionalString(config.apiKey),
+    apiKey: encryptSecret(readOptionalString(config.apiKey)),
     model: readOptionalString(config.model)
   };
 
