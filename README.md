@@ -44,8 +44,12 @@ First boot initializes the MongoDB replica set, pushes the Prisma schema, seeds 
 | Account | Password | Role | Notes |
 |---|---|---|---|
 | admin@wade.local | admin | Global admin | Full access to every workspace |
-| alice@wade.local | password123 | OWNER (Team Alpha) | Main demo account, seeded data |
-| bob@wade.local | password123 | MEMBER (Team Alpha) | Permission-isolation demo |
+
+`demo@wade.local` is created as the demo workspace owner but is not a login account.
+
+### Data persistence
+
+Docker stores MongoDB data in the named volume `ai-workspace_mongodb_data`. `docker compose down` preserves it; `docker compose down -v` deletes it and resets local data.
 
 ### Common commands
 
@@ -88,10 +92,31 @@ Every phase is spec-first: `specs/SPEC-phaseNN-*.md` was written and approved **
 
 ## 🧑‍💻 Development
 
+### Host development
+
+Host mode runs only the API and web processes; MongoDB must be running separately. It uses the same Docker MongoDB volume as Compose when the database port is `27017`.
+
 ```bash
 npm install
-npm run dev:web      # frontend :3000
-npm run dev:api      # API :3001
+cp apps/api/.env.example apps/api/.env
+
+docker compose up -d mongodb  # start MongoDB and preserve ai-workspace_mongodb_data
+npm run dev:api               # API :3001
+npm run dev:web               # web :3000
+```
+
+The host API reads `apps/api/.env`. Keep `directConnection=true`: the Docker replica set advertises `mongodb:27017`, which the host cannot resolve.
+
+### Full Docker stack
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Compose starts MongoDB, Ollama, API, and web together. Both modes access the same data only when host mode connects to the Compose MongoDB above.
+
+```bash
 npm run typecheck && npm run lint && npm test
 ```
 

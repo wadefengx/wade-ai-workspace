@@ -44,8 +44,12 @@ docker compose up --build
 | 账号 | 密码 | 角色 | 说明 |
 |---|---|---|---|
 | admin@wade.local | admin | 全局管理员 | 最高权限,可查看所有 Workspace 与数据 |
-| alice@wade.local | password123 | OWNER(Team Alpha) | 主演示账号,含种子数据 |
-| bob@wade.local | password123 | MEMBER(Team Alpha) | 权限隔离演示 |
+
+`demo@wade.local` 是演示 Workspace 的所属用户,但不能用于登录。
+
+### 数据持久化
+
+Docker 将 MongoDB 数据保存在命名卷 `ai-workspace_mongodb_data`。`docker compose down` 会保留数据；`docker compose down -v` 会删除该卷并重置本地数据。
 
 ### 常用命令
 
@@ -88,10 +92,31 @@ skills/   AI 协作技能(Runtime Operating Model v2)
 
 ## 🧑‍💻 开发
 
+### 宿主机开发
+
+宿主机模式只启动 API 与 Web，MongoDB 必须单独运行。MongoDB 使用 `27017` 端口时，它与 Compose 共用同一个 Docker 数据卷。
+
 ```bash
 npm install
-npm run dev:web      # 前端 :3000
-npm run dev:api      # API :3001
+cp apps/api/.env.example apps/api/.env
+
+docker compose up -d mongodb  # 启动 MongoDB，保留 ai-workspace_mongodb_data
+npm run dev:api               # API :3001
+npm run dev:web               # 前端 :3000
+```
+
+宿主机 API 读取 `apps/api/.env`。请保留 `directConnection=true`：Docker 副本集会广播宿主机无法解析的 `mongodb:27017`。
+
+### Docker 全栈
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Compose 会一并启动 MongoDB、Ollama、API 与 Web。只有宿主机模式连接到上面启动的 Compose MongoDB 时，两种方式才会访问同一份数据。
+
+```bash
 npm run typecheck && npm run lint && npm test
 ```
 
