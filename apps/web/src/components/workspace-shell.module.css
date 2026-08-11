@@ -9,12 +9,13 @@
 
 .sidebar {
   --sidebar-width: 280px;
+  --sidebar-inline-padding: 20px;
   display: flex;
   min-height: 0;
   width: var(--sidebar-width);
   flex: 0 0 var(--sidebar-width);
   flex-direction: column;
-  padding: 28px 20px;
+  padding: 28px var(--sidebar-inline-padding);
   border-right: 1px solid var(--line);
   background: var(--surface-subtle);
   overflow: hidden;
@@ -33,6 +34,8 @@
 .sidebarContent {
   flex: 1 1 auto;
   min-height: 0;
+  margin-right: calc(-1 * var(--sidebar-inline-padding));
+  padding-right: var(--sidebar-inline-padding);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
@@ -40,7 +43,8 @@
 
 .sidebarCollapsed {
   --sidebar-width: 64px;
-  padding-inline: 12px;
+  --sidebar-inline-padding: 12px;
+  padding-inline: var(--sidebar-inline-padding);
 }
 
 .sidebarHeader {
