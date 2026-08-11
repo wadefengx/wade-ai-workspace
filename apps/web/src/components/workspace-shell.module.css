@@ -17,12 +17,25 @@
   padding: 28px 20px;
   border-right: 1px solid var(--line);
   background: var(--surface-subtle);
-  overflow-y: auto;
+  overflow: hidden;
   overscroll-behavior: contain;
   transition:
     width 0.2s ease,
     flex-basis 0.2s ease,
     padding 0.2s ease;
+}
+
+.sidebarHeader,
+.sidebarFooter {
+  flex: 0 0 auto;
+}
+
+.sidebarContent {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .sidebarCollapsed {

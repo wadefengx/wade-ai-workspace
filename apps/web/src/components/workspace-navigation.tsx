@@ -697,8 +697,9 @@ export function WorkspaceNavigation() {
           </div>
         </div>
 
-        <div className={styles.workspaceControls}>
-          <div className={styles.sectionHeader}>
+        <div className={styles.sidebarContent}>
+          <div className={styles.workspaceControls}>
+            <div className={styles.sectionHeader}>
             {sidebarCollapsed ? (
               <Tooltip title={selectedWorkspace?.name ?? "Workspace"} placement="right">
                 <span className={styles.sectionIcon}>{renderWorkspaceIcon(resolveWorkspaceIconName(selectedWorkspace))}</span>
@@ -981,8 +982,9 @@ export function WorkspaceNavigation() {
           </div>
           ) : null}
         </div>
+        </div>
 
-        <SidebarFooter>
+        <SidebarFooter className={styles.sidebarFooter}>
           <UserCard
             type="button"
             $collapsed={sidebarCollapsed}
