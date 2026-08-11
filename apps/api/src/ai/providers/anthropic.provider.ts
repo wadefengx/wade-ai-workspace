@@ -1,5 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { AIProvider, AIProviderStreamInput, ChatStreamEvent } from "./ai-provider";
+import {
+  AIProvider,
+  AIProviderStreamInput,
+  ChatStreamEvent,
+  createProviderRequestSignal
+} from "./ai-provider";
 
 type AnthropicEvent = {
   event?: string;
@@ -31,15 +36,21 @@ const DEFAULT_MAX_TOKENS = 1024;
 export class AnthropicProvider implements AIProvider {
   async *stream(input: AIProviderStreamInput): AsyncIterable<ChatStreamEvent> {
     const config = this.resolveConfig(input);
-    const response = await fetch(config.endpoint, {
-      method: "POST",
-      headers: config.headers,
-      body: JSON.stringify(this.buildRequestBody(input.messages, config.model)),
-      signal: input.abortSignal
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(config.endpoint, {
+        method: "POST",
+        headers: config.headers,
+        body: JSON.stringify(this.buildRequestBody(input.messages, config.model)),
+        signal: createProviderRequestSignal(input.abortSignal)
+      });
+    } catch {
+      throw new Error("AI provider request failed");
+    }
 
     if (!response.ok) {
-      throw new Error(await this.normalizeError(response));
+      throw new Error(this.errorMessageForStatus(response.status));
     }
 
     if (!response.body) {
@@ -48,12 +59,10 @@ export class AnthropicProvider implements AIProvider {
 
     for await (const event of this.readServerSentEvents(response.body)) {
       const payload = this.parseChunk(event.data);
-      const errorMessage = payload.error?.message;
-
-      if (errorMessage) {
+      if (payload.error?.message) {
         yield {
           type: "error",
-          message: errorMessage
+          message: "AI provider request failed"
         };
         return;
       }
@@ -128,24 +137,24 @@ export class AnthropicProvider implements AIProvider {
     }
   }
 
-  private async normalizeError(response: Response) {
-    const fallbackMessage = `Anthropic provider request failed with status ${response.status}`;
-    const bodyText = await response.text();
-
-    if (!bodyText) {
-      return fallbackMessage;
+  private errorMessageForStatus(status: number) {
+    if (status === 401 || status === 403) {
+      return `AI provider authentication failed (status ${status})`;
     }
 
-    try {
-      const payload = JSON.parse(bodyText) as {
-        error?: { message?: string };
-        message?: string;
-      };
-
-      return payload.error?.message ?? payload.message ?? bodyText;
-    } catch {
-      return bodyText;
+    if (status === 408 || status === 504) {
+      return `AI provider request timed out (status ${status})`;
     }
+
+    if (status === 429) {
+      return `AI provider rate limit reached (status ${status})`;
+    }
+
+    if (status >= 500) {
+      return `AI provider is temporarily unavailable (status ${status})`;
+    }
+
+    return `AI provider request failed (status ${status})`;
   }
 
   private async *readServerSentEvents(body: ReadableStream<Uint8Array>) {

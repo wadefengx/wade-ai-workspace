@@ -109,6 +109,36 @@ describe("AnthropicProvider", () => {
       model: "workspace-model"
     }));
   });
+
+  it("does not expose upstream stream errors", async () => {
+    const sentinel = "anthropic-response-sentinel";
+    global.fetch = jest.fn().mockResolvedValue(createResponse([
+      `event: error\ndata: {"error":{"message":"${sentinel}"}}\n\n`
+    ])) as typeof fetch;
+    const provider = new AnthropicProvider();
+
+    await expect(collect(provider.stream({
+      messages: [{ role: "user", content: "hello" }]
+    }))).resolves.toEqual([{
+      type: "error",
+      message: "AI provider request failed"
+    }]);
+  });
+
+  it("uses a bounded request timeout", async () => {
+    global.fetch = jest.fn().mockResolvedValue(createResponse([
+      "event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n"
+    ])) as typeof fetch;
+    const provider = new AnthropicProvider();
+
+    await collect(provider.stream({
+      messages: [{ role: "user", content: "hello" }]
+    }));
+
+    expect((global.fetch as jest.Mock).mock.calls[0]?.[1]).toEqual(expect.objectContaining({
+      signal: expect.any(AbortSignal)
+    }));
+  });
 });
 
 async function collect<T>(iterable: AsyncIterable<T>) {

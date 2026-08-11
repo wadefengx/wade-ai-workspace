@@ -209,10 +209,10 @@ export class AgentsService {
       }
 
       return await this.testOpenAICompatibleConnection(providerConfig);
-    } catch (error) {
+    } catch {
       return {
         ok: false,
-        message: error instanceof Error ? error.message : "Connection test failed"
+        message: "Connection test failed"
       };
     }
   }
@@ -235,12 +235,12 @@ export class AgentsService {
         stream: false,
         messages: [{ role: "user", content: "ping" }],
         max_tokens: 1
-      })
+      }),
+      signal: AbortSignal.timeout(10_000)
     });
 
     if (!response.ok) {
-      const bodyText = await response.text();
-      return { ok: false, message: bodyText || `Connection failed with status ${response.status}` };
+      return this.connectionFailure(response.status);
     }
 
     return { ok: true, message: "Connection successful" };
@@ -262,15 +262,35 @@ export class AgentsService {
         model,
         max_tokens: 1,
         messages: [{ role: "user", content: "ping" }]
-      })
+      }),
+      signal: AbortSignal.timeout(10_000)
     });
 
     if (!response.ok) {
-      const bodyText = await response.text();
-      return { ok: false, message: bodyText || `Connection failed with status ${response.status}` };
+      return this.connectionFailure(response.status);
     }
 
     return { ok: true, message: "Connection successful" };
+  }
+
+  private connectionFailure(status: number) {
+    if (status === 401 || status === 403) {
+      return { ok: false, status, message: "Provider authentication failed" };
+    }
+
+    if (status === 408 || status === 504) {
+      return { ok: false, status, message: "Provider request timed out" };
+    }
+
+    if (status === 429) {
+      return { ok: false, status, message: "Provider rate limit reached" };
+    }
+
+    if (status >= 500) {
+      return { ok: false, status, message: "Provider is temporarily unavailable" };
+    }
+
+    return { ok: false, status, message: "Provider connection failed" };
   }
 
   private mergeProviderConfig(providerConfigRef: string | null, patch?: UpdateAgentDto["providerConfig"]) {

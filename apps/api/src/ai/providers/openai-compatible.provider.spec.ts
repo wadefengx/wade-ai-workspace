@@ -51,11 +51,10 @@ describe("OpenAICompatibleProvider", () => {
     );
   });
 
-  it("normalizes non-2xx provider errors", async () => {
+  it("returns a categorized error without upstream response text", async () => {
+    const sentinel = "provider-response-sentinel";
     global.fetch = jest.fn().mockResolvedValue(new Response(JSON.stringify({
-      error: {
-        message: "upstream rejected the request"
-      }
+      error: { message: sentinel }
     }), {
       status: 401,
       headers: {
@@ -69,7 +68,23 @@ describe("OpenAICompatibleProvider", () => {
         role: "user",
         content: "hello"
       }]
-    }))).rejects.toThrow("upstream rejected the request");
+    }))).rejects.toThrow("AI provider authentication failed (status 401)");
+    await expect(collect(provider.stream({
+      messages: [{ role: "user", content: "hello" }]
+    }))).rejects.not.toThrow(sentinel);
+  });
+
+  it("uses a bounded request timeout", async () => {
+    global.fetch = jest.fn().mockResolvedValue(createResponse(["data: [DONE]\n\n"])) as typeof fetch;
+    const provider = new OpenAICompatibleProvider();
+
+    await collect(provider.stream({
+      messages: [{ role: "user", content: "hello" }]
+    }));
+
+    expect((global.fetch as jest.Mock).mock.calls[0]?.[1]).toEqual(expect.objectContaining({
+      signal: expect.any(AbortSignal)
+    }));
   });
 
   it("prefers per-request provider overrides over environment defaults", async () => {

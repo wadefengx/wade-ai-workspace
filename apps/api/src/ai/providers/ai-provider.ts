@@ -37,6 +37,16 @@ export type ChatStreamEvent =
       message: string;
     };
 
+const PROVIDER_REQUEST_TIMEOUT_MS = 30_000;
+
+export function createProviderRequestSignal(inputSignal?: AbortSignal) {
+    const timeoutSignal = AbortSignal.timeout(PROVIDER_REQUEST_TIMEOUT_MS);
+
+    return inputSignal
+      ? AbortSignal.any([inputSignal, timeoutSignal])
+      : timeoutSignal;
+}
+
 export interface AIProvider {
   stream(input: AIProviderStreamInput): AsyncIterable<ChatStreamEvent>;
 }

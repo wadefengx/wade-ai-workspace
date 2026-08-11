@@ -341,6 +341,51 @@ describe("AgentsService", () => {
     expect(prisma.agent.delete).not.toHaveBeenCalled();
   });
 
+  it("returns a safe categorized response when a connection test fails", async () => {
+    const originalFetch = global.fetch;
+    const sentinel = "connection-response-sentinel Authorization: Bearer test-api-key";
+    global.fetch = jest.fn().mockResolvedValue(new Response(sentinel, { status: 401 })) as typeof fetch;
+    prisma.agent.findUnique.mockResolvedValue({
+      id: "agent-1",
+      workspaceId: "workspace-1",
+      type: AgentType.OPENAI_COMPATIBLE,
+      providerConfigRef: JSON.stringify({ apiKey: "test-key" })
+    });
+    prisma.workspaceMember.findFirst.mockResolvedValue({ role: WorkspaceRole.ADMIN });
+    const service = await createService();
+
+    await expect(service.testConnection("agent-1", "admin-1")).resolves.toEqual({
+      ok: false,
+      status: 401,
+      message: "Provider authentication failed"
+    });
+    expect(JSON.stringify(await service.testConnection("agent-1", "admin-1"))).not.toContain(sentinel);
+    expect((global.fetch as jest.Mock).mock.calls[0]?.[1]).toEqual(expect.objectContaining({
+      signal: expect.any(AbortSignal)
+    }));
+    global.fetch = originalFetch;
+  });
+
+  it("does not expose rejected connection error text", async () => {
+    const originalFetch = global.fetch;
+    const sentinel = "connection-rejection-sentinel Authorization: Bearer test-api-key";
+    global.fetch = jest.fn().mockRejectedValue(new Error(sentinel)) as typeof fetch;
+    prisma.agent.findUnique.mockResolvedValue({
+      id: "agent-1",
+      workspaceId: "workspace-1",
+      type: AgentType.ANTHROPIC,
+      providerConfigRef: JSON.stringify({ apiKey: "test-key" })
+    });
+    prisma.workspaceMember.findFirst.mockResolvedValue({ role: WorkspaceRole.ADMIN });
+    const service = await createService();
+
+    await expect(service.testConnection("agent-1", "admin-1")).resolves.toEqual({
+      ok: false,
+      message: "Connection test failed"
+    });
+    global.fetch = originalFetch;
+  });
+
   it("rejects deleting the default agent", async () => {
     prisma.agent.findUnique.mockResolvedValue({
       id: "agent-1",
