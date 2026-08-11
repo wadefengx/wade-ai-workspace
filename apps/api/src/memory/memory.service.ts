@@ -52,8 +52,8 @@ export class MemoryService {
     });
   }
 
-  createMemory(workspaceId: string, userId: string, dto: CreateMemoryDto) {
-    return this.prisma.memory.create({
+  async createMemory(workspaceId: string, userId: string, dto: CreateMemoryDto) {
+    const memory = await this.prisma.memory.create({
       data: {
         workspaceId,
         type: dto.type,
@@ -63,6 +63,8 @@ export class MemoryService {
         createdBy: userId
       }
     });
+    this.logger.log(`Created memory ${memory.id} in workspace ${workspaceId}`);
+    return memory;
   }
 
   async updateMemory(memoryId: string, userId: string, dto: UpdateMemoryDto) {
@@ -72,21 +74,25 @@ export class MemoryService {
 
     const memory = await this.ensureManagePermission(memoryId, userId);
 
-    return this.prisma.memory.update({
+    const updatedMemory = await this.prisma.memory.update({
       where: { id: memory.id },
       data: {
         ...(dto.content !== undefined ? { content: dto.content } : {}),
         ...(dto.enabled !== undefined ? { enabled: dto.enabled } : {})
       }
     });
+    this.logger.log(`Updated memory ${memoryId}`);
+    return updatedMemory;
   }
 
   async deleteMemory(memoryId: string, userId: string) {
     const memory = await this.ensureManagePermission(memoryId, userId);
 
-    return this.prisma.memory.delete({
+    const deletedMemory = await this.prisma.memory.delete({
       where: { id: memory.id }
     });
+    this.logger.log(`Deleted memory ${memoryId}`);
+    return deletedMemory;
   }
 
   /**

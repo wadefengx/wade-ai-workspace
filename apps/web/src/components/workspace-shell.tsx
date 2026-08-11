@@ -33,68 +33,19 @@ import { ApiError, apiFetch, resolveApiUrl } from "../lib/api";
 import { formatDateTime } from "../lib/datetime";
 import { streamSse } from "../lib/sse";
 import { useAuthStore } from "../stores/auth";
+import {
+  type ChannelMessagesResponse,
+  type ChatMessage,
+  type LocalChatMessage,
+  type MessageFeedback,
+  type StreamEventPayload,
+  type StreamStatusState
+} from "./chat-types";
+import { useChatStream } from "./use-chat-stream";
+import { Composer } from "./composer";
+import { MessageList } from "./message-list";
 import styles from "./workspace-shell.module.css";
 import { EmptyState, LoadingState } from "./ui-state";
-
-type MessageSenderType = "USER" | "AGENT";
-type MessageStatus = "PENDING" | "STREAMING" | "COMPLETED" | "FAILED";
-type MessageFeedback = "like" | "dislike" | null;
-
-type Citation = {
-  index: number;
-  filename: string;
-  chunkIndex: number;
-  content: string;
-};
-
-type ChatMessage = {
-  id: string;
-  channelId: string;
-  senderType: MessageSenderType;
-  senderId: string | null;
-  content: string;
-  status: MessageStatus;
-  createdAt: string;
-  feedback?: MessageFeedback;
-};
-
-type LocalChatMessage = ChatMessage & {
-  errorMessage?: string;
-  optimistic?: boolean;
-  persistedId?: string;
-  requestContent?: string;
-  thinkingContent?: string;
-  agentName?: string | null;
-  modelName?: string | null;
-  harness?: string | null;
-  citations?: Citation[];
-};
-
-type ChannelMessagesResponse = {
-  items: ChatMessage[];
-  nextCursor: string | null;
-};
-
-type StreamEventPayload = {
-  type: "token" | "done" | "error" | "reasoning" | "thinking" | "citations" | string;
-  content?: string;
-  messageId?: string;
-  message?: string;
-  reasoning?: string;
-  reasoning_content?: string;
-  thinking?: string;
-  agent?: string;
-  agentName?: string;
-  model?: string;
-  harness?: string;
-  citations?: Citation[];
-};
-
-type StreamStatusState = {
-  channelId: string;
-  agentName: string;
-  modelName: string | null;
-};
 
 type FeedbackMutationVariables = {
   channelId: string;
@@ -348,7 +299,7 @@ export function WorkspaceShell() {
   });
   const [isSending, setIsSending] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
-  const [localMessages, setLocalMessages] = useState<LocalChatMessage[]>([]);
+  const { localMessages, setLocalMessages, removeLocalMessage, patchLocalMessage } = useChatStream();
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [streamStatus, setStreamStatus] = useState<StreamStatusState | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
@@ -416,14 +367,6 @@ export function WorkspaceShell() {
 
     scrollToBottom();
   }, [scrollToBottom]);
-
-  const removeLocalMessage = useCallback((messageId: string) => {
-    setLocalMessages((current) => current.filter((item) => item.id !== messageId));
-  }, []);
-
-  const patchLocalMessage = useCallback((messageId: string, updater: (message: LocalChatMessage) => LocalChatMessage) => {
-    setLocalMessages((current) => current.map((item) => (item.id === messageId ? updater(item) : item)));
-  }, []);
 
   const patchPersistedMessage = useCallback(
     (
@@ -771,6 +714,7 @@ export function WorkspaceShell() {
       refetchCurrentMessages,
       scrollToBottomIfNeeded,
       selectedChannelId,
+      setLocalMessages,
       streamAgentReply,
       user
     ]
@@ -1025,6 +969,7 @@ export function WorkspaceShell() {
                 </div>
               </div>
 
+              <MessageList>
               <div className={styles.messagesPanel}>
                 <div ref={messagesContainerRef} className={styles.messageScrollArea} onScroll={handleMessagesScroll}>
                   {selectedChannel ? (
@@ -1218,7 +1163,9 @@ export function WorkspaceShell() {
                   )}
                 </div>
               </div>
+              </MessageList>
 
+              <Composer>
               <div className={styles.composer}>
                 {streamStatus?.channelId === selectedChannelId ? (
                   <div className={styles.composerStatus}>
@@ -1336,6 +1283,7 @@ export function WorkspaceShell() {
                   </Typography.Text>
                 </div>
               </div>
+              </Composer>
             </>
           ) : (
             <EmptyState

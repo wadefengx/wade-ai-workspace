@@ -1,14 +1,17 @@
-import { Injectable, ServiceUnavailableException } from "@nestjs/common";
+import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
 
 const DEFAULT_OLLAMA_BASE_URL = "http://ollama:11434";
 const DEFAULT_OLLAMA_EMBEDDING_MODEL = "nomic-embed-text";
 
 @Injectable()
 export class OllamaService {
+  private readonly logger = new Logger(OllamaService.name);
+
   async assertAvailable() {
     const response = await fetch(`${this.resolveBaseUrl()}/api/tags`);
 
     if (!response.ok) {
+      this.logger.warn(`Ollama availability check failed with status ${response.status}`);
       throw new ServiceUnavailableException("Ollama is unavailable");
     }
   }
@@ -26,6 +29,7 @@ export class OllamaService {
     });
 
     if (!response.ok) {
+      this.logger.warn(`Ollama embed request failed with status ${response.status}`);
       throw new Error(await response.text() || `Ollama embed request failed with status ${response.status}`);
     }
 

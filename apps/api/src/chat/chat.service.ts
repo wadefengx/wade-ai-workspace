@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Agent, AgentType, MessageStatus, MessageSenderType } from "@prisma/client";
 import { parseAgentProviderConfigRef } from "../agents/agent-provider-config";
 import { AGENT_ENGINE, AgentEngine } from "../ai/engines/agent-engine";
@@ -39,6 +39,8 @@ type StreamAgentReplyInput = {
 
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject(AGENT_ENGINE) private readonly agentEngine: AgentEngine
@@ -64,8 +66,8 @@ export class ChatService {
     };
   }
 
-  createMessage(workspaceId: string, channelId: string, userId: string, dto: CreateMessageDto) {
-    return this.prisma.message.create({
+  async createMessage(workspaceId: string, channelId: string, userId: string, dto: CreateMessageDto) {
+    const message = await this.prisma.message.create({
       data: {
         workspaceId,
         channelId,
@@ -75,6 +77,8 @@ export class ChatService {
         status: MessageStatus.COMPLETED
       }
     });
+    this.logger.log(`Created message ${message.id} in channel ${channelId}`);
+    return message;
   }
 
   async updateMessageFeedback(
@@ -97,12 +101,14 @@ export class ChatService {
 
     const nextFeedback = message.feedback === dto.type ? null : dto.type;
 
-    return this.prisma.message.update({
+    const updatedMessage = await this.prisma.message.update({
       where: { id: message.id },
       data: {
         feedback: nextFeedback
       }
     });
+    this.logger.log(`Updated feedback for message ${messageId}`);
+    return updatedMessage;
   }
 
   /**
@@ -170,8 +176,10 @@ export class ChatService {
         data: { name: title }
       });
 
+      this.logger.log(`Updated title for channel ${channelId}`);
       return { title };
-    } catch {
+    } catch (error) {
+      this.logger.warn(`Channel title generation failed for ${channelId}: ${this.normalizeError(error)}`);
       // Model unavailable or timed out: keep the original title.
       return { title: channel.name };
     }
@@ -263,6 +271,7 @@ export class ChatService {
       }
 
       const rawMessage = this.normalizeError(error);
+      this.logger.error(`Agent reply failed for channel ${input.channelId}: ${rawMessage}`);
       const harness = agent?.harness ?? "OLLAMA";
       const harnessHint = HARNESS_START_HINT[harness as keyof typeof HARNESS_START_HINT];
       const message = harnessHint && this.isConnectionError(rawMessage)
@@ -373,7 +382,7 @@ export class ChatService {
       return existingAgent;
     }
 
-    return this.prisma.agent.create({
+    const agent = await this.prisma.agent.create({
       data: {
         workspaceId,
         name: "Workspace AI",
@@ -382,6 +391,8 @@ export class ChatService {
         isDefault: true
       }
     });
+    this.logger.log(`Created default agent ${agent.id} in workspace ${workspaceId}`);
+    return agent;
   }
 
   private markFailed(messageId: string, content: string) {

@@ -37,18 +37,6 @@ export function unwrapItems<T>(data: T[] | { items: T[] } | undefined | null): T
   return Array.isArray(data) ? data : data.items ?? [];
 }
 
-function resolveBody(body: ApiFetchOptions["body"]) {
-  if (body == null) {
-    return undefined;
-  }
-
-  if (typeof body === "string" || body instanceof Blob || body instanceof FormData || body instanceof URLSearchParams) {
-    return body;
-  }
-
-  return JSON.stringify(body);
-}
-
 export function setAccessTokenGetter(getter: () => string | null) {
   getAccessToken = getter;
 }
@@ -167,3 +155,4 @@ export async function apiFetch<T = void>(path: string, options: ApiFetchOptions 
 
   return (await response.json()) as T;
 }
+import { resolveBody } from "./http.ts";

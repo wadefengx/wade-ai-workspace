@@ -20,6 +20,7 @@ describe("KnowledgeService", () => {
       findUnique: jest.fn(),
       findFirst: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       delete: jest.fn()
     },
     knowledgeChunk: {
@@ -72,6 +73,40 @@ describe("KnowledgeService", () => {
       buffer: Buffer.from("bad")
     })).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.knowledgeDocument.create).not.toHaveBeenCalled();
+  });
+
+  it("requeues documents stuck in processing after the stale threshold", async () => {
+    const module = await Test.createTestingModule({
+      providers: [{
+        provide: PrismaService,
+        useValue: prisma
+      }, {
+        provide: EmbeddingService,
+        useValue: embeddingService
+      }, KnowledgeService]
+    }).compile();
+    const service = module.get(KnowledgeService);
+    const processDocument = jest.spyOn(service, "processDocument").mockResolvedValue();
+    prisma.knowledgeDocument.findMany.mockResolvedValue([{ id: "stale-document-1" }]);
+    prisma.knowledgeDocument.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(service.requeueStaleProcessingDocuments()).resolves.toBe(1);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    expect(prisma.knowledgeDocument.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: "stale-document-1",
+        extractionStatus: ExtractionStatus.PROCESSING,
+        updatedAt: {
+          lt: expect.any(Date)
+        }
+      },
+      data: {
+        extractionStatus: ExtractionStatus.PENDING,
+        errorMessage: null
+      }
+    });
+    expect(processDocument).toHaveBeenCalledWith("stale-document-1");
   });
 
   it("does not split short documents", () => {

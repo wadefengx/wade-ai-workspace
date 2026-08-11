@@ -71,6 +71,23 @@ const typeOptions = [
   { label: "hermes", value: "HERMES" }
 ] satisfies Array<{ label: string; value: AgentType }>;
 
+const PROVIDER_DEFAULTS = {
+  OLLAMA: {
+    baseUrl: "http://127.0.0.1:11434/v1",
+    model: "qwen3:8b"
+  },
+  OPENCLAW: {
+    baseUrl: "http://localhost:18789/v1",
+    defaultBaseUrl: "http://localhost:3456/v1",
+    model: "openclaw-7b"
+  },
+  HERMES: {
+    baseUrl: "http://localhost:9119/v1",
+    defaultBaseUrl: "http://localhost:8714/v1",
+    model: "hermes-3-llama-3.1-8b"
+  }
+} as const;
+
 const providerPresets = [
   {
     key: "openai",
@@ -94,8 +111,7 @@ const providerPresets = [
     key: "ollama",
     label: "Ollama",
     type: "OLLAMA" as AgentType,
-    baseUrl: "http://127.0.0.1:11434/v1",
-    model: "qwen3:8b",
+    ...PROVIDER_DEFAULTS.OLLAMA,
     harness: "OLLAMA",
     hint: "Requires Ollama running locally"
   },
@@ -112,8 +128,7 @@ const providerPresets = [
     key: "openclaw",
     label: "OpenClaw",
     type: "OPENCLAW" as AgentType,
-    baseUrl: "http://localhost:18789/v1",
-    model: "openclaw-7b",
+    ...PROVIDER_DEFAULTS.OPENCLAW,
     harness: "OPENCLAW",
     hint: "Requires OpenClaw running locally (openclaw gateway)"
   },
@@ -121,8 +136,7 @@ const providerPresets = [
     key: "hermes",
     label: "Hermes",
     type: "HERMES" as AgentType,
-    baseUrl: "http://localhost:9119/v1",
-    model: "hermes-3-llama-3.1-8b",
+    ...PROVIDER_DEFAULTS.HERMES,
     harness: "HERMES",
     hint: "Requires Hermes running locally (hermes serve)"
   }
@@ -186,11 +200,11 @@ function getTypeLabel(type: AgentType) {
 
 function getDefaultBaseUrl(type: AgentType) {
   if (type === "OPENCLAW") {
-    return "http://localhost:3456/v1";
+    return PROVIDER_DEFAULTS.OPENCLAW.defaultBaseUrl;
   }
 
   if (type === "HERMES") {
-    return "http://localhost:8714/v1";
+    return PROVIDER_DEFAULTS.HERMES.defaultBaseUrl;
   }
 
   return "";
@@ -198,7 +212,7 @@ function getDefaultBaseUrl(type: AgentType) {
 
 function getBaseUrlPlaceholder(type: AgentType) {
   if (type === "OLLAMA") {
-    return "Leave blank to use the default Ollama endpoint, e.g. http://127.0.0.1:11434/v1";
+    return `Leave blank to use the default Ollama endpoint, e.g. ${PROVIDER_DEFAULTS.OLLAMA.baseUrl}`;
   }
 
   if (type === "ANTHROPIC") {

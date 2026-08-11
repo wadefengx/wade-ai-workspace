@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { AgentType, WorkspaceRole } from "@prisma/client";
 import { isGlobalAdmin } from "../common/auth/global-admin";
 import { PrismaService } from "../prisma/prisma.service";
@@ -14,6 +14,8 @@ import { UpdateAgentDto } from "./dto/update-agent.dto";
 
 @Injectable()
 export class AgentsService {
+  private readonly logger = new Logger(AgentsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async listWorkspaceAgents(workspaceId: string) {
@@ -75,6 +77,7 @@ export class AgentsService {
       }
     });
 
+    this.logger.log(`Created agent ${createdAgent.id} in workspace ${workspaceId}`);
     return this.toResponse(createdAgent);
   }
 
@@ -154,6 +157,7 @@ export class AgentsService {
       }
     });
 
+    this.logger.log(`Updated agent ${agentId}`);
     return this.toResponse(updatedAgent);
   }
 
@@ -181,6 +185,7 @@ export class AgentsService {
       where: { id: agentId }
     });
 
+    this.logger.log(`Deleted agent ${agentId}`);
     return { id: agentId };
   }
 
@@ -209,7 +214,8 @@ export class AgentsService {
       }
 
       return await this.testOpenAICompatibleConnection(providerConfig);
-    } catch {
+    } catch (error) {
+      this.logger.warn(`Agent connection test failed for ${agentId}: ${this.normalizeError(error)}`);
       return {
         ok: false,
         message: "Connection test failed"
@@ -291,6 +297,10 @@ export class AgentsService {
     }
 
     return { ok: false, status, message: "Provider connection failed" };
+  }
+
+  private normalizeError(error: unknown) {
+    return error instanceof Error ? error.message : String(error);
   }
 
   private mergeProviderConfig(providerConfigRef: string | null, patch?: UpdateAgentDto["providerConfig"]) {

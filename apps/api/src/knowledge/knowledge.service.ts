@@ -1,4 +1,11 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit
+} from "@nestjs/common";
 import { ExtractionStatus, Prisma } from "@prisma/client";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
@@ -16,6 +23,7 @@ export const KNOWLEDGE_SHORT_DOCUMENT_THRESHOLD = 600;
 const RECURSIVE_SPLIT_SEPARATORS = ["\n\n", "\n", "。", "！", "？", ".", "!", "?"];
 
 const DEFAULT_MAX_UPLOAD_SIZE_MB = 10;
+const PROCESSING_STALE_AFTER_MS = 10 * 60 * 1000;
 
 // ponytail: read directly from env at decorator-eval time (before DI exists) — must match instance getter below.
 export function getMaxUploadSizeBytes() {
@@ -49,11 +57,54 @@ export type UploadedKnowledgeFile = {
 };
 
 @Injectable()
-export class KnowledgeService {
+export class KnowledgeService implements OnModuleInit {
+  private readonly logger = new Logger(KnowledgeService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly embeddingService: EmbeddingService
   ) {}
+
+  async onModuleInit() {
+    await this.requeueStaleProcessingDocuments();
+  }
+
+  async requeueStaleProcessingDocuments() {
+    const staleBefore = new Date(Date.now() - PROCESSING_STALE_AFTER_MS);
+    const staleDocuments = await this.prisma.knowledgeDocument.findMany({
+      where: {
+        extractionStatus: ExtractionStatus.PROCESSING,
+        updatedAt: { lt: staleBefore }
+      },
+      select: { id: true }
+    });
+    let requeued = 0;
+
+    for (const document of staleDocuments) {
+      const { count } = await this.prisma.knowledgeDocument.updateMany({
+        where: {
+          id: document.id,
+          extractionStatus: ExtractionStatus.PROCESSING,
+          updatedAt: { lt: staleBefore }
+        },
+        data: {
+          extractionStatus: ExtractionStatus.PENDING,
+          errorMessage: null
+        }
+      });
+
+      if (count === 1) {
+        requeued += 1;
+        this.scheduleProcessing(document.id);
+      }
+    }
+
+    if (requeued > 0) {
+      this.logger.warn(`Requeued ${requeued} stale knowledge document(s)`);
+    }
+
+    return requeued;
+  }
 
   async uploadDocument(workspaceId: string, userId: string, file?: UploadedKnowledgeFile) {
     const validFile = this.validateFile(file);
@@ -77,6 +128,7 @@ export class KnowledgeService {
     });
 
     this.scheduleProcessing(document.id);
+    this.logger.log(`Uploaded knowledge document ${document.id} in workspace ${workspaceId}`);
 
     return document;
   }
@@ -97,11 +149,13 @@ export class KnowledgeService {
       throw new BadRequestException("Invalid document name");
     }
 
-    return this.prisma.knowledgeDocument.update({
+    const updatedDocument = await this.prisma.knowledgeDocument.update({
       where: { id: document.id },
       data: { filename },
       select: documentSummarySelect
     });
+    this.logger.log(`Renamed knowledge document ${documentId}`);
+    return updatedDocument;
   }
 
   async reindexDocument(documentId: string, userId: string) {
@@ -116,6 +170,7 @@ export class KnowledgeService {
     });
 
     this.scheduleProcessing(document.id);
+    this.logger.log(`Requeued knowledge document ${documentId}`);
 
     return updatedDocument;
   }
@@ -137,6 +192,7 @@ export class KnowledgeService {
     });
     await this.deleteStoredFile(document.storageKey);
 
+    this.logger.log(`Deleted knowledge document ${documentId}`);
     return {
       id: document.id
     };
@@ -248,6 +304,7 @@ export class KnowledgeService {
         }
       });
     } catch (error) {
+      this.logger.error(`Knowledge document processing failed for ${documentId}: ${this.normalizeError(error)}`);
       await this.prisma.knowledgeChunk.deleteMany({
         where: {
           documentId: document.id
@@ -345,6 +402,7 @@ export class KnowledgeService {
   }
 
   private scheduleProcessing(documentId: string) {
+    // ponytail: in-process scheduling has no durable retries beyond startup recovery; use a real queue when volume or availability requires it.
     setImmediate(() => {
       void this.processDocument(documentId);
     });

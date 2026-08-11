@@ -12,18 +12,6 @@ type StreamSseOptions = {
   onEvent: (event: SseEvent) => void | Promise<void>;
 };
 
-function resolveBody(body: StreamSseOptions["body"]) {
-  if (body == null) {
-    return undefined;
-  }
-
-  if (typeof body === "string" || body instanceof Blob || body instanceof FormData || body instanceof URLSearchParams) {
-    return body;
-  }
-
-  return JSON.stringify(body);
-}
-
 function parseEventBlock(block: string) {
   const lines = block.split("\n");
   let event = "message";
@@ -119,3 +107,4 @@ export async function streamSse({ url, body, headers, method = "POST", signal, o
     }
   }
 }
+import { resolveBody } from "./http";

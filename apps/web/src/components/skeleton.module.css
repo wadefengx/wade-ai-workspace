@@ -1,0 +1,11 @@
+.shell { display: flex; height: 100vh; overflow: hidden; background: var(--background, #f7f9fc); color: var(--text, #172033); }
+.sidebar { display: flex; flex-direction: column; gap: 16px; width: 260px; flex-shrink: 0; padding: 16px 12px; border-right: 1px solid var(--line, rgba(148, 163, 184, 0.15)); }
+.brandBlock { width: 120px; height: 20px; border-radius: 6px; background: linear-gradient(90deg, var(--skeleton-base, rgba(148, 163, 184, 0.08)), var(--skeleton-highlight, rgba(148, 163, 184, 0.2)), var(--skeleton-base, rgba(148, 163, 184, 0.08))); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+.sidebarSection { margin-top: 4px; }
+.sidebarList { display: grid; gap: 8px; }
+.main { display: flex; flex: 1; min-width: 0; flex-direction: column; }
+.topbar { display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line, rgba(148, 163, 184, 0.15)); }
+.content { display: grid; gap: 16px; flex: 1; overflow: hidden; padding: 24px; }
+.contentHeader { display: grid; gap: 8px; }
+.contentCard { padding: 20px; border: 1px solid var(--line, rgba(148, 163, 184, 0.12)); border-radius: 16px; background: var(--surface, rgba(255, 255, 255, 0.03)); }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }

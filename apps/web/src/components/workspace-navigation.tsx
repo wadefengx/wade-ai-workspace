@@ -22,7 +22,6 @@ import { App, Avatar, Button, Dropdown, Form, Input, Modal, Select, Tooltip, Typ
 import type { MenuProps } from "antd";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import styled from "styled-components";
 import { ApiError, apiFetch } from "../lib/api";
 import { WORKSPACE_ICONS, getWorkspaceIconLabel, renderWorkspaceIcon } from "../lib/workspace-icons";
 import { buildWorkspaceHref } from "../lib/workspace-navigation";
@@ -93,44 +92,6 @@ const useSidebarStore = create<SidebarState>()(
     }
   )
 );
-
-/* styled-components example: sidebar user card at the bottom */
-const SidebarFooter = styled.div`
-  margin-top: auto;
-  padding-top: 12px;
-  border-top: 1px solid var(--line, rgba(148, 163, 184, 0.2));
-`;
-
-const UserCard = styled.button<{ $collapsed?: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: ${({ $collapsed }) => ($collapsed ? "8px 0" : "8px 10px")};
-  border: none;
-  border-radius: 12px;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background: var(--hover, rgba(148, 163, 184, 0.12));
-  }
-`;
-
-const UserCardInfo = styled.span`
-  display: grid;
-  gap: 0;
-  min-width: 0;
-  flex: 1;
-
-  .ant-typography {
-    display: block;
-    font-size: 13px;
-    line-height: 1.4;
-  }
-`;
 
 function resolveActiveNavKey(pathname: string) {
   if (pathname === "/dashboard") {
@@ -984,10 +945,10 @@ export function WorkspaceNavigation() {
         </div>
         </div>
 
-        <SidebarFooter className={styles.sidebarFooter}>
-          <UserCard
+        <div className={styles.sidebarFooter}>
+          <button
             type="button"
-            $collapsed={sidebarCollapsed}
+            className={`${styles.userCard} ${sidebarCollapsed ? styles.userCardCollapsed : ""}`}
             aria-label="Open account menu"
             onClick={(event) => {
               const { left, top, width, height } = event.currentTarget.getBoundingClientRect();
@@ -997,17 +958,17 @@ export function WorkspaceNavigation() {
           >
             <Avatar size={32}>{user?.name?.slice(0, 1).toUpperCase() ?? "U"}</Avatar>
             {!sidebarCollapsed ? (
-              <UserCardInfo>
+              <span className={styles.userCardInfo}>
                 <Typography.Text strong ellipsis>
                   {user?.name ?? "Account"}
                 </Typography.Text>
                 <Typography.Text type="secondary" ellipsis>
                   {user?.email ?? ""}
                 </Typography.Text>
-              </UserCardInfo>
+              </span>
             ) : null}
-          </UserCard>
-        </SidebarFooter>
+          </button>
+        </div>
       </aside>
 
       {accountAnchor && user ? (

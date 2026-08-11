@@ -3,7 +3,6 @@
 import { create } from "zustand";
 import { ApiError, apiFetch, setAccessTokenGetter, setSessionRefreshHandler, setUnauthorizedHandler } from "../lib/api";
 
-const LEGACY_TOKEN_STORAGE_KEY = "wade-ai-workspace-token";
 const SESSION_STORAGE_KEY = "wade-ai-session";
 
 export type AuthUser = {
@@ -82,14 +81,6 @@ function readStoredSession() {
   }
 }
 
-function hasLegacyToken() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return !!window.localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY);
-}
-
 function writeStoredSession(session: StoredSession | null) {
   if (typeof window === "undefined") {
     return;
@@ -155,6 +146,49 @@ async function refreshSessionTokens() {
   }
 }
 
+async function restoreSession(
+  set: (partial: Partial<AuthState>) => void,
+  get: () => AuthState,
+  storedSession: StoredSession
+) {
+  set({
+    token: storedSession.accessToken,
+    refreshToken: storedSession.refreshToken,
+    user: storedSession.user,
+    isRestoring: true
+  });
+
+  const restoreProfile = async () => {
+    const user = await apiFetch<AuthUser>("/auth/me", { autoRefresh: false });
+    get().setSession({
+      accessToken: get().token ?? storedSession.accessToken,
+      refreshToken: get().refreshToken ?? storedSession.refreshToken,
+      user
+    });
+  };
+
+  try {
+    await restoreProfile();
+    return;
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.statusCode !== 401) {
+      applyStoredSession(set, storedSession);
+      return;
+    }
+  }
+
+  if (!await refreshSessionTokens()) {
+    get().clearSession();
+    return;
+  }
+
+  try {
+    await restoreProfile();
+  } catch {
+    get().clearSession();
+  }
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   refreshToken: null,
@@ -174,58 +208,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const storedSession = readStoredSession();
 
       if (!storedSession) {
-        if (hasLegacyToken()) {
-          set({ hydrated: true, isRestoring: false, token: null, refreshToken: null, user: null });
-          return;
-        }
-
         set({ hydrated: true, isRestoring: false, token: null, refreshToken: null, user: null });
         return;
       }
 
-      set({
-        token: storedSession.accessToken,
-        refreshToken: storedSession.refreshToken,
-        user: storedSession.user,
-        isRestoring: true
-      });
-
-      try {
-        const response = await apiFetch<AuthUser>("/auth/me", {
-          autoRefresh: false
-        });
-        get().setSession({
-          accessToken: storedSession.accessToken,
-          refreshToken: storedSession.refreshToken,
-          user: response
-        });
-        return;
-      } catch (error) {
-        if (!(error instanceof ApiError) || error.statusCode !== 401) {
-          applyStoredSession(set, storedSession);
-          return;
-        }
-      }
-
-      const refreshed = await refreshSessionTokens();
-
-      if (!refreshed) {
-        get().clearSession();
-        return;
-      }
-
-      try {
-        const response = await apiFetch<AuthUser>("/auth/me", {
-          autoRefresh: false
-        });
-        get().setSession({
-          accessToken: get().token ?? undefined,
-          refreshToken: get().refreshToken ?? undefined,
-          user: response
-        });
-      } catch {
-        get().clearSession();
-      }
+      await restoreSession(set, get, storedSession);
     })().finally(() => {
       initializePromise = null;
     });

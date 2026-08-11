@@ -1039,3 +1039,36 @@
     width: 100%;
   }
 }
+.userCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}
+
+.userCard:hover {
+  background: var(--hover, rgba(148, 163, 184, 0.12));
+}
+
+.userCardCollapsed {
+  padding: 8px 0;
+}
+
+.userCardInfo {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.userCardInfo :global(.ant-typography) {
+  display: block;
+  font-size: 13px;
+  line-height: 1.4;
+}

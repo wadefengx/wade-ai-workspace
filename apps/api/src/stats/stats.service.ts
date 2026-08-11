@@ -1,7 +1,7 @@
 import { execSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { ForbiddenException, Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable, Logger } from "@nestjs/common";
 import { UserRole } from "@prisma/client";
 import { load } from "js-yaml";
 import { hasGlobalAdminRole } from "../common/auth/global-admin";
@@ -71,6 +71,8 @@ const FEEDBACK_TYPES = ["like", "dislike"] as const;
 
 @Injectable()
 export class StatsService {
+  private readonly logger = new Logger(StatsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getOrganizationStats(userId: string, userRole: UserRole) {
@@ -245,7 +247,8 @@ export class StatsService {
         lanes: lanes.length > 0 ? lanes : this.createDefaultLaneRegistry(repoRoot).lanes,
         pipeline: pipeline.length > 0 ? pipeline : this.derivePipeline(lanes)
       };
-    } catch {
+    } catch (error) {
+      this.logger.warn(`Failed to load lane registry: ${this.normalizeError(error)}`);
       return this.createDefaultLaneRegistry(repoRoot);
     }
   }
@@ -293,7 +296,8 @@ export class StatsService {
       }
 
       return lanes;
-    } catch {
+    } catch (error) {
+      this.logger.warn(`Failed to infer lanes from Git history: ${this.normalizeError(error)}`);
       return [];
     }
   }
@@ -352,7 +356,8 @@ export class StatsService {
         harness: buckets.harness.size,
         specs: buckets.specs.size
       };
-    } catch {
+    } catch (error) {
+      this.logger.warn(`Failed to count improvements: ${this.normalizeError(error)}`);
       return this.createZeroImprovements();
     }
   }
@@ -620,7 +625,8 @@ export class StatsService {
   private safeCountMarkdownFiles(directoryPath: string) {
     try {
       return this.countMarkdownFiles(directoryPath);
-    } catch {
+    } catch (error) {
+      this.logger.warn(`Failed to count markdown files: ${this.normalizeError(error)}`);
       return 0;
     }
   }
@@ -644,7 +650,8 @@ export class StatsService {
   private findRepositoryRootSafe() {
     try {
       return this.findRepositoryRoot(process.cwd());
-    } catch {
+    } catch (error) {
+      this.logger.warn(`Failed to find repository root: ${this.normalizeError(error)}`);
       return null;
     }
   }
@@ -695,5 +702,9 @@ export class StatsService {
     }
 
     return 0;
+  }
+
+  private normalizeError(error: unknown) {
+    return error instanceof Error ? error.message : String(error);
   }
 }

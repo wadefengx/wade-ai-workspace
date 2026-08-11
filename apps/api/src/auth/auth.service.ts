@@ -79,12 +79,14 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
         }
       });
 
+      this.logger.log(`Registered user ${user.id}`);
       return this.buildAuthResponse(user);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         throw new ConflictException("This email address is already registered");
       }
 
+      this.logger.error("User registration failed", error instanceof Error ? error.stack : undefined);
       throw error;
     }
   }
@@ -150,6 +152,7 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
       where: { userId }
     });
 
+    this.logger.log(`Logged out user ${userId}`);
     return { ok: true };
   }
 
@@ -178,6 +181,7 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
         }
       });
 
+      this.logger.log(`Changed password for user ${userId}`);
       await tx.refreshToken.deleteMany({
         where: { userId }
       });

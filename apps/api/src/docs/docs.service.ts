@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { access, readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -6,6 +6,8 @@ const DOC_NAME_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 @Injectable()
 export class DocsService {
+  private readonly logger = new Logger(DocsService.name);
+
   async listSpecs() {
     const specsDir = await this.resolveDocsDir("specs");
     const files = await this.listMarkdownFiles(specsDir);
@@ -93,6 +95,7 @@ export class DocsService {
       }
     }
 
+    this.logger.warn(`Document directory not found for ${directory}`);
     throw new NotFoundException("Document directory not found");
   }
 

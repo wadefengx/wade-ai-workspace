@@ -2,7 +2,10 @@ import "dotenv/config";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import helmet from "helmet";
 import { AppModule } from "./app.module";
+import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
+import { LoggingInterceptor } from "./common/interceptors/logging.interceptor";
 
 const DEFAULT_CORS_ORIGINS = [
   "http://localhost:3000",
@@ -38,9 +41,12 @@ export function validateRuntimeConfiguration() {
 async function bootstrap() {
   validateRuntimeConfiguration();
   const app = await NestFactory.create(AppModule);
+  app.use(helmet());
   app.setGlobalPrefix("api");
   app.enableCors({ origin: resolveCorsOrigins(), credentials: true });
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalInterceptors(new LoggingInterceptor());
   const swaggerConfig = new DocumentBuilder()
     .setTitle("Wade AI Workspace API")
     .setVersion("1.0")

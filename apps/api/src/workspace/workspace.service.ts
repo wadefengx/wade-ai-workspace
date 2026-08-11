@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException
 } from "@nestjs/common";
 import { Prisma, WorkspaceRole } from "@prisma/client";
@@ -21,6 +22,8 @@ const DEFAULT_UPLOAD_DIR = "/app/uploads";
 
 @Injectable()
 export class WorkspaceService {
+  private readonly logger = new Logger(WorkspaceService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async listForUser(userId: string) {
@@ -41,7 +44,7 @@ export class WorkspaceService {
   }
 
   async createWorkspace(userId: string, dto: CreateWorkspaceDto) {
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const workspace = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const workspace = await tx.workspace.create({
         data: {
           name: dto.name,
@@ -67,6 +70,8 @@ export class WorkspaceService {
 
       return workspace;
     });
+    this.logger.log(`Created workspace ${workspace.id}`);
+    return workspace;
   }
 
   async updateWorkspace(workspaceId: string, userId: string, dto: UpdateWorkspaceDto) {
@@ -83,7 +88,7 @@ export class WorkspaceService {
       }
     }
 
-    return this.prisma.workspace.update({
+    const workspace = await this.prisma.workspace.update({
       where: { id: workspaceId },
       data: {
         name: dto.name,
@@ -100,6 +105,8 @@ export class WorkspaceService {
         updatedAt: true
       }
     });
+    this.logger.log(`Updated workspace ${workspaceId}`);
+    return workspace;
   }
 
   async transferOwnership(workspaceId: string, userId: string, dto: TransferWorkspaceDto) {
@@ -156,6 +163,7 @@ export class WorkspaceService {
       });
     });
 
+    this.logger.log(`Transferred workspace ${workspaceId} ownership`);
     return { id: workspaceId };
   }
 
@@ -196,6 +204,7 @@ export class WorkspaceService {
 
     await Promise.all(documents.map((document) => this.deleteStoredFile(document.storageKey)));
 
+    this.logger.log(`Deleted workspace ${workspaceId}`);
     return { id: workspaceId };
   }
 
@@ -260,7 +269,7 @@ export class WorkspaceService {
       throw new ConflictException("This user is already a workspace member");
     }
 
-    return this.prisma.workspaceMember.create({
+    const member = await this.prisma.workspaceMember.create({
       data: {
         workspaceId,
         userId: targetUser.id,
@@ -268,6 +277,8 @@ export class WorkspaceService {
       },
       select: { id: true, userId: true, role: true, createdAt: true }
     });
+    this.logger.log(`Added member ${member.id} to workspace ${workspaceId}`);
+    return member;
   }
 
   async updateMemberRole(memberId: string, operatorId: string, dto: UpdateMemberRoleDto) {
@@ -294,11 +305,13 @@ export class WorkspaceService {
       throw new BadRequestException("Administrators cannot demote themselves; ask another administrator to do it");
     }
 
-    return this.prisma.workspaceMember.update({
+    const member = await this.prisma.workspaceMember.update({
       where: { id: memberId },
       data: { role: dto.role },
       select: { id: true, userId: true, role: true }
     });
+    this.logger.log(`Updated role for member ${memberId}`);
+    return member;
   }
 
   async removeMember(memberId: string, operatorId: string) {
@@ -321,6 +334,7 @@ export class WorkspaceService {
 
     await this.prisma.workspaceMember.delete({ where: { id: memberId } });
 
+    this.logger.log(`Removed member ${memberId}`);
     return { id: memberId };
   }
 
@@ -412,12 +426,14 @@ export class WorkspaceService {
   async createChannel(workspaceId: string, userId: string, dto: CreateChannelDto) {
     await this.ensureWorkspaceMember(workspaceId, userId);
 
-    return this.prisma.channel.create({
+    const channel = await this.prisma.channel.create({
       data: {
         workspaceId,
         name: dto.name
       }
     });
+    this.logger.log(`Created channel ${channel.id} in workspace ${workspaceId}`);
+    return channel;
   }
 
   private async ensureWorkspaceMember(workspaceId: string, userId: string) {
@@ -453,6 +469,7 @@ export class WorkspaceService {
       await unlink(join(process.env.UPLOAD_DIR ?? DEFAULT_UPLOAD_DIR, storageKey));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        this.logger.error(`Failed to delete stored file ${storageKey}`, error instanceof Error ? error.stack : undefined);
         throw error;
       }
     }

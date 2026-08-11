@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { UserRole } from "@prisma/client";
 import { ensureGlobalAdmin } from "../common/auth/global-admin";
 import { PrismaService } from "../prisma/prisma.service";
@@ -6,6 +6,8 @@ import { UpdateUserRoleDto } from "./dto/update-user-role.dto";
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async listUsers(operatorId: string, query?: string) {
@@ -65,7 +67,7 @@ export class UsersService {
       await this.ensureAnotherAdminExists();
     }
 
-    return this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: { role: dto.role },
       select: {
@@ -76,6 +78,8 @@ export class UsersService {
         createdAt: true
       }
     });
+    this.logger.log(`Updated role for user ${userId}`);
+    return updatedUser;
   }
 
   async removeUser(operatorId: string, userId: string) {
@@ -122,6 +126,7 @@ export class UsersService {
       });
     });
 
+    this.logger.log(`Deleted user ${userId}`);
     return { id: userId };
   }
 

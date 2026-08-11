@@ -16,7 +16,11 @@ type MarkdownCodeProps = ComponentPropsWithoutRef<"code"> & {
 
 type MermaidModule = {
   default: {
-    initialize: (config: { startOnLoad: boolean; theme: "default" | "dark" }) => void;
+    initialize: (config: {
+      startOnLoad: boolean;
+      theme: "default" | "dark";
+      securityLevel: "strict";
+    }) => void;
     render: (id: string, text: string) => Promise<{ svg: string }>;
   };
 };
@@ -75,7 +79,7 @@ function MermaidBlock({ code }: { code: string }) {
 
       try {
         const mermaid = ((await import("mermaid")) as MermaidModule).default;
-        mermaid.initialize({ startOnLoad: false, theme });
+        mermaid.initialize({ startOnLoad: false, theme, securityLevel: "strict" });
         const result = await mermaid.render(`mermaid-${mermaidId}`, code);
 
         if (cancelled) {
@@ -119,6 +123,8 @@ function MermaidBlock({ code }: { code: string }) {
       {status === "ready" ? (
         <div
           className={`${shellStyles.markdownDiagramCard} ${shellStyles.markdownDiagramSvg}`}
+          role="img"
+          aria-label="Diagram"
           dangerouslySetInnerHTML={{ __html: svg }}
         />
       ) : null}
