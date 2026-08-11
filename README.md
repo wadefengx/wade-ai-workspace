@@ -28,10 +28,23 @@
 
 ## 🚀 Quick Start
 
+### Docker Compose configuration
+
 ```bash
 cp .env.example .env
+# Edit .env: set JWT_SECRET; keep MONGO_DATABASE=wade_workspace to retain existing local data.
 docker compose up --build
 ```
+
+| `.env` variable | Configure when | Effect |
+|---|---|---|
+| `JWT_SECRET` | Always replace outside throwaway local development | Signs API sessions; changing it logs out existing sessions. |
+| `MONGO_DATABASE` | Only to deliberately create/select another database | Changing it makes the app look empty because it selects a different database. |
+| `WEB_PORT`, `API_PORT`, `MONGO_PORT` | A default host port is occupied | Changes host port mappings only; does not reset data. |
+| `OLLAMA_CHAT_MODEL`, `OLLAMA_EMBEDDING_MODEL` | You need different local models | Models Compose downloads on first boot. |
+| `MAX_UPLOAD_SIZE_MB` | You need another upload limit | API upload limit in MB. |
+
+`apps/api/.env` is **not used by Docker Compose**. It is only for host development (`npm run dev:api`).
 
 First boot initializes the MongoDB replica set, pushes the Prisma schema, seeds a demo workspace, and (optionally) pulls local Ollama models.
 
@@ -105,7 +118,12 @@ npm run dev:api               # API :3001
 npm run dev:web               # web :3000
 ```
 
-The host API reads `apps/api/.env`. Keep `directConnection=true`: the Docker replica set advertises `mongodb:27017`, which the host cannot resolve.
+The host API reads `apps/api/.env` (copied from `apps/api/.env.example`):
+
+- `DATABASE_URL` must target `127.0.0.1:27017/wade_workspace` and keep `replicaSet=rs0&directConnection=true`.
+- `JWT_SECRET` signs local API sessions; set any private development value.
+
+`directConnection=true` is required because the Docker replica set advertises `mongodb:27017`, which the host cannot resolve.
 
 ### Full Docker stack
 

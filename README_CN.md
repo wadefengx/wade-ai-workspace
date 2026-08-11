@@ -28,10 +28,23 @@
 
 ## 🚀 快速启动
 
+### Docker Compose 配置
+
 ```bash
 cp .env.example .env
+# 编辑 .env：设置 JWT_SECRET；保持 MONGO_DATABASE=wade_workspace 才能继续使用现有本地数据。
 docker compose up --build
 ```
+
+| `.env` 变量 | 何时配置 | 影响 |
+|---|---|---|
+| `JWT_SECRET` | 除一次性本地开发外始终替换 | 用于签发 API 会话；修改后现有会话会退出登录。 |
+| `MONGO_DATABASE` | 仅在有意创建/选择另一套数据库时修改 | 修改后会选择另一个数据库，页面看起来会像“数据丢失”。 |
+| `WEB_PORT`、`API_PORT`、`MONGO_PORT` | 默认宿主机端口被占用时 | 只修改宿主机端口映射，不会重置数据。 |
+| `OLLAMA_CHAT_MODEL`、`OLLAMA_EMBEDDING_MODEL` | 需要不同的本地模型时 | Compose 首次启动会下载这些模型。 |
+| `MAX_UPLOAD_SIZE_MB` | 需要调整上传限制时 | API 接受的上传文件大小上限（MB）。 |
+
+`apps/api/.env` **不会被 Docker Compose 使用**；它只服务于宿主机开发模式（`npm run dev:api`）。
 
 首次启动会初始化 MongoDB replica set、推送 Prisma schema、写入演示工作区,并(可选)拉取本地 Ollama 模型。
 
@@ -105,7 +118,12 @@ npm run dev:api               # API :3001
 npm run dev:web               # 前端 :3000
 ```
 
-宿主机 API 读取 `apps/api/.env`。请保留 `directConnection=true`：Docker 副本集会广播宿主机无法解析的 `mongodb:27017`。
+宿主机 API 读取 `apps/api/.env`（由 `apps/api/.env.example` 复制）：
+
+- `DATABASE_URL` 必须指向 `127.0.0.1:27017/wade_workspace`，并保留 `replicaSet=rs0&directConnection=true`。
+- `JWT_SECRET` 用于签发本地 API 会话；设为任意私有开发值即可。
+
+必须保留 `directConnection=true`：Docker 副本集会广播宿主机无法解析的 `mongodb:27017`。
 
 ### Docker 全栈
 
