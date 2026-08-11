@@ -77,11 +77,11 @@ export async function streamSse({ url, body, headers, method = "POST", signal, o
   });
 
   if (!response.ok) {
-    throw new Error(response.statusText || "SSE 请求失败");
+    throw new Error(response.statusText || "SSE request failed");
   }
 
   if (!response.body) {
-    throw new Error("SSE 响应体为空");
+    throw new Error("SSE response body is empty");
   }
 
   const reader = response.body.getReader();

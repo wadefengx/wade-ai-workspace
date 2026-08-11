@@ -22,11 +22,11 @@ export class WorkspaceMemberGuard implements CanActivate {
     const workspaceId = request.params.workspaceId;
 
     if (!request.user) {
-      throw new UnauthorizedException("未登录或登录已过期");
+      throw new UnauthorizedException("Not signed in or session has expired");
     }
 
     if (!workspaceId) {
-      throw new NotFoundException("工作区不存在");
+      throw new NotFoundException("Workspace not found");
     }
 
     const workspace = await this.prisma.workspace.findUnique({
@@ -35,7 +35,7 @@ export class WorkspaceMemberGuard implements CanActivate {
     });
 
     if (!workspace) {
-      throw new NotFoundException("工作区不存在");
+      throw new NotFoundException("Workspace not found");
     }
 
     if (hasGlobalAdminRole(request.user.role)) {
@@ -48,7 +48,7 @@ export class WorkspaceMemberGuard implements CanActivate {
     });
 
     if (!membership) {
-      throw new ForbiddenException("无权访问该工作区");
+      throw new ForbiddenException("You do not have access to this workspace");
     }
 
     return true;

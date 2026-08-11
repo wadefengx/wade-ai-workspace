@@ -241,7 +241,7 @@ describe("WorkspaceService", () => {
 
     expect(invalidResults).toHaveLength(1);
     expect(invalidResults[0]?.constraints).toMatchObject({
-      maxLength: "工作区图标长度不能超过50个字符"
+      maxLength: "workspace icon must not exceed 50 characters"
     });
 
     const validDto = plainToInstance(CreateWorkspaceDto, {

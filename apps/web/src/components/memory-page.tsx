@@ -45,27 +45,27 @@ const memoryGroups: Array<{
 }> = [
   {
     level: "L3_PERSONA",
-    title: "L3 · 用户画像",
-    description: "从对话中提炼的用户偏好与习惯，对话时全量注入。",
-    emptyText: "还没有画像记忆。"
+    title: "L3 · User Profile",
+    description: "User preferences and habits distilled from conversations, fully injected into chat.",
+    emptyText: "No profile memories yet."
   },
   {
     level: "L2_SCENARIO",
-    title: "L2 · 场景",
-    description: "同一主题的原子记忆聚合，按相关度注入。",
-    emptyText: "还没有场景记忆。"
+    title: "L2 · Context",
+    description: "Atomic memories grouped by topic and injected by relevance.",
+    emptyText: "No contextual memories yet."
   },
   {
     level: "L1_ATOM",
-    title: "L1 · 原子事实",
-    description: "单条可独立理解的事实，按需下钻检索。",
-    emptyText: "还没有原子记忆。"
+    title: "L1 · Atomic Facts",
+    description: "Independently understandable facts, retrieved on demand.",
+    emptyText: "No atomic memories yet."
   },
   {
     level: "L0_CONVERSATION",
-    title: "L0 · 对话原文",
-    description: "原始对话记录，作为上层记忆的溯源证据。",
-    emptyText: "还没有对话记录。"
+    title: "L0 · Conversation Source",
+    description: "Original conversation records used as provenance for higher-level memories.",
+    emptyText: "No conversation records yet."
   }
 ];
 
@@ -89,7 +89,7 @@ function MemoryContent() {
   const createMutation = useMutation({
     mutationFn: (values: CreateMemoryValues) => {
       if (!workspaceId) {
-        throw new Error("缺少 Workspace");
+        throw new Error("Workspace is required");
       }
 
       return apiFetch(`/workspaces/${workspaceId}/memories`, {
@@ -101,10 +101,10 @@ function MemoryContent() {
       createForm.resetFields();
       createForm.setFieldValue("type", "PERSONAL");
       await queryClient.invalidateQueries({ queryKey: memoryKeys.list(workspaceId) });
-      message.success("记忆已创建");
+      message.success("Memory created");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "创建记忆失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to create memory");
     }
   });
 
@@ -118,7 +118,7 @@ function MemoryContent() {
       await queryClient.invalidateQueries({ queryKey: memoryKeys.list(workspaceId) });
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "更新记忆状态失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to update memory status");
     }
   });
 
@@ -132,10 +132,10 @@ function MemoryContent() {
       setEditingMemory(null);
       editForm.resetFields();
       await queryClient.invalidateQueries({ queryKey: memoryKeys.list(workspaceId) });
-      message.success("记忆已更新");
+      message.success("Memory updated");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "更新记忆失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to update memory");
     }
   });
 
@@ -146,10 +146,10 @@ function MemoryContent() {
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: memoryKeys.list(workspaceId) });
-      message.success("记忆已删除");
+      message.success("Memory deleted");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "删除记忆失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to delete memory");
     }
   });
 
@@ -167,9 +167,9 @@ function MemoryContent() {
       <div className={styles.pageCard}>
         <div className={styles.sectionHeader}>
           <div>
-            <Typography.Title level={5}>新建记忆</Typography.Title>
+            <Typography.Title level={5}>Create memory</Typography.Title>
             <Typography.Paragraph type="secondary" className={styles.helperText}>
-              个人记忆仅自己可见；团队/项目记忆对当前 Workspace 全体成员可见。
+              Personal memories are visible only to you; team and project memories are visible to everyone in the current workspace.
             </Typography.Paragraph>
           </div>
         </div>
@@ -182,41 +182,41 @@ function MemoryContent() {
         >
           <div className={styles.formRow}>
             <Form.Item
-              label="类型"
+              label="Type"
               name="type"
               className={styles.formTypeField}
-              rules={[{ required: true, message: "请选择记忆类型" }]}
+              rules={[{ required: true, message: "Select a memory type" }]}
             >
               <Select
                 options={[
-                  { label: "个人记忆（仅自己可见）", value: "PERSONAL" },
-                  { label: "团队记忆（全体成员）", value: "TEAM" },
-                  { label: "项目记忆（长期约定）", value: "PROJECT" }
+                  { label: "Personal memory (only visible to you)", value: "PERSONAL" },
+                  { label: "Team memory (all members)", value: "TEAM" },
+                  { label: "Project memory (long-term convention)", value: "PROJECT" }
                 ]}
               />
             </Form.Item>
             <Form.Item
-              label="内容"
+              label="Content"
               name="content"
               className={styles.formContentField}
-              rules={[{ required: true, message: "请输入记忆内容" }]}
+              rules={[{ required: true, message: "Enter memory content" }]}
             >
               <Input.TextArea
                 autoSize={{ minRows: 3, maxRows: 6 }}
-                placeholder="例如：默认用中文回复；PRD 缩写统一指 Product Requirement Document。"
+                placeholder="e.g. Reply in English by default; PRD always means Product Requirement Document."
               />
             </Form.Item>
           </div>
 
           <Button type="primary" htmlType="submit" loading={createMutation.isPending}>
-            添加记忆
+            Add memory
           </Button>
         </Form>
       </div>
 
       {memoriesQuery.isLoading ? (
         <div className={styles.pageCard}>
-          <LoadingState compact title="正在读取记忆" description="同步个人、团队和项目记忆。" />
+          <LoadingState compact title="Loading memories" description="Syncing personal, team, and project memories." />
         </div>
       ) : (
         groupedMemories.map((group) => (
@@ -239,7 +239,7 @@ function MemoryContent() {
                           {item.type}
                         </Tag>
                         {typeof item.priority === "number" && item.priority > 0 ? (
-                          <Tag color="gold">优先级 {item.priority}</Tag>
+                          <Tag color="gold">Priority {item.priority}</Tag>
                         ) : null}
                         <Typography.Text type="secondary">{formatDateTime(item.createdAt)}</Typography.Text>
                       </Space>
@@ -247,7 +247,7 @@ function MemoryContent() {
 
                     <div className={styles.memoryActions}>
                       <Space size={12} wrap>
-                        <span className={styles.switchLabel}>启用</span>
+                        <span className={styles.switchLabel}>Enabled</span>
                         <Switch
                           checked={item.enabled}
                           loading={toggleMutation.isPending && toggleMutation.variables?.memoryId === item.id}
@@ -260,13 +260,13 @@ function MemoryContent() {
                             editForm.setFieldsValue({ content: item.content });
                           }}
                         >
-                          编辑
+                          Edit
                         </Button>
                         <Popconfirm
-                          title="删除记忆？"
-                          description="删除后不会保留历史版本。"
-                          okText="删除"
-                          cancelText="取消"
+                          title="Delete memory?"
+                          description="Historical versions will not be retained."
+                          okText="Delete"
+                          cancelText="Cancel"
                           onConfirm={() => deleteMutation.mutate(item.id)}
                         >
                           <Button
@@ -274,7 +274,7 @@ function MemoryContent() {
                             icon={<DeleteOutlined />}
                             loading={deleteMutation.isPending && deleteMutation.variables === item.id}
                           >
-                            删除
+                            Delete
                           </Button>
                         </Popconfirm>
                       </Space>
@@ -292,8 +292,8 @@ function MemoryContent() {
       <Modal
         destroyOnHidden
         open={!!editingMemory}
-        title="编辑记忆"
-        okText="保存"
+        title="Edit memory"
+        okText="Save"
         confirmLoading={editMutation.isPending && editMutation.variables?.memoryId === editingMemory?.id}
         onCancel={() => {
           setEditingMemory(null);
@@ -316,9 +316,9 @@ function MemoryContent() {
           }}
         >
           <Form.Item
-            label="内容"
+            label="Content"
             name="content"
-            rules={[{ required: true, message: "请输入记忆内容" }]}
+            rules={[{ required: true, message: "Enter memory content" }]}
           >
             <Input.TextArea autoSize={{ minRows: 4, maxRows: 8 }} />
           </Form.Item>
@@ -333,7 +333,7 @@ export function MemoryPage() {
   return (
     <WorkspacePageFrame
       title="Memory"
-      description="按个人、团队、项目三层管理长期记忆，并控制是否注入后续上下文。"
+      description="Manage long-term memories across personal, team, and project levels, and control whether they are injected into later context."
       scrollableContent
     >
       <MemoryContent />

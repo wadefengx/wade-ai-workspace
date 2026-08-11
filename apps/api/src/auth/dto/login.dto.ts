@@ -2,12 +2,12 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsString } from "class-validator";
 
 export class LoginDto {
-  @ApiProperty({ description: "登录邮箱", example: "admin@wade.local", required: true })
-  @IsEmail({}, { message: "邮箱格式不正确" })
+  @ApiProperty({ description: "Sign-in email", example: "admin@wade.local", required: true })
+  @IsEmail({}, { message: "Invalid email address format" })
   email!: string;
 
-  @ApiProperty({ description: "登录密码", example: "admin", required: true })
-  @IsString({ message: "密码必须是字符串" })
-  @IsNotEmpty({ message: "密码不能为空" })
+  @ApiProperty({ description: "Sign-in password", example: "admin", required: true })
+  @IsString({ message: "password must be a string" })
+  @IsNotEmpty({ message: "password must not be empty" })
   password!: string;
 }

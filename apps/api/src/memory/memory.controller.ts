@@ -16,7 +16,7 @@ export class MemoryController {
 
   @Get("workspaces/:workspaceId/memories")
   @UseGuards(WorkspaceMemberGuard)
-  @ApiOperation({ summary: "获取工作区记忆列表" })
+  @ApiOperation({ summary: "Get workspace memories" })
   @ApiBearerAuth()
   listMemories(@Param("workspaceId") workspaceId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.memoryService.listVisibleMemories(workspaceId, user.id);
@@ -24,7 +24,7 @@ export class MemoryController {
 
   @Post("workspaces/:workspaceId/memories")
   @UseGuards(WorkspaceMemberGuard)
-  @ApiOperation({ summary: "创建工作区记忆" })
+  @ApiOperation({ summary: "Create a workspace memory" })
   @ApiBearerAuth()
   createMemory(
     @Param("workspaceId") workspaceId: string,
@@ -35,7 +35,7 @@ export class MemoryController {
   }
 
   @Patch("memories/:memoryId")
-  @ApiOperation({ summary: "更新记忆" })
+  @ApiOperation({ summary: "Update a memory" })
   @ApiBearerAuth()
   updateMemory(
     @Param("memoryId") memoryId: string,
@@ -46,14 +46,14 @@ export class MemoryController {
   }
 
   @Delete("memories/:memoryId")
-  @ApiOperation({ summary: "删除记忆" })
+  @ApiOperation({ summary: "Delete a memory" })
   @ApiBearerAuth()
   deleteMemory(@Param("memoryId") memoryId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.memoryService.deleteMemory(memoryId, user.id);
   }
 
   @Post("channels/:channelId/memories/extract")
-  @ApiOperation({ summary: "从频道对话抽取分层记忆(L1 原子 → L2 场景)" })
+  @ApiOperation({ summary: "Extract layered memories from channel conversations (L1 atomic → L2 scenarios)" })
   @ApiBearerAuth()
   extractFromConversation(
     @Param("channelId") channelId: string,

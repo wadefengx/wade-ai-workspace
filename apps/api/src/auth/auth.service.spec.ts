@@ -180,7 +180,7 @@ describe("AuthService", () => {
       createdAt: new Date("2023-12-01T00:00:00.000Z")
     });
 
-    await expect(service.refresh(expiredRefreshToken)).rejects.toThrow("登录已过期,请重新登录");
+    await expect(service.refresh(expiredRefreshToken)).rejects.toThrow("Session has expired; please sign in again");
     expect(prisma.refreshToken.delete).toHaveBeenCalledWith({
       where: { id: "refresh-1" }
     });

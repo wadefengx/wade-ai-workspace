@@ -94,7 +94,7 @@ const useSidebarStore = create<SidebarState>()(
   )
 );
 
-/* styled-components 组件化示范:侧边栏底部用户卡片 */
+/* styled-components example: sidebar user card at the bottom */
 const SidebarFooter = styled.div`
   margin-top: auto;
   padding-top: 12px;
@@ -224,14 +224,14 @@ function startOfDay(value: Date) {
 }
 
 function formatMonthLabel(value: Date) {
-  return `${value.getFullYear()}年${value.getMonth() + 1}月`;
+  return value.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 function resolveChannelGroup(channel: Channel, now: Date): Omit<ChannelGroup, "channels"> {
   if (!channel.lastMessageAt) {
     return {
       key: "no-messages",
-      label: "暂无消息",
+      label: "No messages",
       sortOrder: 99,
       sortTimestamp: Number.NEGATIVE_INFINITY
     };
@@ -242,7 +242,7 @@ function resolveChannelGroup(channel: Channel, now: Date): Omit<ChannelGroup, "c
   if (Number.isNaN(timestamp.getTime())) {
     return {
       key: "no-messages",
-      label: "暂无消息",
+      label: "No messages",
       sortOrder: 99,
       sortTimestamp: Number.NEGATIVE_INFINITY
     };
@@ -253,7 +253,7 @@ function resolveChannelGroup(channel: Channel, now: Date): Omit<ChannelGroup, "c
   if (dayDiff <= 0) {
     return {
       key: "today",
-      label: "今天",
+      label: "Today",
       sortOrder: 0,
       sortTimestamp: Number.POSITIVE_INFINITY
     };
@@ -262,7 +262,7 @@ function resolveChannelGroup(channel: Channel, now: Date): Omit<ChannelGroup, "c
   if (dayDiff < 7) {
     return {
       key: "this-week",
-      label: "一周前",
+      label: "One week ago",
       sortOrder: 1,
       sortTimestamp: now.getTime() - 7 * DAY_IN_MS
     };
@@ -271,7 +271,7 @@ function resolveChannelGroup(channel: Channel, now: Date): Omit<ChannelGroup, "c
   if (dayDiff < 30) {
     return {
       key: "this-month",
-      label: "一月前",
+      label: "One month ago",
       sortOrder: 2,
       sortTimestamp: now.getTime() - 30 * DAY_IN_MS
     };
@@ -316,15 +316,15 @@ function resolveWorkspaceIconName(workspace?: { icon?: unknown } | null) {
 
 function resolveThemeLabel(themeMode: ThemeMode, resolvedTheme: "light" | "dark") {
   if (themeMode === "system") {
-    return `跟随系统（当前${resolvedTheme === "dark" ? "深色" : "浅色"}）`;
+    return `System (${resolvedTheme === "dark" ? "Dark" : "Light"})`;
   }
 
-  return resolvedTheme === "dark" ? "深色" : "浅色";
+  return resolvedTheme === "dark" ? "Dark" : "Light";
 }
 
 function resolveNextChatName() {
-  // 新对话统一叫"新对话",AI 回复完成后由模型生成真实标题
-  return "新对话";
+  // New chats are uniformly named "New Chat"; the model generates the actual title after an AI response completes
+  return "New Chat";
 }
 
 function BrandMark() {
@@ -411,7 +411,7 @@ export function WorkspaceNavigation() {
     [systemPrefersDark, themeMode]
   );
   const themeTooltip = useMemo(
-    () => `当前主题：${resolveThemeLabel(themeMode, resolvedTheme)}`,
+    () => `Current theme: ${resolveThemeLabel(themeMode, resolvedTheme)}`,
     [resolvedTheme, themeMode]
   );
   const currentMember = useMemo(
@@ -504,18 +504,18 @@ export function WorkspaceNavigation() {
 
       setWorkspaceModalOpen(false);
       workspaceForm.resetFields();
-      message.success("Workspace 已创建");
+      message.success("Workspace created");
       router.push(buildWorkspaceHref(pathname, nextWorkspace?.id ?? null));
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "创建 Workspace 失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to create workspace");
     }
   });
 
   const createChannelMutation = useMutation({
     mutationFn: () => {
       if (!workspaceId) {
-        throw new Error("缺少 Workspace");
+        throw new Error("Workspace is required");
       }
 
       return requestCreateChannel(workspaceId, { name: resolveNextChatName() });
@@ -530,11 +530,11 @@ export function WorkspaceNavigation() {
         queryKey: workspaceKeys.channels(workspaceId),
         queryFn: () => fetchChannels(workspaceId)
       });
-      message.success("对话已创建");
+      message.success("Chat created");
       router.push(buildWorkspaceHref("/", workspaceId, { channelId: channel.id }));
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "创建对话失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to create chat");
     }
   });
   const logoutMutation = useMutation({
@@ -567,8 +567,8 @@ export function WorkspaceNavigation() {
               )
             },
             { type: "divider" },
-            { key: "profile", label: "个人详情" },
-            { key: "logout", danger: true, label: "退出登录" }
+            { key: "profile", label: "Profile" },
+            { key: "logout", danger: true, label: "Sign out" }
           ]
         : [],
     [user]
@@ -685,11 +685,11 @@ export function WorkspaceNavigation() {
                 />
               </Tooltip>
             ) : null}
-            <Tooltip title={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"} placement="bottom">
+            <Tooltip title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} placement="bottom">
               <Button
                 className={styles.sidebarActionButton}
                 type="text"
-                aria-label={sidebarCollapsed ? "展开侧边栏" : "折叠侧边栏"}
+                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               />
@@ -717,8 +717,8 @@ export function WorkspaceNavigation() {
                     selectedWorkspace
                       ? `${selectedWorkspace.name} · ${getWorkspaceIconLabel(resolveWorkspaceIconName(selectedWorkspace))}`
                       : workspaces.length
-                        ? "选择 Workspace"
-                        : "暂无 Workspace"
+                        ? "Select workspace"
+                        : "No workspaces yet"
                   }
                   placement="right"
                 >
@@ -728,18 +728,18 @@ export function WorkspaceNavigation() {
                     loading={workspacesLoading}
                     aria-label={
                       selectedWorkspace
-                        ? `当前 Workspace：${selectedWorkspace.name}，打开切换菜单`
-                        : "打开 Workspace 切换菜单"
+                        ? `Current workspace: ${selectedWorkspace.name}. Open switcher.`
+                        : "Open workspace switcher"
                     }
                     icon={renderWorkspaceIcon(resolveWorkspaceIconName(selectedWorkspace))}
                   />
                 </Tooltip>
               </Dropdown>
-              <Tooltip title="新建 Workspace" placement="right">
+              <Tooltip title="Create workspace" placement="right">
                 <Button
                   className={styles.iconOnlyButton}
                   type="text"
-                  aria-label="新建 Workspace"
+                  aria-label="Create workspace"
                   icon={<PlusOutlined />}
                   onClick={() => setWorkspaceModalOpen(true)}
                 />
@@ -748,8 +748,8 @@ export function WorkspaceNavigation() {
           ) : (
             <>
               <Select
-                aria-label="选择 Workspace"
-                placeholder={workspaces.length ? "选择 Workspace" : "暂无 Workspace"}
+                aria-label="Select workspace"
+                placeholder={workspaces.length ? "Select workspace" : "No workspaces yet"}
                 value={workspaceId ?? undefined}
                 options={workspaces.map((workspace) => ({
                   label: (
@@ -771,8 +771,8 @@ export function WorkspaceNavigation() {
                   )
                 }
               />
-              <Button icon={<PlusOutlined />} aria-label="新建 Workspace" onClick={() => setWorkspaceModalOpen(true)}>
-                新建 Workspace
+              <Button icon={<PlusOutlined />} aria-label="Create workspace" onClick={() => setWorkspaceModalOpen(true)}>
+                Create workspace
               </Button>
             </>
           )}
@@ -791,7 +791,7 @@ export function WorkspaceNavigation() {
                 <Button
                   className={styles.sectionCollapseToggle}
                   type="text"
-                  aria-label={`${collapsedSections.chats ? "展开" : "折叠"} Chats 区域`}
+                  aria-label={`${collapsedSections.chats ? "Expand" : "Collapse"} Chats section`}
                   onClick={() =>
                     setCollapsedSections((current) => ({ ...current, chats: !current.chats }))
                   }
@@ -805,13 +805,13 @@ export function WorkspaceNavigation() {
                 <Typography.Text className={`${styles.sectionTitle} ${styles.sectionCollapseTitle}`}>Chats</Typography.Text>
               </>
             )}
-            <Tooltip title="新建 Chat" placement={sidebarCollapsed ? "right" : "top"}>
+            <Tooltip title="Create chat" placement={sidebarCollapsed ? "right" : "top"}>
               <Button
                 className={sidebarCollapsed ? styles.hiddenOnCollapsed : ""}
                 icon={<PlusOutlined />}
                 size="small"
                 type="text"
-                aria-label="新建 Chat"
+                aria-label="Create chat"
                 disabled={!workspaceId || createChannelMutation.isPending}
                 loading={createChannelMutation.isPending}
                 onClick={() => createChannelMutation.mutate()}
@@ -823,7 +823,7 @@ export function WorkspaceNavigation() {
             <Input
               allowClear
               className={styles.chatSearch}
-              placeholder="搜索 Chats"
+              placeholder="Search chats"
               prefix={<SearchOutlined />}
               value={chatSearch}
               onChange={(event) => setChatSearch(event.target.value)}
@@ -832,7 +832,7 @@ export function WorkspaceNavigation() {
 
           {!collapsedSections.chats && (channelsLoading ? (
             <div className={styles.loadingBlock}>
-              <LoadingState compact align="left" title="正在读取 Chats" description="同步频道列表与最近活跃时间。" />
+              <LoadingState compact align="left" title="Loading chats" description="Syncing channel list and latest activity." />
             </div>
           ) : (
             <div className={styles.channelGroups}>
@@ -843,7 +843,7 @@ export function WorkspaceNavigation() {
                       <Button
                         className={styles.channelGroupToggle}
                         type="text"
-                        aria-label={`${collapsedChannelGroups[group.key] ? "展开" : "折叠"} ${group.label} 频道分组`}
+                        aria-label={`${collapsedChannelGroups[group.key] ? "Expand" : "Collapse"} ${group.label} channel group`}
                         onClick={() =>
                           setCollapsedChannelGroups((current) => ({
                             ...current,
@@ -875,7 +875,7 @@ export function WorkspaceNavigation() {
                                 channel.id === selectedChannelId ? styles.channelButtonActive : ""
                               } ${sidebarCollapsed ? styles.channelButtonCollapsed : ""}`}
                               type="text"
-                              aria-label={`打开频道 ${channel.name}`}
+                              aria-label={`Open channel ${channel.name}`}
                               onClick={() => router.push(buildWorkspaceHref("/", workspaceId, { channelId: channel.id }))}
                             >
                               <MessageOutlined />
@@ -903,8 +903,8 @@ export function WorkspaceNavigation() {
                   compact
                   align="left"
                   icon={<MessageOutlined />}
-                  title={workspaceId ? "还没有频道" : "先创建 Workspace"}
-                  description={workspaceId ? "先创建一个 Chat 频道，消息与 AI 对话就会开始沉淀。" : "创建 Workspace 后，这里会自动出现频道列表。"}
+                  title={workspaceId ? "No channels yet" : "Create a workspace first"}
+                  description={workspaceId ? "Create a chat channel to start accumulating messages and AI conversations." : "The channel list will appear here automatically after you create a workspace."}
                   action={
                     workspaceId ? (
                     <Button
@@ -913,14 +913,14 @@ export function WorkspaceNavigation() {
                        loading={createChannelMutation.isPending}
                        onClick={() => createChannelMutation.mutate()}
                     >
-                        新建 Chat
+                        Create chat
                       </Button>
                     ) : undefined
                   }
                 />
               ) : null}
               {!!channels.length && !groupedChannels.length && !sidebarCollapsed ? (
-                <EmptyState compact align="left" icon={<SearchOutlined />} title="没有匹配的 Chats" description="换个关键词试试，或清空搜索查看全部频道。" />
+                <EmptyState compact align="left" icon={<SearchOutlined />} title="No matching chats" description="Try another keyword, or clear search to view all channels." />
               ) : null}
             </div>
           ))}
@@ -938,7 +938,7 @@ export function WorkspaceNavigation() {
               <Button
                 className={styles.sectionCollapseToggle}
                 type="text"
-                aria-label={`${collapsedSections.menu ? "展开" : "折叠"} Workspace Menu 区域`}
+                aria-label={`${collapsedSections.menu ? "Expand" : "Collapse"} Workspace Menu section`}
                 onClick={() =>
                   setCollapsedSections((current) => ({ ...current, menu: !current.menu }))
                 }
@@ -960,7 +960,7 @@ export function WorkspaceNavigation() {
                     sidebarCollapsed ? styles.navButtonCollapsed : ""
                   }`}
                   type="text"
-                  aria-label={`打开 ${item.label}`}
+                  aria-label={`Open ${item.label}`}
                   disabled={item.disabled}
                   onClick={() => {
                     if (item.disabled || !item.href) {
@@ -988,7 +988,7 @@ export function WorkspaceNavigation() {
           <UserCard
             type="button"
             $collapsed={sidebarCollapsed}
-            aria-label="打开账户菜单"
+            aria-label="Open account menu"
             onClick={(event) => {
               const { left, top, width, height } = event.currentTarget.getBoundingClientRect();
               setAccountAnchor({ left, top, width, height });
@@ -1047,8 +1047,8 @@ export function WorkspaceNavigation() {
       <Modal
         destroyOnHidden
         open={workspaceModalOpen}
-        title="创建 Workspace"
-        okText="创建"
+        title="Create workspace"
+        okText="Create"
         confirmLoading={createWorkspaceMutation.isPending}
         onCancel={() => setWorkspaceModalOpen(false)}
         onOk={() => workspaceForm.submit()}
@@ -1061,13 +1061,13 @@ export function WorkspaceNavigation() {
           onFinish={(values) => createWorkspaceMutation.mutate(values)}
         >
           <Form.Item
-            label="Workspace 名称"
+            label="Workspace Name"
             name="name"
-            rules={[{ required: true, message: "请输入 Workspace 名称" }]}
+            rules={[{ required: true, message: "Enter a workspace name" }]}
           >
-            <Input placeholder="例如：Product Team" />
+            <Input placeholder="e.g. Product Team" />
           </Form.Item>
-          <Form.Item label="Workspace Icon" name="icon" rules={[{ required: true, message: "请选择 Workspace Icon" }]}>
+          <Form.Item label="Workspace Icon" name="icon" rules={[{ required: true, message: "Select a workspace icon" }]}>
             <div className={styles.workspaceIconPickerGrid}>
               {WORKSPACE_ICONS.map((iconItem) => {
                 const selected = selectedWorkspaceIcon === iconItem.key;
@@ -1079,7 +1079,7 @@ export function WorkspaceNavigation() {
                       selected ? styles.workspaceIconPickerButtonSelected : ""
                     }`}
                     type="button"
-                    aria-label={`选择 ${iconItem.label} 图标`}
+                    aria-label={`Select ${iconItem.label} icon`}
                     onClick={() => workspaceForm.setFieldValue("icon", iconItem.key)}
                   >
                     {iconItem.icon}
@@ -1095,7 +1095,7 @@ export function WorkspaceNavigation() {
         destroyOnHidden
         footer={null}
         open={profileModalOpen}
-        title="个人详情"
+        title="Profile"
         onCancel={() => setProfileModalOpen(false)}
       >
         {user ? (
@@ -1103,19 +1103,19 @@ export function WorkspaceNavigation() {
             <Avatar size={72}>{user.name.slice(0, 1).toUpperCase()}</Avatar>
             <div className={styles.accountProfileMeta}>
               <div className={styles.accountProfileRow}>
-                <span className={styles.accountProfileLabel}>用户名</span>
+                <span className={styles.accountProfileLabel}>Username</span>
                 <span className={styles.accountProfileValue}>{user.name}</span>
               </div>
               <div className={styles.accountProfileRow}>
-                <span className={styles.accountProfileLabel}>邮箱</span>
+                <span className={styles.accountProfileLabel}>Email</span>
                 <span className={styles.accountProfileValue}>{user.email}</span>
               </div>
               <div className={styles.accountProfileRow}>
-                <span className={styles.accountProfileLabel}>角色</span>
+                <span className={styles.accountProfileLabel}>Role</span>
                 <span className={styles.accountProfileValue}>{userRole}</span>
               </div>
               <div className={styles.accountProfileRow}>
-                <span className={styles.accountProfileLabel}>注册时间</span>
+                <span className={styles.accountProfileLabel}>Registered</span>
                 <span className={styles.accountProfileValue}>{formatRegisteredAt(user.createdAt)}</span>
               </div>
             </div>

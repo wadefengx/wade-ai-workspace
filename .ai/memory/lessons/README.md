@@ -6,8 +6,8 @@
 2. Prefer copy-based migration when other lanes still read the old path.
 3. Short runtime docs work better when deep detail lives in focused files.
 4. Root-cause fixes beat one-off caller patches, especially around shared flows.
-5. 回归脚本要尽量自描述并输出 PASS/FAIL 汇总,这样才能直接接到后续 Hermes 打分链路。
-6. dev server 热重载下若先杀 npm wrapper,子进程可能残留占用端口;排查时先 `lsof -ti :PORT` 再定点清理 PID,不要用 `pkill`/`killall`.
+5. Regression scripts should be as self-describing as possible and print PASS/FAIL summaries so they can be directly connected to the subsequent Hermes scoring flow.
+6. With dev-server hot reload, killing the npm wrapper first can leave child processes holding the port; diagnose with `lsof -ti :PORT` and clean up the specific PID rather than using `pkill`/`killall`.
 
 ## Pending entries
 

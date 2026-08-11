@@ -25,21 +25,21 @@ export class AuthController {
 
   @Post("register")
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: "注册新用户" })
+  @ApiOperation({ summary: "Register a new user" })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post("login")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "用户登录" })
+  @ApiOperation({ summary: "User login" })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
 
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "刷新登录令牌" })
+  @ApiOperation({ summary: "Refresh authentication token" })
   refresh(@Body() dto: RefreshTokenDto) {
     return this.authService.refresh(dto.refreshToken);
   }
@@ -47,7 +47,7 @@ export class AuthController {
   @Post("logout")
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "用户退出登录" })
+  @ApiOperation({ summary: "User logout" })
   @ApiBearerAuth()
   logout(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.logout(user.id);
@@ -55,7 +55,7 @@ export class AuthController {
 
   @Get("me")
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: "获取当前登录用户" })
+  @ApiOperation({ summary: "Get current authenticated user" })
   @ApiBearerAuth()
   me(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.getCurrentUser(user);
@@ -63,7 +63,7 @@ export class AuthController {
 
   @Patch("password")
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: "修改当前用户密码" })
+  @ApiOperation({ summary: "Change current user password" })
   @ApiBearerAuth()
   changePassword(@CurrentUser() user: AuthenticatedUser, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(user.id, dto);

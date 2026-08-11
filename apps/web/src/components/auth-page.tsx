@@ -45,23 +45,23 @@ const contentByMode: Record<
   }
 > = {
   login: {
-    title: "登录 Wade AI",
-    subtitle: "进入你的团队 AI Workspace。",
-    submitLabel: "登录",
-    alternateLabel: "还没有账号？",
+    title: "Sign in to Wade AI",
+    subtitle: "Enter your team AI workspace.",
+    submitLabel: "Sign in",
+    alternateLabel: "Don’t have an account?",
     alternateHref: "/register",
-    alternateCta: "立即注册",
-    successMessage: "登录成功",
+    alternateCta: "Sign up",
+    successMessage: "Signed in successfully",
     endpoint: "/auth/login"
   },
   register: {
-    title: "创建 Wade AI 账号",
-    subtitle: "注册后即可创建或加入 Workspace。",
-    submitLabel: "注册",
-    alternateLabel: "已经有账号？",
+    title: "Create a Wade AI account",
+    subtitle: "Sign up to create or join a workspace.",
+    submitLabel: "Sign up",
+    alternateLabel: "Already have an account?",
     alternateHref: "/login",
-    alternateCta: "去登录",
-    successMessage: "注册成功",
+    alternateCta: "Sign in",
+    successMessage: "Signed up successfully",
     endpoint: "/auth/register"
   }
 };
@@ -93,7 +93,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       const resolvedAccessToken = accessToken ?? token;
 
       if (!resolvedAccessToken) {
-        setSubmitError("登录响应缺少 access token");
+        setSubmitError("The sign-in response is missing an access token");
         return;
       }
 
@@ -107,12 +107,12 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       router.replace("/");
     },
     onError: (error) => {
-      setSubmitError(error instanceof ApiError ? error.message : "请求失败，请稍后重试");
+      setSubmitError(error instanceof ApiError ? error.message : "Request failed. Please try again later.");
     }
   });
 
   if (!hydrated || isRestoring) {
-    return <LoadingState fullscreen title="正在恢复会话" description="请稍候，马上进入你的 Workspace。" />;
+    return <LoadingState fullscreen title="Restoring session" description="Please wait while we open your workspace." />;
   }
 
   if (user) {
@@ -157,8 +157,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           {mode === "register" ? (
             <Form.Item<RegisterValues>
               name="name"
-              label="姓名"
-              rules={[{ required: true, message: "请输入姓名" }]}
+              label="Name"
+              rules={[{ required: true, message: "Enter your name" }]}
             >
               <Input autoComplete="name" placeholder="Wade" className={styles.input} />
             </Form.Item>
@@ -166,10 +166,10 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
           <Form.Item<LoginValues>
             name="email"
-            label="邮箱"
+            label="Email"
             rules={[
-              { required: true, message: "请输入邮箱" },
-              { type: "email", message: "请输入有效邮箱" }
+              { required: true, message: "Enter your email" },
+              { type: "email", message: "Enter a valid email address" }
             ]}
           >
             <Input autoComplete="email" placeholder="wade@example.com" className={styles.input} />
@@ -177,10 +177,10 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
           <Form.Item<LoginValues>
             name="password"
-            label="密码"
-            rules={[{ required: true, message: "请输入密码" }]}
+            label="Password"
+            rules={[{ required: true, message: "Enter your password" }]}
           >
-            <Input.Password autoComplete="current-password" placeholder="请输入密码" className={styles.input} />
+            <Input.Password autoComplete="current-password" placeholder="Enter your password" className={styles.input} />
           </Form.Item>
 
           {submitError ? <Typography.Text className={styles.inlineError}>{submitError}</Typography.Text> : null}
@@ -194,7 +194,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           <Typography.Text className={styles.footerText}>
             {content.alternateLabel} <Link href={content.alternateHref}>{content.alternateCta}</Link>
           </Typography.Text>
-          <Typography.Text className={styles.footerHint}>使用你的团队账号继续进入协作空间。</Typography.Text>
+          <Typography.Text className={styles.footerHint}>Continue with your team account to enter the collaborative workspace.</Typography.Text>
         </Space>
       </motion.section>
     </div>

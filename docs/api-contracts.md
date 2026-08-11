@@ -1,71 +1,71 @@
-# API 契约(当前)
+# API Contract (Current)
 
-基路径 `/api`(NestJS 全局前缀)。JSON,时间 ISO 8601 UTC,ID 为 MongoDB ObjectId。完整 OpenAPI 见 Swagger:http://localhost:3001/api/swagger
+Base path: `/api` (NestJS global prefix). Requests and responses use JSON; timestamps use ISO 8601 UTC; IDs are MongoDB ObjectIds. For the complete OpenAPI definition, see [Swagger UI](http://localhost:3001/api/swagger).
 
-认证:注册/登录后返回 `accessToken`(Bearer);`/auth/refresh` 轮换。除健康检查与注册/登录外均需 `Authorization: Bearer <token>`。
+Authentication: registration and login return an `accessToken` (Bearer); `/auth/refresh` rotates tokens. All endpoints except health checks, registration, and login require `Authorization: Bearer ***`.
 
-## 认证 `/api/auth`
+## Authentication `/api/auth`
 
-| 方法 | 路径 | 说明 |
+| Method | Path | Description |
 |---|---|---|
 | POST | /auth/register | `{email, password, name?}` → 201 |
 | POST | /auth/login | `{email, password}` → `{accessToken, user}` |
-| POST | /auth/refresh | `{refreshToken}` → 新 token 对 |
-| POST | /auth/logout | 使当前 refresh token 失效 |
-| GET | /auth/me | 当前用户信息 |
+| POST | /auth/refresh | `{refreshToken}` → a new token pair |
+| POST | /auth/logout | Invalidates the current refresh token |
+| GET | /auth/me | Current user information |
 | PATCH | /auth/password | `{oldPassword, newPassword}` |
 
-## Workspace `/api/workspaces`(需 WorkspaceMember 权限)
+## Workspaces `/api/workspaces` (requires `WorkspaceMember` permission)
 
-- `GET /`、`POST /`(建 workspace)、`GET /:id`、`PATCH /:id`、`DELETE /:id`
-- `GET /:id/channels`、`POST /:id/channels`(建频道)
-- `GET /:id/members`、`POST /:id/members`、`PATCH /members/:memberId`、`DELETE /members/:memberId`
-- Workspace 响应含 **defaultAgentId**(Phase 16:对话默认 Agent)
+- `GET /`, `POST /` (create a workspace), `GET /:id`, `PATCH /:id`, `DELETE /:id`
+- `GET /:id/channels`, `POST /:id/channels` (create a channel)
+- `GET /:id/members`, `POST /:id/members`, `PATCH /members/:memberId`, `DELETE /members/:memberId`
+- Workspace responses include **defaultAgentId** (Phase 16: the default agent for conversations).
 
-## 聊天 `/api/channels`
+## Chat `/api/channels`
 
-| 方法 | 路径 | 说明 |
+| Method | Path | Description |
 |---|---|---|
-| GET | /channels/:id/messages | 消息历史(游标分页) |
-| POST | /channels/:id/messages | `{content, mentionIds?}` → 201 消息 |
+| GET | /channels/:id/messages | Message history (cursor pagination) |
+| POST | /channels/:id/messages | `{content, mentionIds?}` → 201 message |
 | PATCH | /channels/:id/messages/:msgId/feedback | `{feedback: like\|dislike\|null}` |
-| POST | /channels/:id/generate-title | AI 生成对话标题 |
-| POST | /channels/:id/ai/stream | **SSE 流式 AI 回复** |
+| POST | /channels/:id/generate-title | Generate a conversation title with AI |
+| POST | /channels/:id/ai/stream | **SSE-streamed AI response** |
 
-**SSE 事件**(stream):`token {content}` / `citations {citations: [{index, filename, chunkIndex, content}]}` / `reasoning` / `done` / `error {message}`。
+**SSE events** (`stream`): `token {content}` / `citations {citations: [{index, filename, chunkIndex, content}]}` / `reasoning` / `done` / `error {message}`.
 
-## Agents `/api`(Phase 14/15/16)
+## Agents `/api` (Phases 14–16)
 
-- `GET /workspaces/:id/agents`、`POST /workspaces/:id/agents`、`PATCH /agents/:id`、`DELETE /agents/:id`
-- `POST /agents/:id/test` — **测试连接**(调 provider 验证 baseUrl/key/model)
-- Agent 字段:name、type(OLLAMA/OPENAI_COMPATIBLE/ANTHROPIC/OPENCLAW/HERMES)、engineType、emoji、role、description、systemPrompt、harness、providerConfigRef(只写不回,响应为 `hasApiKey`)、embeddingModel/embeddingBaseUrl
+- `GET /workspaces/:id/agents`, `POST /workspaces/:id/agents`, `PATCH /agents/:id`, `DELETE /agents/:id`
+- `POST /agents/:id/test` — **test the connection** (calls the provider to validate `baseUrl`, key, and model)
+- Agent fields: `name`, `type` (`OLLAMA`/`OPENAI_COMPATIBLE`/`ANTHROPIC`/`OPENCLAW`/`HERMES`), `engineType`, `emoji`, `role`, `description`, `systemPrompt`, `harness`, `providerConfigRef` (write-only; responses expose `hasApiKey`), `embeddingModel`, and `embeddingBaseUrl`
 
-## Knowledge(RAG)`/api`
+## Knowledge (RAG) `/api`
 
-- `POST /workspaces/:id/knowledge`(上传文档,multipart)
-- `GET /workspaces/:id/knowledge`、`PATCH /knowledge/:docId`、`DELETE /knowledge/:docId`
-- `POST /knowledge/:docId/reindex`(重新切片;contentHash 相同跳过)
+- `POST /workspaces/:id/knowledge` (upload a document; multipart)
+- `GET /workspaces/:id/knowledge`, `PATCH /knowledge/:docId`, `DELETE /knowledge/:docId`
+- `POST /knowledge/:docId/reindex` (re-chunk; skips when `contentHash` is unchanged)
 
-## Memory(Phase 16 分层)`/api`
+## Memory (Phase 16 layered memory) `/api`
 
-- `GET /workspaces/:id/memories`、`POST /workspaces/:id/memories`(手建)
-- `PATCH /memories/:id`、`DELETE /memories/:id`
-- **`POST /channels/:id/memories/extract`** — 从频道对话抽取 L1 原子 → L2 场景(LLM JSON,失败降级返回 `{success:false}`)
+- `GET /workspaces/:id/memories`, `POST /workspaces/:id/memories` (create manually)
+- `PATCH /memories/:id`, `DELETE /memories/:id`
+- **`POST /channels/:id/memories/extract`** — extracts L1 atoms → L2 scenarios from a channel conversation (LLM JSON; degrades to `{success:false}` on failure)
 
 ## Docs / Stats / Users
 
-- `GET /docs/specs`、`GET /docs/specs/:name`、`GET /docs/skills`、`GET /docs/skills/:name`(浏览 SDD 规格与技能)
-- `GET /stats/organization`(AI 组织仪表盘)、`GET /stats/feedback`
-- `GET /users`(用户管理,全局管理员)
+- `GET /docs/specs`, `GET /docs/specs/:name`, `GET /docs/skills`, `GET /docs/skills/:name` (browse SDD specifications and skills)
+- `GET /stats/organization` (AI organization dashboard), `GET /stats/feedback`
+- `GET /users` (user management; global administrators only)
 
-## 健康检查
+## Health Check
 
-- `GET /api/health` → `{status: "ok"}`(仅 DB ping;ollama 为可选,不影响健康)
+- `GET /api/health` → `{status: "ok"}` (DB ping only; Ollama is optional and does not affect health)
 
-## 错误格式
+## Error Format
 
 ```json
-{ "statusCode": 400, "message": "可读错误信息", "error": "Bad Request" }
+{ "statusCode": 400, "message": "Readable error message", "error": "Bad Request" }
 ```
 
-常用状态码:`400` 参数、`401` 未认证、`403` 无权限、`404` 不存在、`500` 服务错误。
+Common status codes: `400` invalid input, `401` unauthenticated, `403` unauthorized, `404` not found, `500` server error.

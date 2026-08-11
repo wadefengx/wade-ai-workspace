@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# 用途: Phase 6 e2e 验证 members + agents + users search + AI stream
-# 前置依赖: 本地 API 已启动在 http://localhost:3001/api ; 已有 alice/bob/carol 测试账号 ; node/curl 可用
-# 运行方式: bash .ai/harness/regression/verify-phase6.sh
+# Purpose: Phase 6 e2e verification for members + agents + user search + AI stream
+# Prerequisites: local API running at http://localhost:3001/api; alice/bob/carol test accounts exist; node and curl available
+# Run: bash .ai/harness/regression/verify-phase6.sh
 set -u
 
 BASE="${API_BASE:-http://localhost:3001/api}"
@@ -159,7 +159,7 @@ ensure_registered() { # ensure_registered <name> <email>
   else
     ck "ensure $email registered" "201|409" "$REQ_STATUS"
     show_request_failure
-    fatal "测试前置失败: 无法确保 $email 已注册"
+    fatal "Test prerequisite failed: could not ensure $email is registered"
   fi
 }
 
@@ -181,38 +181,38 @@ echo "== 1. setup =="
 request "alice-login" POST "/auth/login" "" '{"email":"alice@wade.local","password":"password123"}' "$TMP_DIR/alice-login.json"
 if [ "$REQ_STATUS" != "200" ]; then
   assert_status "alice login" 200
-  fatal "测试前置失败: alice 登录失败" 0
+  fatal "Test prerequisite failed: alice login failed" 0
 fi
 ALICE_TOKEN="$(json_eval "$TMP_DIR/alice-login.json" 'data.token ?? ""' 2>/dev/null)"
-[ -n "$ALICE_TOKEN" ] || fatal "测试前置失败: alice token 缺失"
+[ -n "$ALICE_TOKEN" ] || fatal "Test prerequisite failed: alice token is missing"
 
 request "admin-login" POST "/auth/login" "" '{"email":"admin@wade.local","password":"admin"}' "$TMP_DIR/admin-login.json"
 if [ "$REQ_STATUS" != "200" ]; then
   assert_status "admin login" 200
-  fatal "测试前置失败: admin 登录失败" 0
+  fatal "Test prerequisite failed: admin login failed" 0
 fi
 ADMIN_TOKEN="$(json_eval "$TMP_DIR/admin-login.json" 'data.token ?? ""' 2>/dev/null)"
-[ -n "$ADMIN_TOKEN" ] || fatal "测试前置失败: admin token 缺失"
+[ -n "$ADMIN_TOKEN" ] || fatal "Test prerequisite failed: admin token is missing"
 
 request "alice-workspaces" GET "/workspaces" "$ALICE_TOKEN" "" "$TMP_DIR/alice-workspaces.json"
 if [ "$REQ_STATUS" != "200" ]; then
   assert_status "alice workspaces" 200
-  fatal "测试前置失败: 无法读取工作区列表" 0
+  fatal "Test prerequisite failed: could not read workspace list" 0
 fi
 WORKSPACE_ID="$(json_eval "$TMP_DIR/alice-workspaces.json" '(Array.isArray(data) ? data : []).find((item) => item.name === "Team Alpha")?.id ?? ""' 2>/dev/null)"
-[ -n "$WORKSPACE_ID" ] || fatal "测试前置失败: 未找到 Team Alpha workspaceId"
+[ -n "$WORKSPACE_ID" ] || fatal "Test prerequisite failed: Team Alpha workspaceId was not found"
 
 request "channels" GET "/workspaces/$WORKSPACE_ID/channels" "$ALICE_TOKEN" "" "$TMP_DIR/channels.json"
 if [ "$REQ_STATUS" != "200" ]; then
   assert_status "list channels" 200
-  fatal "测试前置失败: 无法读取频道列表" 0
+  fatal "Test prerequisite failed: could not read channel list" 0
 fi
 GENERAL_CHANNEL_ID="$(json_eval "$TMP_DIR/channels.json" '(Array.isArray(data) ? data : []).find((item) => item.name === "general")?.id ?? ""' 2>/dev/null)"
-[ -n "$GENERAL_CHANNEL_ID" ] || fatal "测试前置失败: 未找到 general 频道"
+[ -n "$GENERAL_CHANNEL_ID" ] || fatal "Test prerequisite failed: general channel was not found"
 
 ensure_registered "Carol" "carol@wade.local"
 
-# 幂等清理:移除上次运行残留的 bob/carol 成员,重置 agent 配置
+# Idempotent cleanup: remove bob/carol members left by the previous run and reset agent configuration
 request "members-list" GET "/workspaces/$WORKSPACE_ID/members" "$ALICE_TOKEN" "" "$TMP_DIR/members-before.json"
 for _email in bob@wade.local carol@wade.local; do
   _mid="$(json_eval "$TMP_DIR/members-before.json" "(Array.isArray(data) ? data : []).find((item) => item.email === \"$_email\")?.id ?? \"\"" 2>/dev/null)"
@@ -221,7 +221,7 @@ for _email in bob@wade.local carol@wade.local; do
   fi
 done
 request "agents-before" GET "/workspaces/$WORKSPACE_ID/agents" "$ALICE_TOKEN" "" "$TMP_DIR/agents-before.json"
-# 重置 agent 配置到初始状态(apiKey 无法通过 API 清空,测试环境直接清库)
+# Reset agent configuration to its initial state (the API cannot clear apiKey, so the test environment updates the database directly)
 mongosh --quiet mongodb://127.0.0.1:27017/wade_workspace --eval 'db.Agent.updateMany({}, {$set: {providerConfigRef: null}})' > /dev/null 2>&1 || true
 
 echo "== 2. members =="
@@ -240,10 +240,10 @@ assert_status "4. add OWNER 400" 400
 request "bob-login" POST "/auth/login" "" '{"email":"bob@wade.local","password":"password123"}' "$TMP_DIR/bob-login.json"
 if [ "$REQ_STATUS" != "200" ]; then
   assert_status "5. bob login 200" 200
-  fatal "测试前置失败: bob 登录失败" 0
+  fatal "Test prerequisite failed: bob login failed" 0
 fi
 BOB_TOKEN="$(json_eval "$TMP_DIR/bob-login.json" 'data.token ?? ""' 2>/dev/null)"
-[ -n "$BOB_TOKEN" ] || fatal "测试前置失败: bob token 缺失"
+[ -n "$BOB_TOKEN" ] || fatal "Test prerequisite failed: bob token is missing"
 
 request "bob-workspaces" GET "/workspaces" "$BOB_TOKEN" "" "$TMP_DIR/bob-workspaces.json"
 assert_status "5. bob can list workspaces 200" 200
@@ -252,12 +252,12 @@ json_true "5. bob sees Team Alpha" "$TMP_DIR/bob-workspaces.json" '(Array.isArra
 request "members-after-bob" GET "/workspaces/$WORKSPACE_ID/members" "$ALICE_TOKEN" "" "$TMP_DIR/members-after-bob.json"
 if [ "$REQ_STATUS" != "200" ]; then
   assert_status "list members for ids" 200
-  fatal "测试前置失败: 无法读取成员列表" 0
+  fatal "Test prerequisite failed: could not read member list" 0
 fi
 BOB_MEMBER_ID="$(json_eval "$TMP_DIR/members-after-bob.json" '(Array.isArray(data) ? data : []).find((item) => item.email === "bob@wade.local")?.id ?? ""' 2>/dev/null)"
 ALICE_MEMBER_ID="$(json_eval "$TMP_DIR/members-after-bob.json" '(Array.isArray(data) ? data : []).find((item) => item.email === "alice@wade.local")?.id ?? ""' 2>/dev/null)"
-[ -n "$BOB_MEMBER_ID" ] || fatal "测试前置失败: 未找到 bob 的 memberId"
-[ -n "$ALICE_MEMBER_ID" ] || fatal "测试前置失败: 未找到 alice 的 memberId"
+[ -n "$BOB_MEMBER_ID" ] || fatal "Test prerequisite failed: bob memberId was not found"
+[ -n "$ALICE_MEMBER_ID" ] || fatal "Test prerequisite failed: alice memberId was not found"
 
 request "promote-bob" PATCH "/members/$BOB_MEMBER_ID" "$ALICE_TOKEN" '{"role":"ADMIN"}' "$TMP_DIR/promote-bob.json"
 assert_status "6. promote bob to ADMIN 200" 200
@@ -280,10 +280,10 @@ assert_status "10. delete OWNER target 403" 403
 request "members-after-carol" GET "/workspaces/$WORKSPACE_ID/members" "$ALICE_TOKEN" "" "$TMP_DIR/members-after-carol.json"
 if [ "$REQ_STATUS" != "200" ]; then
   assert_status "list members before carol delete" 200
-  fatal "测试前置失败: 无法刷新成员列表" 0
+  fatal "Test prerequisite failed: could not refresh member list" 0
 fi
 CAROL_MEMBER_ID="$(json_eval "$TMP_DIR/members-after-carol.json" '(Array.isArray(data) ? data : []).find((item) => item.email === "carol@wade.local")?.id ?? ""' 2>/dev/null)"
-[ -n "$CAROL_MEMBER_ID" ] || fatal "测试前置失败: 未找到 carol 的 memberId"
+[ -n "$CAROL_MEMBER_ID" ] || fatal "Test prerequisite failed: carol memberId was not found"
 
 request "delete-carol" DELETE "/members/$CAROL_MEMBER_ID" "$ALICE_TOKEN" "" "$TMP_DIR/delete-carol.json"
 assert_status "11. alice deletes carol 200" 200
@@ -293,7 +293,7 @@ request "list-agents-1" GET "/workspaces/$WORKSPACE_ID/agents" "$ALICE_TOKEN" ""
 assert_status "12. list agents 200" 200
 json_true "12. agents response is array" "$TMP_DIR/list-agents-1.json" 'Array.isArray(data)'
 AGENT_ID="$(json_eval "$TMP_DIR/list-agents-1.json" '(Array.isArray(data) ? data : [])[0]?.id ?? ""' 2>/dev/null)"
-[ -n "$AGENT_ID" ] || fatal "测试前置失败: agents 列表为空，无法继续 PATCH/stream 验证"
+[ -n "$AGENT_ID" ] || fatal "Test prerequisite failed: agents list is empty; cannot continue PATCH/stream verification"
 
 request "patch-agent-no-key" PATCH "/agents/$AGENT_ID" "$ALICE_TOKEN" '{"providerConfig":{"model":"qwen3:8b","baseUrl":"http://127.0.0.1:11434/v1"}}' "$TMP_DIR/patch-agent-no-key.json"
 assert_status "13. patch agent without apiKey 200" 200
@@ -309,7 +309,7 @@ json_true "14. list agents hasApiKey === true" "$TMP_DIR/list-agents-2.json" '(A
 json_true "14. list agents does not expose apiKey" "$TMP_DIR/list-agents-2.json" '(Array.isArray(data) ? data : []).every((item) => !("apiKey" in (item.providerConfig ?? {})))'
 
 echo "== 4. AI stream =="
-request "ai-stream" POST "/channels/$GENERAL_CHANNEL_ID/ai/stream" "$ALICE_TOKEN" '{"content":"@AI 请只回复 ok"}' "$TMP_DIR/ai-stream.txt"
+request "ai-stream" POST "/channels/$GENERAL_CHANNEL_ID/ai/stream" "$ALICE_TOKEN" '{"content":"@AI \u8bf7\u53ea\u56de\u590d ok"}' "$TMP_DIR/ai-stream.txt"
 assert_status "15. ai stream 200" 200
 text_true "15. ai stream has token event" "$TMP_DIR/ai-stream.txt" 'text.split(/\n/).filter((line) => line.startsWith("data: ")).map((line) => JSON.parse(line.slice(6))).some((event) => event.type === "token" && typeof event.content === "string" && event.content.length > 0)'
 text_true "15. ai stream has done event" "$TMP_DIR/ai-stream.txt" 'text.split(/\n/).filter((line) => line.startsWith("data: ")).map((line) => JSON.parse(line.slice(6))).some((event) => event.type === "done")'

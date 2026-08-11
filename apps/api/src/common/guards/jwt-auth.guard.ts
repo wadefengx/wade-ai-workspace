@@ -25,14 +25,14 @@ export class JwtAuthGuard implements CanActivate {
     const token = this.extractBearerToken(request.headers.authorization);
 
     if (!token) {
-      throw new UnauthorizedException("未登录或登录已过期");
+      throw new UnauthorizedException("Not signed in or session has expired");
     }
 
     const payload = await this.verifyToken(token);
     const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
 
     if (!user) {
-      throw new UnauthorizedException("未登录或登录已过期");
+      throw new UnauthorizedException("Not signed in or session has expired");
     }
 
     request.user = toAuthenticatedUser(user);
@@ -58,7 +58,7 @@ export class JwtAuthGuard implements CanActivate {
     try {
       return await this.jwtService.verifyAsync<JwtPayload>(token);
     } catch {
-      throw new UnauthorizedException("未登录或登录已过期");
+      throw new UnauthorizedException("Not signed in or session has expired");
     }
   }
 }

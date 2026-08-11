@@ -32,11 +32,11 @@ bash .ai/harness/regression/verify-phase9.sh
 bash .ai/harness/regression/verify-phase10.sh
 ```
 
-- 默认目标是 `http://localhost:3001/api`; 如需覆盖可设置 `API_BASE=http://host:port/api`.
-- 这些脚本会输出 PASS/FAIL 汇总并用退出码表达结果,适合接到本地 QA 或后续 Hermes 流水线。
+- The default target is `http://localhost:3001/api`; override it with `API_BASE=http://host:port/api` when needed.
+- These scripts print a PASS/FAIL summary and signal the result with their exit code, making them suitable for local QA or a later Hermes pipeline.
 
 ## Notes
 
-- 每个重要 workflow 配一个 harness 目录,把 golden case、eval 定义和回归材料放在一起。
-- Hermes 实现后优先跑 harness 出分,再把分数写回评审或发布材料。
+- Give every important workflow a harness directory and keep its golden cases, eval definitions, and regression assets together.
+- After Hermes implements a change, run the harness first and then record its score in review or release material.
 - Prefer lightweight, source-controlled artifacts over opaque external tooling state.

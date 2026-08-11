@@ -67,7 +67,7 @@ export class MemoryService {
 
   async updateMemory(memoryId: string, userId: string, dto: UpdateMemoryDto) {
     if (dto.content === undefined && dto.enabled === undefined) {
-      throw new BadRequestException("至少提供一个可更新字段");
+      throw new BadRequestException("Provide at least one field to update");
     }
 
     const memory = await this.ensureManagePermission(memoryId, userId);
@@ -90,8 +90,8 @@ export class MemoryService {
   }
 
   /**
-   * TencentDB-Agent-Memory 创意落地:L0 对话 → L1 原子事实 → L2 场景 → L3 画像。
-   * 取频道最近 N 条消息,单次 LLM 调用(JSON)抽取场景分段 + 原子事实,L1 按 embedding 余弦去重。
+   * TencentDB-Agent-Memory implementation: L0 conversations → L1 atomic facts → L2 scenarios → L3 profiles.
+   * Retrieve the latest N channel messages and use one LLM call (JSON) to extract scenario segments and atomic facts; deduplicate L1 entries by embedding cosine similarity.
    */
   async extractFromConversation(channelId: string, userId: string) {
     const channel = await this.prisma.channel.findUnique({
@@ -100,13 +100,13 @@ export class MemoryService {
     });
 
     if (!channel) {
-      throw new NotFoundException("频道不存在");
+      throw new NotFoundException("Channel not found");
     }
 
-    // 取 workspace 默认 agent 的 provider 配置,LLM 抽取必须走真实模型
+    // Use the workspace default agent provider configuration; LLM extraction must use a real model.
     const agentConfig = await this.resolveAgentConfig(channel.workspaceId);
     if (!agentConfig) {
-      this.logger.warn("记忆抽取跳过:workspace 无可用默认 Agent(未配置 provider)");
+      this.logger.warn("Memory extraction skipped: the workspace has no available default agent (provider not configured)");
       return { success: false, extractedCount: 0, storedCount: 0, sceneNames: [], reason: "NO_AGENT_CONFIG" };
     }
 
@@ -138,7 +138,7 @@ export class MemoryService {
       const sceneNames: string[] = [];
 
       for (const scene of parsed.scenes ?? []) {
-        const sceneName = String(scene.scene_name ?? "未命名场景").slice(0, 80);
+        const sceneName = String(scene.scene_name ?? "Untitled scenario").slice(0, 80);
         sceneNames.push(sceneName);
 
         for (const memory of scene.memories ?? []) {
@@ -177,12 +177,12 @@ export class MemoryService {
 
       return { success: true, extractedCount: parsed.scenes?.length ?? 0, storedCount: stored.length, sceneNames };
     } catch (error) {
-      this.logger.warn(`记忆抽取失败(降级): ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.warn(`Memory extraction failed (falling back): ${error instanceof Error ? error.message : String(error)}`);
       return { success: false, extractedCount: 0, storedCount: 0, sceneNames: [] };
     }
   }
 
-  /** 解析 workspace 默认 agent 的 provider 配置(LLM 抽取用) */
+  /** Resolve the workspace default agent provider configuration for LLM extraction. */
   private async resolveAgentConfig(workspaceId: string): Promise<{ baseUrl?: string; apiKey?: string; model?: string } | null> {
     const workspace = await this.prisma.workspace.findUnique({
       where: { id: workspaceId },
@@ -205,13 +205,13 @@ export class MemoryService {
     return config;
   }
 
-  /** L2 场景聚合:把同批 L1 按主题聚类为场景记忆 */
+  /** L2 scenario aggregation: cluster the same batch of L1 entries into scenario memories by topic. */
   private async aggregateScenarios(workspaceId: string, memories: Array<{ id: string; content: string; type: MemoryType; level: MemoryLevel; priority: number }>, userId: string, agentConfig: { baseUrl?: string; apiKey?: string; model?: string }) {
     try {
       const summary = memories.map((m, i) => `${i + 1}. ${m.content.slice(0, 120)}`).join("\n");
       const response = await this.collectProviderResponse([
         { role: "system", content: SCENARIO_SYSTEM_PROMPT },
-        { role: "user", content: `请把以下原子记忆聚合为 1-2 个场景主题:\n${summary}` }
+        { role: "user", content: `Aggregate the following atomic memories into 1-2 scenario topics:\n${summary}` }
       ], agentConfig);
 
       const scenes = this.parseScenarioResponse(response);
@@ -233,11 +233,11 @@ export class MemoryService {
         }
       }
     } catch (error) {
-      this.logger.warn(`场景聚合失败(降级): ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.warn(`Scenario aggregation failed (falling back): ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  /** L1 去重:同 workspace 已有语义近似(embedding 余弦 > 阈值)则跳过 */
+  /** L1 deduplication: skip entries that are semantically similar to existing workspace entries (embedding cosine similarity > threshold). */
   private async isDuplicateL1(workspaceId: string, content: string): Promise<boolean> {
     try {
       const existing = await this.prisma.memory.findMany({
@@ -334,7 +334,7 @@ export class MemoryService {
   }
 
   private buildExtractionPrompt(messages: string): string {
-    return `以下是频道中最近的对话:\n\n${messages}\n\n请按场景分段并抽取原子记忆。`;
+    return `Here are the latest channel conversations:\n\n${messages}\n\nSegment them by scenario and extract atomic memories.`;
   }
 
   private buildVisibleWhere(workspaceId: string, userId: string, enabledOnly = false): Prisma.MemoryWhereInput {
@@ -358,7 +358,7 @@ export class MemoryService {
     });
 
     if (!memory) {
-      throw new NotFoundException("记忆不存在");
+      throw new NotFoundException("Memory not found");
     }
 
     const membership = await this.prisma.workspaceMember.findFirst({
@@ -377,7 +377,7 @@ export class MemoryService {
         return memory;
       }
 
-      throw new ForbiddenException("无权访问该工作区");
+      throw new ForbiddenException("You do not have access to this workspace");
     }
 
     if (
@@ -385,7 +385,7 @@ export class MemoryService {
       && membership.role !== WorkspaceRole.OWNER
       && !(await isGlobalAdmin(this.prisma, userId))
     ) {
-      throw new ForbiddenException("无权修改该记忆");
+      throw new ForbiddenException("You do not have permission to modify this memory");
     }
 
     return memory;
@@ -393,13 +393,13 @@ export class MemoryService {
 }
 
 const EXTRACTION_SYSTEM_PROMPT = [
-  "你是记忆抽取引擎。把对话按主题场景分段,并抽取可长期复用的原子记忆。",
-  "只输出 JSON,格式:",
-  '[{"scene_name": "场景名", "memories": [{"content": "原子事实", "type": "FACT|PREFERENCE|DECISION|LESSON", "priority": 0-5}]}]',
-  "规则:content 要自包含、可独立理解;不抽取寒暄;PREFERENCE 用于用户偏好,其他用 FACT。"
+  "You are a memory extraction engine. Segment conversations into topical scenarios and extract atomic memories that can be reused long-term.",
+  "Output JSON only, in this format:",
+  '[{"scene_name": "Scenario name", "memories": [{"content": "Atomic fact", "type": "FACT|PREFERENCE|DECISION|LESSON", "priority": 0-5}]}]',
+  "Rules: content must be self-contained and independently understandable; do not extract pleasantries; use PREFERENCE for user preferences and FACT for everything else."
 ].join(" ");
 
 const SCENARIO_SYSTEM_PROMPT = [
-  "你是场景聚合引擎。把输入的原子记忆按主题聚合为 1-2 个场景摘要。",
-  "只输出 JSON:{\"scenes\": [{\"summary\": \"场景摘要(一句话,≤50字)\"}]}"
+  "You are a scenario aggregation engine. Group the input atomic memories by topic into 1-2 scenario summaries.",
+  "Output JSON only: {\"scenes\": [{\"summary\": \"Scenario summary (one sentence, ≤50 characters)\"}]}"
 ].join(" ");

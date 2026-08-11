@@ -63,7 +63,7 @@ function KnowledgeContent() {
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       if (!workspaceId) {
-        throw new Error("缺少 Workspace");
+        throw new Error("Workspace is required");
       }
 
       const formData = new FormData();
@@ -75,10 +75,10 @@ function KnowledgeContent() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: knowledgeKeys.list(workspaceId) });
-      message.success("文档上传成功");
+      message.success("Document uploaded successfully");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "文档上传失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to upload document");
     }
   });
 
@@ -89,10 +89,10 @@ function KnowledgeContent() {
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: knowledgeKeys.list(workspaceId) });
-      message.success("已提交重建索引");
+      message.success("Index rebuild submitted");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "重建索引失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to rebuild index");
     }
   });
 
@@ -103,17 +103,17 @@ function KnowledgeContent() {
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: knowledgeKeys.list(workspaceId) });
-      message.success("文档已删除");
+      message.success("Document deleted");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "删除文档失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to delete document");
     }
   });
 
   const columns = useMemo<TableColumnsType<KnowledgeDocument>>(
     () => [
       {
-        title: "文件名",
+        title: "File name",
         dataIndex: "filename",
         key: "filename",
         render: (filename: string, record) => (
@@ -124,7 +124,7 @@ function KnowledgeContent() {
         )
       },
       {
-        title: "状态",
+        title: "Status",
         dataIndex: "extractionStatus",
         key: "extractionStatus",
         width: 180,
@@ -139,14 +139,14 @@ function KnowledgeContent() {
         }
       },
       {
-        title: "上传时间",
+        title: "Uploaded",
         dataIndex: "createdAt",
         key: "createdAt",
         width: 220,
         render: (createdAt: string) => formatDateTime(createdAt)
       },
       {
-        title: "操作",
+        title: "Actions",
         key: "actions",
         width: 220,
         render: (_, record) => (
@@ -156,13 +156,13 @@ function KnowledgeContent() {
               loading={reindexMutation.isPending && reindexMutation.variables === record.id}
               onClick={() => reindexMutation.mutate(record.id)}
             >
-              重建索引
+              Rebuild index
             </Button>
             <Popconfirm
-              title="删除文档？"
-              description="删除后将移除文档及其索引数据。"
-              okText="删除"
-              cancelText="取消"
+              title="Delete document?"
+              description="This removes the document and its index data."
+              okText="Delete"
+              cancelText="Cancel"
               onConfirm={() => deleteMutation.mutate(record.id)}
             >
               <Button
@@ -170,7 +170,7 @@ function KnowledgeContent() {
                 icon={<DeleteOutlined />}
                 loading={deleteMutation.isPending && deleteMutation.variables === record.id}
               >
-                删除
+                Delete
               </Button>
             </Popconfirm>
           </Space>
@@ -191,7 +191,7 @@ function KnowledgeContent() {
         return true;
       }
 
-      message.error("仅支持 .md、.txt、.pdf 文件");
+      message.error("Only .md, .txt, and .pdf files are supported");
       return Upload.LIST_IGNORE;
     },
     customRequest: async ({ file, onError, onSuccess }) => {
@@ -199,7 +199,7 @@ function KnowledgeContent() {
         await uploadMutation.mutateAsync(file as File);
         onSuccess?.({}, new XMLHttpRequest());
       } catch (error) {
-        const resolvedError = error instanceof Error ? error : new Error("上传失败");
+        const resolvedError = error instanceof Error ? error : new Error("Upload failed");
         onError?.(resolvedError);
       }
     }
@@ -214,9 +214,9 @@ function KnowledgeContent() {
           <p className="ant-upload-drag-icon">
             <InboxOutlined />
           </p>
-          <Typography.Title level={5}>拖拽上传知识文档</Typography.Title>
+          <Typography.Title level={5}>Drag and drop knowledge documents</Typography.Title>
           <Typography.Paragraph type="secondary">
-            支持 .md、.txt、.pdf；上传后会自动刷新列表，索引处理中每 3 秒轮询一次。
+            Supports .md, .txt, and .pdf. The list refreshes automatically after upload and polls every 3 seconds while indexing.
           </Typography.Paragraph>
         </Upload.Dragger>
       </div>
@@ -224,15 +224,15 @@ function KnowledgeContent() {
       <div className={styles.pageCard}>
         <div className={styles.sectionHeader}>
           <div>
-            <Typography.Title level={5}>文档列表</Typography.Title>
+            <Typography.Title level={5}>Documents</Typography.Title>
             <Typography.Text type="secondary">
-              READY / FAILED 后自动停止轮询；FAILED 可查看错误并手动重建索引。
+              Polling stops automatically after READY or FAILED; view errors and manually rebuild failed indexes.
             </Typography.Text>
           </div>
         </div>
 
         {knowledgeQuery.isLoading ? (
-          <LoadingState compact title="正在读取文档" description="同步知识库索引状态。" />
+          <LoadingState compact title="Loading documents" description="Syncing knowledge-base index status." />
         ) : (
           <Table<KnowledgeDocument>
             rowKey="id"
@@ -241,7 +241,7 @@ function KnowledgeContent() {
             pagination={false}
             locale={{
               emptyText: (
-                <EmptyState compact icon={<FileSearchOutlined />} title="还没有知识文档" description="先上传一个 .md、.txt 或 .pdf 文件，AI 检索上下文就会从这里开始。" />
+                <EmptyState compact icon={<FileSearchOutlined />} title="No knowledge documents yet" description="Upload a .md, .txt, or .pdf file to start building AI retrieval context." />
               )
             }}
           />
@@ -256,7 +256,7 @@ export function KnowledgePage() {
   return (
     <WorkspacePageFrame
       title="Knowledge"
-      description="上传 .md / .txt / .pdf 文档，查看索引状态，并在失败后重新构建。"
+      description="Upload .md, .txt, or .pdf documents, view index status, and rebuild failed indexes."
     >
       <KnowledgeContent />
     </WorkspacePageFrame>

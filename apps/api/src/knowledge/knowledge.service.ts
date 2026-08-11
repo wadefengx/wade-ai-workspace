@@ -86,7 +86,7 @@ export class KnowledgeService {
     const filename = dto.name.trim();
 
     if (basename(filename) !== filename || INVALID_FILENAME_PATTERN.test(filename)) {
-      throw new BadRequestException("文档名称不合法");
+      throw new BadRequestException("Invalid document name");
     }
 
     return this.prisma.knowledgeDocument.update({
@@ -162,7 +162,7 @@ export class KnowledgeService {
       const extractedContent = (await this.extractText(document.mimeType, fileBuffer)).trim();
 
       if (!extractedContent) {
-        throw new Error("文档未提取到有效文本");
+        throw new Error("No valid text could be extracted from the document");
       }
 
       const contentHash = createHash("sha256").update(extractedContent).digest("hex");
@@ -264,7 +264,7 @@ export class KnowledgeService {
 
   private validateFile(file?: UploadedKnowledgeFile) {
     if (!file) {
-      throw new BadRequestException("请上传文件");
+      throw new BadRequestException("Upload a file");
     }
 
     const filename = file.originalname.trim();
@@ -272,19 +272,19 @@ export class KnowledgeService {
     const supportedMimeTypes = SUPPORTED_MIME_TYPES[extension];
 
     if (!filename) {
-      throw new BadRequestException("文件名不能为空");
+      throw new BadRequestException("File name must not be empty");
     }
 
     if (basename(filename) !== filename || INVALID_FILENAME_PATTERN.test(filename)) {
-      throw new BadRequestException("文件名不合法");
+      throw new BadRequestException("Invalid file name");
     }
 
     if (!supportedMimeTypes || !supportedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException("仅支持上传 .md、.txt、.pdf 文件");
+      throw new BadRequestException("Only .md, .txt, and .pdf files are supported");
     }
 
     if (file.size > this.getMaxUploadSizeBytes()) {
-      throw new BadRequestException(`文件大小不能超过 ${this.getMaxUploadSizeMb()} MB`);
+      throw new BadRequestException(`File size must not exceed ${this.getMaxUploadSizeMb()} MB`);
     }
 
     return file;
@@ -301,7 +301,7 @@ export class KnowledgeService {
     });
 
     if (!document) {
-      throw new NotFoundException("知识文档不存在");
+      throw new NotFoundException("Knowledge document not found");
     }
 
     const membership = await this.prisma.workspaceMember.findFirst({
@@ -319,7 +319,7 @@ export class KnowledgeService {
         return document;
       }
 
-      throw new ForbiddenException("无权访问该工作区");
+      throw new ForbiddenException("You do not have access to this workspace");
     }
 
     return document;
@@ -380,7 +380,7 @@ export class KnowledgeService {
       return error.message;
     }
 
-    return "知识文档提取失败";
+    return "Knowledge document extraction failed";
   }
 }
 

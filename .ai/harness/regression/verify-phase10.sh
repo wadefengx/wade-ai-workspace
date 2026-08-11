@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# 用途: Phase 10 workspace icon 冒烟(创建带 icon -> 列表返回 icon -> 更新 icon -> 删除)
-# 前置依赖: 本地 API 已启动在 http://localhost:3001/api ; 已有 admin/admin 演示账号 ; node/curl 可用
-# 运行方式: bash .ai/harness/regression/verify-phase10.sh
+# Purpose: Phase 10 workspace-icon smoke test (create with icon -> list returns icon -> update icon -> delete)
+# Prerequisites: local API running at http://localhost:3001/api; admin/admin demo account exists; node and curl available
+# Run: bash .ai/harness/regression/verify-phase10.sh
 set -u
 
 BASE="${API_BASE:-http://localhost:3001/api}"
@@ -136,7 +136,7 @@ echo "== 0. preflight =="
 request "health" GET "/health" "" "" "$TMP_DIR/health.json"
 if [ "$REQ_STATUS" != "200" ]; then
   assert_status "health" 200
-  fatal "测试前置失败: health 检查失败"
+  fatal "Test prerequisite failed: health check failed"
 fi
 echo "  ✓ health 200"
 
@@ -144,7 +144,7 @@ echo "== 1. login =="
 request "login" POST "/auth/login" "" '{"email":"admin@wade.local","password":"admin"}' "$TMP_DIR/login.json"
 assert_status "1. login 200" 200
 ACCESS_TOKEN="$(json_eval "$TMP_DIR/login.json" 'data.accessToken ?? ""' 2>/dev/null)"
-[ -n "$ACCESS_TOKEN" ] || fatal "测试前置失败: accessToken 缺失"
+[ -n "$ACCESS_TOKEN" ] || fatal "Test prerequisite failed: accessToken is missing"
 
 RUN_ID="$(date +%s)"
 WORKSPACE_NAME="Icon Smoke $RUN_ID"
@@ -156,7 +156,7 @@ echo "== 2. create workspace with icon =="
 request "create-workspace" POST "/workspaces" "$ACCESS_TOKEN" "{\"name\":\"$WORKSPACE_NAME\",\"icon\":\"$INITIAL_ICON\"}" "$TMP_DIR/create-workspace.json"
 assert_status "2. create workspace 201" 201
 WORKSPACE_ID="$(json_eval "$TMP_DIR/create-workspace.json" 'data.id ?? ""' 2>/dev/null)"
-[ -n "$WORKSPACE_ID" ] || fatal "测试前置失败: workspace id 缺失"
+[ -n "$WORKSPACE_ID" ] || fatal "Test prerequisite failed: workspace ID is missing"
 json_true "2. create response returns icon" "$TMP_DIR/create-workspace.json" 'data.icon === "RocketOutlined"'
 
 echo "== 3. list workspace icon =="

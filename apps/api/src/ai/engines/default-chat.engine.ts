@@ -14,9 +14,9 @@ const MAX_CONTEXT_MESSAGES = 20;
 const MAX_MESSAGE_CHARS = 4_000;
 const TRUNCATED_SUFFIX = "\n...[truncated]";
 const SYSTEM_PROMPT = [
-  "你是工作区 AI 助手。",
-  "请基于当前频道上下文提供准确、简洁、有帮助的中文 Markdown 回答。",
-  "如果上下文不足，请明确说明不确定性，不要编造事实。"
+  "You are the workspace AI assistant.",
+  "Provide accurate, concise, helpful English Markdown responses based on the current channel context.",
+  "If the context is insufficient, clearly state the uncertainty and do not fabricate facts."
 ].join(" ");
 
 @Injectable()
@@ -128,7 +128,7 @@ export class DefaultChatEngine implements AgentEngine {
       ? await this.buildKnowledgeChunks(input.workspaceId, latestUserMessage)
       : [];
     const knowledgeSnippets = knowledgeChunks.map(
-      (chunk, index) => `[^${index + 1}]: 来源：${chunk.filename}（第 ${chunk.chunkIndex + 1} 段）\n${chunk.content}`
+      (chunk, index) => `[^${index + 1}]: Source: ${chunk.filename} (section ${chunk.chunkIndex + 1})\n${chunk.content}`
     );
     const citations: ChatCitation[] = knowledgeChunks.map((chunk, index) => ({
       index: index + 1,
@@ -155,13 +155,13 @@ export class DefaultChatEngine implements AgentEngine {
     const sections = [SYSTEM_PROMPT];
 
     if (memoryEntries.length > 0) {
-      sections.push(`记忆上下文:\n${memoryEntries.join("\n")}`);
+      sections.push(`Memory context:\n${memoryEntries.join("\n")}`);
     }
 
     if (knowledgeSnippets.length > 0) {
       sections.push(
         [
-          `参考资料(引用编号与 [^n] 一一对应,请在使用某条资料的内容时,在对应句子末尾标注 [^n],n 为下方编号,不要编造引用):`,
+          `Reference material (citation numbers correspond one-to-one with [^n]. When using a source, append its [^n] citation to the relevant sentence. Do not fabricate citations):`,
           knowledgeSnippets.join("\n\n")
         ].join("\n")
       );
@@ -172,9 +172,9 @@ export class DefaultChatEngine implements AgentEngine {
 
   private buildMemoryEntries(memories: Array<{ type: MemoryType; content: string }>) {
     const labels: Record<MemoryType, string> = {
-      [MemoryType.PERSONAL]: "个人记忆",
-      [MemoryType.TEAM]: "团队记忆",
-      [MemoryType.PROJECT]: "项目记忆"
+      [MemoryType.PERSONAL]: "Personal memory",
+      [MemoryType.TEAM]: "Team memory",
+      [MemoryType.PROJECT]: "Project memory"
     };
 
     return [MemoryType.PERSONAL, MemoryType.TEAM, MemoryType.PROJECT]

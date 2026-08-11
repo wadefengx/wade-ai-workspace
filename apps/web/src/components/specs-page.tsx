@@ -50,12 +50,12 @@ function SpecsContent() {
         <div className={styles.sectionHeader}>
           <div className={styles.helperStack}>
             <Typography.Title level={5}>Specs</Typography.Title>
-            <Typography.Text type="secondary">选择一个阶段规格查看原始 Markdown 内容。</Typography.Text>
+            <Typography.Text type="secondary">Select a phase specification to view its original Markdown content.</Typography.Text>
           </div>
         </div>
 
         {specsQuery.isLoading ? (
-          <LoadingState compact title="正在读取 Specs" description="同步当前阶段的规格文档。" />
+          <LoadingState compact title="Loading specs" description="Syncing specification documents for the current phase." />
         ) : specItems.length ? (
           <div className={styles.selectionList}>
             {specItems.map((item) => (
@@ -71,28 +71,28 @@ function SpecsContent() {
             ))}
           </div>
         ) : (
-          <EmptyState compact icon={<FolderOpenOutlined />} title="还没有可用 Specs" description="把阶段规格写入仓库后，这里会自动列出来。" />
+          <EmptyState compact icon={<FolderOpenOutlined />} title="No specs available yet" description="Phase specifications added to the repository appear here automatically." />
         )}
       </div>
 
       <div className={styles.pageCard}>
         <div className={styles.sectionHeader}>
           <div className={styles.helperStack}>
-            <Typography.Title level={5}>内容</Typography.Title>
+            <Typography.Title level={5}>Content</Typography.Title>
             <Typography.Text type="secondary">
-              {activeSelectedName ? activeSelectedName : "先从左侧选择一个 Spec 文件。"}
+              {activeSelectedName ? activeSelectedName : "Select a spec file from the left."}
             </Typography.Text>
           </div>
         </div>
 
         {specDetailQuery.isLoading ? (
-          <LoadingState compact title="正在读取内容" description="马上展示选中的 Spec 原文。" />
+          <LoadingState compact title="Loading content" description="The selected spec source will appear shortly." />
         ) : specDetailQuery.data ? (
           <div className={styles.scrollPanel}>
             <MarkdownContent content={specDetailQuery.data.content} />
           </div>
         ) : (
-          <EmptyState compact icon={<ReadOutlined />} title="选择一个 Spec" description="从左侧挑一个阶段规格后，这里会显示完整 Markdown 内容。" />
+          <EmptyState compact icon={<ReadOutlined />} title="Select a spec" description="Choose a phase specification from the left to view its full Markdown content." />
         )}
       </div>
     </div>
@@ -103,7 +103,7 @@ export function SpecsPage() {
   return (
     <WorkspacePageFrame
       title="Specs"
-      description="浏览仓库中的阶段规格文档，方便在当前 Workspace 内对照实施。"
+      description="Browse phase specification documents in the repository to implement against them in the current workspace."
     >
       <SpecsContent />
     </WorkspacePageFrame>

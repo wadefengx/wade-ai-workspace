@@ -141,17 +141,17 @@ function SettingsContent() {
       }),
     onSuccess: () => {
       passwordForm.resetFields();
-      message.success("密码已更新");
+      message.success("Password updated");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "修改密码失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to change password");
     }
   });
 
   const renameWorkspaceMutation = useMutation({
     mutationFn: (values: RenameWorkspaceValues) => {
       if (!workspaceId) {
-        throw new Error("缺少 Workspace");
+        throw new Error("Workspace is required");
       }
 
       return apiFetch(`/workspaces/${workspaceId}`, {
@@ -161,17 +161,17 @@ function SettingsContent() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: workspaceKeys.all });
-      message.success("Workspace 名称已更新");
+      message.success("Workspace name updated");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "更新 Workspace 失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to update workspace");
     }
   });
 
   const setDefaultAgentMutation = useMutation({
     mutationFn: (defaultAgentId: string | null) => {
       if (!workspaceId || !selectedWorkspace) {
-        throw new Error("缺少 Workspace");
+        throw new Error("Workspace is required");
       }
 
       return apiFetch(`/workspaces/${workspaceId}`, {
@@ -185,17 +185,17 @@ function SettingsContent() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: workspaceKeys.all });
-      message.success("默认 Agent 已更新");
+      message.success("Default agent updated");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "更新默认 Agent 失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to update default agent");
     }
   });
 
   const transferWorkspaceMutation = useMutation({
     mutationFn: (toUserId: string) => {
       if (!workspaceId) {
-        throw new Error("缺少 Workspace");
+        throw new Error("Workspace is required");
       }
 
       return apiFetch(`/workspaces/${workspaceId}/transfer`, {
@@ -209,17 +209,17 @@ function SettingsContent() {
         queryClient.invalidateQueries({ queryKey: workspaceKeys.all }),
         queryClient.invalidateQueries({ queryKey: workspaceKeys.members(workspaceId) })
       ]);
-      message.success("Workspace OWNER 已转交");
+      message.success("Workspace ownership transferred");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "转交 OWNER 失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to transfer ownership");
     }
   });
 
   const deleteWorkspaceMutation = useMutation({
     mutationFn: () => {
       if (!workspaceId) {
-        throw new Error("缺少 Workspace");
+        throw new Error("Workspace is required");
       }
 
       return apiFetch(`/workspaces/${workspaceId}`, {
@@ -229,12 +229,12 @@ function SettingsContent() {
     onSuccess: async () => {
       setDeleteWorkspaceArmed(false);
       await queryClient.invalidateQueries({ queryKey: workspaceKeys.all });
-      message.success("Workspace 已删除");
+      message.success("Workspace deleted");
       router.push("/");
     },
     onError: (error) => {
       setDeleteWorkspaceArmed(false);
-      message.error(error instanceof ApiError ? error.message : "删除 Workspace 失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to delete workspace");
     }
   });
 
@@ -246,10 +246,10 @@ function SettingsContent() {
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: settingsKeys.users(debouncedUserSearch) });
-      message.success("用户角色已更新");
+      message.success("User role updated");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "更新用户角色失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to update user role");
     }
   });
 
@@ -260,31 +260,31 @@ function SettingsContent() {
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: settingsKeys.users(debouncedUserSearch) });
-      message.success("用户已删除");
+      message.success("User deleted");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "删除用户失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to delete user");
     }
   });
 
   const userColumns = useMemo<TableColumnsType<ManagedUser>>(
     () => [
       {
-        title: "姓名",
+        title: "Name",
         dataIndex: "name",
         key: "name",
         width: 180,
         render: (name: string) => <Typography.Text strong>{name}</Typography.Text>
       },
       {
-        title: "邮箱",
+        title: "Email",
         dataIndex: "email",
         key: "email",
         width: 260,
         render: (email: string) => <Typography.Text type="secondary">{email}</Typography.Text>
       },
       {
-        title: "角色",
+        title: "Role",
         dataIndex: "role",
         key: "role",
         width: 200,
@@ -311,14 +311,14 @@ function SettingsContent() {
         }
       },
       {
-        title: "注册时间",
+        title: "Registered",
         dataIndex: "createdAt",
         key: "createdAt",
         width: 220,
         render: (createdAt: string) => formatDateTime(createdAt)
       },
       {
-        title: "操作",
+        title: "Actions",
         key: "actions",
         width: 140,
         render: (_, record) => {
@@ -327,15 +327,15 @@ function SettingsContent() {
 
           return (
             <Popconfirm
-              title="删除用户？"
-              description="删除后会移除该用户的成员关系记录。"
-              okText="删除"
-              cancelText="取消"
+              title="Delete user?"
+              description="This removes the user’s membership records."
+              okText="Delete"
+              cancelText="Cancel"
               disabled={isSelf}
               onConfirm={() => deleteUserMutation.mutate(record.id)}
             >
               <Button danger size="small" icon={<DeleteOutlined />} disabled={isSelf} loading={isDeleting}>
-                删除
+                Delete
               </Button>
             </Popconfirm>
           );
@@ -350,8 +350,8 @@ function SettingsContent() {
       <div className={styles.pageCard}>
         <div className={styles.sectionHeader}>
           <div className={styles.helperStack}>
-            <Typography.Title level={5}>账户</Typography.Title>
-            <Typography.Text type="secondary">账号信息与登录安全。</Typography.Text>
+            <Typography.Title level={5}>Account</Typography.Title>
+            <Typography.Text type="secondary">Account information and sign-in security.</Typography.Text>
           </div>
         </div>
 
@@ -366,11 +366,11 @@ function SettingsContent() {
           <div className={styles.settingsRow}>
             <KeyOutlined className={styles.settingsRowIcon} />
             <div className={styles.helperStack}>
-              <Typography.Text strong>密码</Typography.Text>
-              <Typography.Text type="secondary">已设置;修改后需重新登录(新密码至少 6 位)。</Typography.Text>
+              <Typography.Text strong>Password</Typography.Text>
+              <Typography.Text type="secondary">Set; sign in again after changing it (new password must be at least 6 characters).</Typography.Text>
             </div>
             <Button icon={<EditOutlined />} onClick={() => setPasswordDrawerOpen(true)}>
-              修改密码
+              Change password
             </Button>
           </div>
         </div>
@@ -379,8 +379,8 @@ function SettingsContent() {
       <div className={styles.pageCard}>
         <div className={styles.sectionHeader}>
           <div className={styles.helperStack}>
-            <Typography.Title level={5}>外观</Typography.Title>
-            <Typography.Text type="secondary">主题切换会立即生效，并在刷新后保留。</Typography.Text>
+            <Typography.Title level={5}>Appearance</Typography.Title>
+            <Typography.Text type="secondary">Theme changes take effect immediately and persist after refresh.</Typography.Text>
           </div>
         </div>
 
@@ -389,9 +389,9 @@ function SettingsContent() {
           buttonStyle="solid"
           value={themeMode}
           options={[
-            { label: "浅色", value: "light" },
-            { label: "深色", value: "dark" },
-            { label: "跟随系统", value: "system" }
+            { label: "Light", value: "light" },
+            { label: "Dark", value: "dark" },
+            { label: "System", value: "system" }
           ]}
           onChange={(event) => setTheme(event.target.value as ThemeMode)}
         />
@@ -401,9 +401,9 @@ function SettingsContent() {
         <div className={styles.pageCard}>
           <div className={styles.sectionHeader}>
             <div className={styles.helperStack}>
-              <Typography.Title level={5}>Workspace 管理</Typography.Title>
+              <Typography.Title level={5}>Workspace management</Typography.Title>
               <Typography.Text type="secondary">
-                当前权限：
+                Current permission:
                 <Tag
                   color={currentWorkspaceRole ? getWorkspaceRoleColor(currentWorkspaceRole) : "default"}
                   style={{ marginInlineStart: 8 }}
@@ -422,21 +422,21 @@ function SettingsContent() {
               <div className={styles.helperStack}>
                 <Typography.Text strong>{selectedWorkspace?.name ?? "—"}</Typography.Text>
                 <Typography.Text type="secondary">
-                  {membersLoading ? "读取成员中" : `${members.length} 位成员`}
+                  {membersLoading ? "Loading members" : `${members.length} members`}
                 </Typography.Text>
               </div>
               <Button icon={<EditOutlined />} onClick={() => setWorkspaceDrawerOpen(true)}>
-                编辑
+                Edit
               </Button>
             </div>
             <div className={styles.settingsRow}>
               <div className={styles.helperStack}>
-                <Typography.Text strong>默认 Agent</Typography.Text>
-                <Typography.Text type="secondary">对话未 @ 指定 Agent 时，优先使用该 Agent。</Typography.Text>
+                <Typography.Text strong>Default agent</Typography.Text>
+                <Typography.Text type="secondary">Use this agent by default when a chat does not @mention an agent.</Typography.Text>
               </div>
               <Select
                 style={{ minWidth: 240 }}
-                placeholder="使用系统默认 Agent"
+                placeholder="Use system default agent"
                 allowClear
                 value={selectedWorkspace?.defaultAgentId ?? undefined}
                 loading={setDefaultAgentMutation.isPending}
@@ -455,25 +455,25 @@ function SettingsContent() {
             <div className={styles.summaryCard}>
               <div className={styles.summaryCardHeader}>
                 <div className={styles.helperStack}>
-                  <Typography.Text strong>转交 OWNER</Typography.Text>
-                  <Typography.Text type="secondary">目标必须是当前成员；转交后原 OWNER 自动降为 ADMIN。</Typography.Text>
+                  <Typography.Text strong>Transfer ownership</Typography.Text>
+                  <Typography.Text type="secondary">The target must be a current member; the original OWNER becomes ADMIN after transfer.</Typography.Text>
                 </div>
               </div>
               <Space wrap>
                 <Select
                   showSearch
                   style={{ minWidth: 280 }}
-                  placeholder={membersLoading ? "读取成员中" : "选择要转交的成员"}
+                  placeholder={membersLoading ? "Loading members" : "Select a member to transfer to"}
                   value={transferTargetUserId}
                   options={transferCandidates}
                   disabled={!workspaceId || membersLoading || transferCandidates.length === 0}
                   onChange={setTransferTargetUserId}
                 />
                 <Popconfirm
-                  title="确认转交 OWNER？"
-                  description="确认后会立即更新当前 Workspace 的角色结构。"
-                  okText="确认转交"
-                  cancelText="取消"
+                  title="Confirm ownership transfer?"
+                  description="This immediately updates the current workspace’s role structure."
+                  okText="Confirm transfer"
+                  cancelText="Cancel"
                   disabled={!transferTargetUserId}
                   onConfirm={() => transferTargetUserId && transferWorkspaceMutation.mutate(transferTargetUserId)}
                 >
@@ -482,7 +482,7 @@ function SettingsContent() {
                     disabled={!transferTargetUserId}
                     loading={transferWorkspaceMutation.isPending}
                   >
-                    转交 OWNER
+                    Transfer ownership
                   </Button>
                 </Popconfirm>
               </Space>
@@ -491,21 +491,21 @@ function SettingsContent() {
             <div className={styles.summaryCard}>
               <div className={styles.summaryCardHeader}>
                 <div className={styles.helperStack}>
-                  <Typography.Text strong>删除 Workspace</Typography.Text>
+                  <Typography.Text strong>Delete workspace</Typography.Text>
                   <Typography.Text type="secondary">
-                    会级联删除 channels、messages、members、knowledge、memories、agents，且不可恢复。
+                    This permanently cascades to channels, messages, members, knowledge, memories, and agents.
                   </Typography.Text>
                 </div>
               </div>
               <Popconfirm
-                title={deleteWorkspaceArmed ? "再次确认删除当前 Workspace？" : "确认删除当前 Workspace？"}
+                title={deleteWorkspaceArmed ? "Delete this workspace again?" : "Delete this workspace?"}
                 description={
                   deleteWorkspaceArmed
-                    ? "这是最后一次确认，提交后会立即执行级联删除。"
-                    : "首次确认后需要再点一次删除，避免误操作。"
+                    ? "This is the final confirmation. Submitting permanently cascades deletion."
+                    : "After the first confirmation, click Delete once more to prevent accidental actions."
                 }
-                okText={deleteWorkspaceArmed ? "最终删除" : "继续"}
-                cancelText="取消"
+                okText={deleteWorkspaceArmed ? "Delete permanently" : "Continue"}
+                cancelText="Cancel"
                 onCancel={() => setDeleteWorkspaceArmed(false)}
                 onConfirm={() => {
                   if (!deleteWorkspaceArmed) {
@@ -517,7 +517,7 @@ function SettingsContent() {
                 }}
               >
                 <Button danger icon={<DeleteOutlined />} disabled={!workspaceId} loading={deleteWorkspaceMutation.isPending}>
-                  {deleteWorkspaceArmed ? "再次确认删除" : "删除 Workspace"}
+                  {deleteWorkspaceArmed ? "Confirm deletion again" : "Delete workspace"}
                 </Button>
               </Popconfirm>
             </div>
@@ -529,13 +529,13 @@ function SettingsContent() {
         <div className={styles.pageCard}>
           <div className={styles.sectionHeader}>
             <div className={styles.helperStack}>
-              <Typography.Title level={5}>用户管理</Typography.Title>
-              <Typography.Text type="secondary">仅全局 ADMIN 可见；自己这一行不可删除或改角色。</Typography.Text>
+              <Typography.Title level={5}>User management</Typography.Title>
+              <Typography.Text type="secondary">Visible only to global ADMIN; you cannot delete or change your own role.</Typography.Text>
             </div>
             <Input
               allowClear
               prefix={<SearchOutlined />}
-              placeholder="按姓名或邮箱搜索用户"
+              placeholder="Search users by name or email"
               className={styles.searchControl}
               value={userSearchInput}
               onChange={(event) => setUserSearchInput(event.target.value)}
@@ -543,7 +543,7 @@ function SettingsContent() {
           </div>
 
           {usersQuery.isLoading ? (
-            <LoadingState compact title="正在读取用户" description="同步全局账户列表。" />
+            <LoadingState compact title="Loading users" description="Syncing the global account list." />
           ) : (
             <Table<ManagedUser>
               rowKey="id"
@@ -552,7 +552,7 @@ function SettingsContent() {
               pagination={false}
               scroll={{ x: 1000 }}
               locale={{
-                emptyText: <EmptyState compact icon={<SearchOutlined />} title="没有匹配的用户" description="换个姓名或邮箱关键词试试。" />
+                emptyText: <EmptyState compact icon={<SearchOutlined />} title="No matching users" description="Try another name or email keyword." />
               }}
             />
           )}
@@ -560,7 +560,7 @@ function SettingsContent() {
       ) : null}
 
       <Drawer
-        title="修改密码"
+        title="Change password"
         width={420}
         open={passwordDrawerOpen}
         onClose={() => setPasswordDrawerOpen(false)}
@@ -573,35 +573,35 @@ function SettingsContent() {
           onFinish={(values) => changePasswordMutation.mutate(values)}
         >
           <Form.Item
-            label="当前密码"
+            label="Current password"
             name="currentPassword"
-            rules={[{ required: true, message: "请输入当前密码" }]}
+            rules={[{ required: true, message: "Enter your current password" }]}
           >
             <Input.Password />
           </Form.Item>
           <Form.Item
-            label="新密码"
+            label="New password"
             name="newPassword"
             rules={[
-              { required: true, message: "请输入新密码" },
-              { min: 6, message: "新密码至少 6 位" }
+              { required: true, message: "Enter a new password" },
+              { min: 6, message: "New password must be at least 6 characters" }
             ]}
           >
             <Input.Password />
           </Form.Item>
           <Form.Item
-            label="确认新密码"
+            label="Confirm new password"
             name="confirmPassword"
             dependencies={["newPassword"]}
             rules={[
-              { required: true, message: "请再次输入新密码" },
+              { required: true, message: "Re-enter your new password" },
               ({ getFieldValue }) => ({
                 validator(_, value: string) {
                   if (!value || value === getFieldValue("newPassword")) {
                     return Promise.resolve();
                   }
 
-                  return Promise.reject(new Error("两次输入的新密码不一致"));
+                  return Promise.reject(new Error("The new passwords do not match"));
                 }
               })
             ]}
@@ -609,13 +609,13 @@ function SettingsContent() {
             <Input.Password />
           </Form.Item>
           <Button type="primary" htmlType="submit" loading={changePasswordMutation.isPending} block>
-            更新密码
+            Update password
           </Button>
         </Form>
       </Drawer>
 
       <Drawer
-        title="编辑 Workspace"
+        title="Edit workspace"
         width={460}
         open={workspaceDrawerOpen}
         onClose={() => setWorkspaceDrawerOpen(false)}
@@ -623,13 +623,13 @@ function SettingsContent() {
       >
         <Form form={workspaceForm} layout="vertical" onFinish={(values) => renameWorkspaceMutation.mutate(values)}>
           <Form.Item
-            label="Workspace 名称"
+            label="Workspace Name"
             name="name"
-            rules={[{ required: true, message: "请输入 Workspace 名称" }]}
+            rules={[{ required: true, message: "Enter a workspace name" }]}
           >
-            <Input placeholder="输入新的 Workspace 名称" />
+            <Input placeholder="Enter a new workspace name" />
           </Form.Item>
-          <Form.Item label="Workspace Icon" name="icon" rules={[{ required: true, message: "请选择 Workspace Icon" }]}>
+          <Form.Item label="Workspace Icon" name="icon" rules={[{ required: true, message: "Select a workspace icon" }]}>
             <div className={shellStyles.workspaceIconPickerGrid}>
               {WORKSPACE_ICONS.map((iconItem) => {
                 const selected = selectedWorkspaceIcon === iconItem.key;
@@ -641,7 +641,7 @@ function SettingsContent() {
                       selected ? shellStyles.workspaceIconPickerButtonSelected : ""
                     }`}
                     type="button"
-                    aria-label={`选择 ${iconItem.label} 图标`}
+                    aria-label={`Select ${iconItem.label} icon`}
                     onClick={() => workspaceForm.setFieldValue("icon", iconItem.key)}
                   >
                     {iconItem.icon}
@@ -651,7 +651,7 @@ function SettingsContent() {
             </div>
           </Form.Item>
           <div className={`${styles.helperStack} ${styles.inlinePreview}`}>
-            <Typography.Text type="secondary">当前显示：</Typography.Text>
+            <Typography.Text type="secondary">Currently shown:</Typography.Text>
             <div className={shellStyles.workspaceOptionLabel}>
               <span className={shellStyles.workspacePreviewIcon}>{renderWorkspaceIcon(selectedWorkspaceIcon)}</span>
               <Typography.Text>{selectedWorkspaceName || "Workspace"}</Typography.Text>
@@ -665,7 +665,7 @@ function SettingsContent() {
             loading={renameWorkspaceMutation.isPending}
             block
           >
-            保存
+            Save
           </Button>
         </Form>
       </Drawer>
@@ -677,7 +677,7 @@ export function SettingsPage() {
   return (
     <WorkspacePageFrame
       title="Settings"
-      description="管理账户、主题、Workspace 以及全局用户权限。"
+      description="Manage account, theme, workspace, and global user permissions."
     >
       <SettingsContent />
     </WorkspacePageFrame>

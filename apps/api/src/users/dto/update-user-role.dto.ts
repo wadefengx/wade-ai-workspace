@@ -4,11 +4,11 @@ import { UserRole } from "@prisma/client";
 
 export class UpdateUserRoleDto {
   @ApiProperty({
-    description: "更新后的全局角色",
+    description: "Updated global role",
     example: UserRole.ADMIN,
     required: true,
     enum: UserRole
   })
-  @IsEnum(UserRole, { message: "角色只能是 USER 或 ADMIN" })
+  @IsEnum(UserRole, { message: "role must be USER or ADMIN" })
   role!: UserRole;
 }

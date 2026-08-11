@@ -223,7 +223,7 @@ export class StatsService {
     });
 
     if (!membership) {
-      throw new ForbiddenException("无权访问组织统计");
+      throw new ForbiddenException("You do not have access to organization statistics");
     }
   }
 

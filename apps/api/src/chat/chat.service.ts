@@ -92,7 +92,7 @@ export class ChatService {
     });
 
     if (!message) {
-      throw new NotFoundException("消息不存在");
+      throw new NotFoundException("Message not found");
     }
 
     const nextFeedback = message.feedback === dto.type ? null : dto.type;
@@ -106,8 +106,8 @@ export class ChatService {
   }
 
   /**
-   * 调用本地模型为对话生成简洁标题(≤20 字),并更新频道名。
-   * 容错:模型不可用时返回当前标题,不抛 500。
+   * Use the local model to generate a concise conversation title (≤20 characters) and update the channel name.
+   * Graceful fallback: return the current title without throwing a 500 if the model is unavailable.
    */
   async generateChannelTitle(workspaceId: string, channelId: string) {
     const channel = await this.prisma.channel.findFirst({
@@ -115,7 +115,7 @@ export class ChatService {
     });
 
     if (!channel) {
-      throw new NotFoundException("频道不存在");
+      throw new NotFoundException("Channel not found");
     }
 
     try {
@@ -143,9 +143,9 @@ export class ChatService {
             {
               role: "system",
               content:
-                "你是对话标题生成器。根据用户提供的对话内容,生成一个简洁的中文标题,不超过 15 个字。只输出标题本身,不要引号、不要解释、不要标点。"
+                "You are a conversation title generator. Based on the user-provided conversation, generate a concise English title no longer than 15 characters. Output only the title itself, with no quotation marks, explanation, or punctuation."
             },
-            { role: "user", content: `对话内容:\n${transcript}` }
+            { role: "user", content: `Conversation:\n${transcript}` }
           ],
           options: { temperature: 0.3 }
         })
@@ -172,7 +172,7 @@ export class ChatService {
 
       return { title };
     } catch {
-      // 模型不可用/超时:保留原标题
+      // Model unavailable or timed out: keep the original title.
       return { title: channel.name };
     }
   }
@@ -182,7 +182,7 @@ export class ChatService {
       ?? (await this.resolveWorkspaceDefaultAgent(input.workspaceId))
       ?? (await this.ensureDefaultAgent(input.workspaceId));
     const agent = targetAgent;
-    // ponytail: 用户消息由前端 POST /messages 持久化,stream 只创建 AI 回复消息,避免双写
+    // ponytail: The frontend persists user messages through POST /messages; stream creates only the AI response message to avoid duplicate writes.
     const agentMessage = await this.prisma.message.create({
       data: {
         workspaceId: input.workspaceId,
@@ -293,7 +293,7 @@ export class ChatService {
     });
 
     if (!cursorMessage) {
-      throw new NotFoundException("消息不存在");
+      throw new NotFoundException("Message not found");
     }
 
     return {
@@ -311,7 +311,7 @@ export class ChatService {
   }
 
   /**
-   * 若消息文本中 @ 到某个具体 Agent(按名称匹配,非 @AI/@All),返回该 Agent;否则返回 null 走默认 Agent。
+   * If the message mentions a specific agent by name (not @AI/@All), return that agent; otherwise return null to use the default agent.
    */
   private async resolveMentionedAgent(workspaceId: string, content: string): Promise<Agent | null> {
     const mentionMatches = content.match(/@([^\s@]+)/g);
@@ -399,7 +399,7 @@ export class ChatService {
       return error.message;
     }
 
-    return "AI 回复失败";
+    return "AI response failed";
   }
 
   private isAbortError(error: unknown) {
@@ -424,9 +424,9 @@ export class ChatService {
 }
 
 const HARNESS_START_HINT: Record<string, string> = {
-  HERMES: "请先启动 Hermes harness:hermes serve --port 9119",
-  OPENCLAW: "请先启动 OpenClaw harness:openclaw gateway",
-  OLLAMA: "请先启动本地模型:ollama serve",
-  OPENAI: "请检查 API Key 配置是否有效",
-  ANTHROPIC: "请检查 API Key 配置是否有效"
+  HERMES: "Start the Hermes harness first: hermes serve --port 9119",
+  OPENCLAW: "Start the OpenClaw harness first: openclaw gateway",
+  OLLAMA: "Start the local model first: ollama serve",
+  OPENAI: "Check whether the API key configuration is valid",
+  ANTHROPIC: "Check whether the API key configuration is valid"
 };

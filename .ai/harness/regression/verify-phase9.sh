@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# 用途: Phase 9 认证冒烟 + channels lastMessageAt + docs .ai/specs 列表验证
-# 前置依赖: 本地 API 已启动在 http://localhost:3001/api ; 已有 admin/admin 演示账号 ; node/curl 可用
-# 运行方式: bash .ai/harness/regression/verify-phase9.sh
+# Purpose: Phase 9 auth smoke test + channels lastMessageAt + docs .ai/specs list verification
+# Prerequisites: local API running at http://localhost:3001/api; admin/admin demo account exists; node and curl available
+# Run: bash .ai/harness/regression/verify-phase9.sh
 set -u
 
 BASE="${API_BASE:-http://localhost:3001/api}"
@@ -133,7 +133,7 @@ echo "== 0. preflight =="
 request "health" GET "/health" "" "" "$TMP_DIR/health.json"
 if [ "$REQ_STATUS" != "200" ]; then
   assert_status "health" 200
-  fatal "测试前置失败: health 检查失败"
+  fatal "Test prerequisite failed: health check failed"
 fi
 echo "  ✓ health 200"
 
@@ -142,8 +142,8 @@ request "login" POST "/auth/login" "" '{"email":"admin@wade.local","password":"a
 assert_status "1. login 200" 200
 ACCESS_TOKEN="$(json_eval "$TMP_DIR/login.json" 'data.accessToken ?? ""' 2>/dev/null)"
 REFRESH_TOKEN="$(json_eval "$TMP_DIR/login.json" 'data.refreshToken ?? ""' 2>/dev/null)"
-[ -n "$ACCESS_TOKEN" ] || fatal "测试前置失败: accessToken 缺失"
-[ -n "$REFRESH_TOKEN" ] || fatal "测试前置失败: refreshToken 缺失"
+[ -n "$ACCESS_TOKEN" ] || fatal "Test prerequisite failed: accessToken is missing"
+[ -n "$REFRESH_TOKEN" ] || fatal "Test prerequisite failed: refreshToken is missing"
 json_true "1. login returns token alias" "$TMP_DIR/login.json" 'data.token === data.accessToken'
 json_true "1. login returns admin user" "$TMP_DIR/login.json" 'data.user?.email === "admin@wade.local"'
 
@@ -151,19 +151,19 @@ request "refresh" POST "/auth/refresh" "" "{\"refreshToken\":\"$REFRESH_TOKEN\"}
 assert_status "2. refresh 200" 200
 ROTATED_ACCESS_TOKEN="$(json_eval "$TMP_DIR/refresh.json" 'data.accessToken ?? ""' 2>/dev/null)"
 ROTATED_REFRESH_TOKEN="$(json_eval "$TMP_DIR/refresh.json" 'data.refreshToken ?? ""' 2>/dev/null)"
-[ -n "$ROTATED_ACCESS_TOKEN" ] || fatal "测试前置失败: rotated accessToken 缺失"
-[ -n "$ROTATED_REFRESH_TOKEN" ] || fatal "测试前置失败: rotated refreshToken 缺失"
+[ -n "$ROTATED_ACCESS_TOKEN" ] || fatal "Test prerequisite failed: rotated accessToken is missing"
+[ -n "$ROTATED_REFRESH_TOKEN" ] || fatal "Test prerequisite failed: rotated refreshToken is missing"
 ck "2. refresh token rotated" "true" "$([ "$REFRESH_TOKEN" != "$ROTATED_REFRESH_TOKEN" ] && echo true || echo false)"
 
 request "refresh-old" POST "/auth/refresh" "" "{\"refreshToken\":\"$REFRESH_TOKEN\"}" "$TMP_DIR/refresh-old.json"
 assert_status "3. old refresh 401" 401
-json_true "3. old refresh returns expiry message" "$TMP_DIR/refresh-old.json" 'data.message === "登录已过期,请重新登录"'
+json_true "3. old refresh returns expiry message" "$TMP_DIR/refresh-old.json" 'data.message === "\u767b\u5f55\u5df2\u8fc7\u671f,\u8bf7\u91cd\u65b0\u767b\u5f55"'
 
 echo "== 2. channels =="
 request "workspaces" GET "/workspaces" "$ROTATED_ACCESS_TOKEN" "" "$TMP_DIR/workspaces.json"
 assert_status "4. list workspaces 200" 200
 WORKSPACE_ID="$(json_eval "$TMP_DIR/workspaces.json" '(Array.isArray(data) ? data : []).find((item) => item.name === "Team Alpha")?.id ?? (Array.isArray(data) ? data[0]?.id : "")' 2>/dev/null)"
-[ -n "$WORKSPACE_ID" ] || fatal "测试前置失败: 未找到可访问工作区"
+[ -n "$WORKSPACE_ID" ] || fatal "Test prerequisite failed: no accessible workspace was found"
 
 request "channels" GET "/workspaces/$WORKSPACE_ID/channels" "$ROTATED_ACCESS_TOKEN" "" "$TMP_DIR/channels.json"
 assert_status "5. channels 200" 200
@@ -204,7 +204,7 @@ json_true "8. logout returns ok" "$TMP_DIR/logout.json" 'data.ok === true'
 
 request "refresh-after-logout" POST "/auth/refresh" "" "{\"refreshToken\":\"$ROTATED_REFRESH_TOKEN\"}" "$TMP_DIR/refresh-after-logout.json"
 assert_status "9. refresh after logout 401" 401
-json_true "9. logout invalidates refresh token" "$TMP_DIR/refresh-after-logout.json" 'data.message === "登录已过期,请重新登录"'
+json_true "9. logout invalidates refresh token" "$TMP_DIR/refresh-after-logout.json" 'data.message === "\u767b\u5f55\u5df2\u8fc7\u671f,\u8bf7\u91cd\u65b0\u767b\u5f55"'
 
 echo ""
 echo "RESULT: PASS=$PASS FAIL=$FAIL"

@@ -20,12 +20,12 @@ function getDayDiff(value?: string | null) {
 
 export function formatDateTime(value?: string | null) {
   const parsed = parseValue(value);
-  return parsed ? parsed.format("YYYY年M月D日 HH:mm") : "-";
+  return parsed ? parsed.format("MMM D, YYYY HH:mm") : "-";
 }
 
 export function formatDate(value?: string | null) {
   const parsed = parseValue(value);
-  return parsed ? parsed.format("YYYY年M月D日") : "-";
+  return parsed ? parsed.format("MMM D, YYYY") : "-";
 }
 
 export function formatRelative(value?: string | null) {
@@ -36,15 +36,15 @@ export function formatRelative(value?: string | null) {
   }
 
   if (dayDiff <= 0) {
-    return "今天";
+    return "Today";
   }
 
   if (dayDiff === 1) {
-    return "昨天";
+    return "Yesterday";
   }
 
   if (dayDiff < 30) {
-    return `${dayDiff}天前`;
+    return `${dayDiff} days ago`;
   }
 
   return formatDate(value);
@@ -55,20 +55,20 @@ export function bucketByTime(value?: string | null) {
   const parsed = parseValue(value);
 
   if (dayDiff == null || !parsed) {
-    return "暂无消息";
+    return "No messages";
   }
 
   if (dayDiff <= 0) {
-    return "今天";
+    return "Today";
   }
 
   if (dayDiff < 7) {
-    return "一周前";
+    return "One week ago";
   }
 
   if (dayDiff < 30) {
-    return "一月前";
+    return "One month ago";
   }
 
-  return parsed.format("YYYY年M月");
+  return parsed.format("MMM YYYY");
 }

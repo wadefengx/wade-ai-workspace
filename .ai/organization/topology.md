@@ -24,4 +24,4 @@ Frontend            Backend
            Memory
 ```
 
-- 异常/升级路径: owner 冲突、契约冲突、lane 阻塞时回到 PM 仲裁,必要时由 Architect 先收敛技术边界。
+- Exception/escalation path: when an owner conflict, contract conflict, or lane blockage occurs, return to PM arbitration; the Architect narrows technical boundaries first when necessary.

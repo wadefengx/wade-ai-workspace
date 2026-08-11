@@ -7,7 +7,7 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 ## Context loading order
 
 1. Root `AGENTS.md` or this mirror.
-2. `.ai/runtime/AI_INSTRUCTION_V2.md` — **Runtime Operating Model 2.0**(Goal-First / Skill 触发 / 动态 Subagent / Verification Iron Law / Self-Evolution Loop / Governance)。与本文档冲突时以 v2 为准。
+2. `.ai/runtime/AI_INSTRUCTION_V2.md` — **Runtime Operating Model 2.0**(Goal-First / Skill Triggering / Dynamic Subagents / Verification Iron Law / Self-Evolution Loop / Governance). When this document conflicts with v2, v2 takes precedence.
 3. `.ai/organization/` for team model, routing, communication, and role contracts.
 4. `.ai/registry/` for stable indexes before scanning deeper trees.
 5. `.ai/runtime/` for context, prompt, model, tool, coding policy, and pipeline.

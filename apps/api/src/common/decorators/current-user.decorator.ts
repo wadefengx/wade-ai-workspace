@@ -5,7 +5,7 @@ export const CurrentUser = createParamDecorator((_: unknown, context: ExecutionC
   const request = context.switchToHttp().getRequest<{ user?: AuthenticatedUser }>();
 
   if (!request.user) {
-    throw new UnauthorizedException("未登录或登录已过期");
+    throw new UnauthorizedException("Not signed in or session has expired");
   }
 
   return request.user;

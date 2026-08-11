@@ -1,132 +1,132 @@
-# Wade AI Workspace 终极实施计划
+#Wade AI Workspace Ultimate Implementation Plan
 
-版本：0.1
+Version: 0.1
 
-## 1. 产品定位
+## 1. Product positioning
 
-Wade AI Workspace 是一个面向团队协作的 AI Native Workspace。它不是 Slack 的复刻，也不只是一个聊天机器人；它要把人类讨论、AI 协作、知识文档与可复用记忆沉淀在同一个工作空间中。
+Wade AI Workspace is an AI Native Workspace for team collaboration. It is not a replica of Slack, nor is it just a chatbot; it integrates human discussions, AI collaboration, knowledge documents and reusable memories in the same workspace.
 
-核心闭环：
+Core closed loop:
 
 ```text
-人类讨论 -> AI 理解与协作 -> 知识提取/记忆沉淀 -> 后续会话自动获得上下文
+Human discussion -> AI understanding and collaboration -> Knowledge extraction/memory precipitation -> Automatically obtain context for subsequent conversations
 ```
 
-长期目标是形成团队的“AI Brain”：成员与 Agent 不仅能在频道中协作，还能基于团队知识和记忆持续提高回答质量。
+The long-term goal is to form the "AI Brain" of the team: members and agents can not only collaborate in the channel, but also continuously improve the quality of answers based on team knowledge and memory.
 
-## 2. MVP 边界
+## 2. MVP Boundary
 
-### 必须交付
+### Must be delivered
 
-- 用户注册、登录、会话管理。
-- Workspace 创建、成员查看与加入机制。
-- Channel 创建及频道内消息历史。
-- 基础实时聊天：人类消息发送、接收与展示。
-- `@AI` 触发 Agent 回答，支持 Markdown 与流式输出。
-- OpenAI-compatible Provider：首期兼容 OpenAI、DeepSeek、Ollama。
-- 知识库上传与检索：`.md`、`.txt`、`.pdf`。
-- 三层 Memory：个人、团队、项目。
-- 默认聊天 Agent，以及可扩展的 Provider/Engine 抽象。
+- User registration, login, session management.
+- Workspace creation, member viewing and joining mechanisms.
+- Channel creation and message history in the channel.
+- Basic real-time chat: sending, receiving and displaying human messages.
+- `@AI` triggers Agent responses and supports Markdown and streaming output.
+- OpenAI-compatible Provider: Compatible with OpenAI, DeepSeek, and Ollama in the first phase.
+- Knowledge base upload and search: `.md`, `.txt`, `.pdf`.
+- Three layers of memory: individual, team, and project.
+- Default chat agent, and extensible Provider/Engine abstraction.
 
-### 明确不做
+### Definitely not doing it
 
-- 视频/语音聊天。
-- 复杂企业级 RBAC、审批流与工作流编排。
-- 完整 Slack 协议兼容。
+- Video/voice chat.
+- Complex enterprise-level RBAC, approval flow and workflow orchestration.
+- Full Slack protocol compatibility.
 - Agent Marketplace。
-- 自主多 Agent 任务执行、Planner、反思循环。
-- 生产级评测平台与 CI Quality Gate。
+- Autonomous multi-agent task execution, Planner, and reflection loop.
+- Production-grade evaluation platform and CI Quality Gate.
 
-## 3. 技术决策
+## 3. Technical decisions
 
-### 前端
+### front end
 
-| 范畴       | 选择                               | 决策理由                                                |
+| Category | Choice | Reasons for decision |
 | ---------- | ---------------------------------- | ------------------------------------------------------- |
-| 框架       | Next.js 16 + React 19 + TypeScript | 负责前端工作台与服务端渲染。                            |
-| 企业组件   | Ant Design 6                       | 表单、表格、状态、配置页和后台管理能力成熟。            |
-| AI 交互    | Ant Design X                       | 用于 Conversation、Bubble、Sender、Prompts 等聊天体验。 |
-| 样式       | CSS Variables + CSS Modules        | 不使用 Tailwind/shadcn；保留可控的视觉定制空间。        |
-| 客户端状态 | Zustand                            | 管理局部 UI 状态、聊天草稿和工作台交互状态。            |
-| 服务端数据 | TanStack Query                     | 缓存、失效、请求状态和 mutation 管理。                  |
+| Framework | Next.js 16 + React 19 + TypeScript | Responsible for front-end workbench and server-side rendering.                            |
+| Enterprise Components | Ant Design 6 | Forms, forms, status, configuration pages and background management capabilities are mature.            |
+| AI interaction | Ant Design X | For chat experiences such as Conversation, Bubble, Sender, and Prompts. |
+| Styles | CSS Variables + CSS Modules | Does not use Tailwind/shadcn; retains controllable visual customization space.        |
+| Client State | Zustand | Manage partial UI state, chat drafts, and workbench interaction state.            |
+| Server-side data | TanStack Query | Cache, invalidation, request status and mutation management.                  |
 
-### 后端与数据
+### Backend and data
 
-| 范畴     | 选择                                                               | 决策理由                                                              |
+| Category | Choice | Reasons for decision |
 | -------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| 服务端   | NestJS                                                             | 提供模块化 BFF/API、鉴权、SSE、异步任务编排和后续 WebSocket 能力。    |
-| 数据库   | 本地 MongoDB Community 7（Docker Compose）                         | 所有数据与开发流程先在本机闭环；使用 replica set，兼容 Prisma 事务。  |
-| ORM      | Prisma                                                             | 统一业务集合的 schema、类型和数据访问；不在 MVP 中保留 Drizzle 选项。 |
-| 向量检索 | 本地应用层余弦相似度 Top-K                                         | MVP 无云服务依赖；以清晰的规模上限换取可本地验证的 RAG 闭环。         |
-| 文件存储 | 本地文件系统 `data/uploads`                                        | 上传、提取和删除均在本机完成，不依赖 S3 或对象存储。                  |
-| 实时能力 | NestJS SSE 流式 AI 回复；多人消息后续使用 NestJS WebSocket Gateway | 将 AI token 流和协作消息广播解耦，同时保持服务端实现集中。            |
+| Server side | NestJS | Provides modular BFF/API, authentication, SSE, asynchronous task orchestration and subsequent WebSocket capabilities.    |
+| Database | Local MongoDB Community 7 (Docker Compose) | All data and development processes are closed on the local machine first; use replica set, compatible with Prisma transactions.  |
+| ORM | Prisma | Unify schema, types, and data access for business collections; does not retain Drizzle option in MVP. |
+| Vector retrieval | Local application layer cosine similarity Top-K | MVP has no dependence on cloud services; a clear scale upper limit is exchanged for a locally verifiable RAG closed loop.         |
+| File storage | Local file system `data/uploads` | Uploading, retrieval, and deletion are all done locally, without relying on S3 or object storage.                  |
+| Real-time capabilities | NestJS SSE streaming AI replies; multi-person messages are subsequently processed using NestJS WebSocket Gateway | Decoupling the AI ​​token stream and collaborative message broadcast while keeping the server implementation centralized.            |
 
-### UI 设计原则
+### UI design principles
 
-- 主色为 `#024AD8`，通过 Ant Design `ConfigProvider` 统一 token，基础圆角为 `8px`。
-- AntD 负责控件行为、数据密度和可访问性；自定义布局、间距、排版、动效与 AI Context 氛围，避免默认企业后台观感。
-- 目标气质：清爽、紧凑、适合长时间工作的 AI Workspace；参考 Linear、Notion、Alma，而不是营销站或 Slack 的直接复制。
-- 不以卡片堆叠替代信息层级。工作台应优先支持扫描、连续操作与上下文切换。
+- The main color is `#024AD8`, the token is unified through Ant Design `ConfigProvider`, and the basic rounded corners are `8px`.
+- AntD is responsible for control behavior, data density and accessibility; customize layout, spacing, typography, animation and AI Context atmosphere to avoid the default corporate backend look and feel.
+- Target temperament: AI Workspace that is refreshing, compact, and suitable for long-term work; refer to Linear, Notion, and Alma, rather than a direct copy of a marketing station or Slack.
+- Do not replace information hierarchy with card stacks. The workbench should prioritize scanning, continuous operations, and context switching.
 
-### 本地运行原则
+### Local operation principles
 
-- MVP 不部署线上服务，不依赖 MongoDB Atlas、对象存储、托管队列或云端实时服务。
-- 整个项目只能通过 Docker Compose 启动；不要求本机安装 Node.js、MongoDB、Ollama 或其他运行时服务。
-- Compose 默认编排 `web`、`api`、`mongodb`、`mongo-init`、`ollama` 与 `ollama-init`：前端、NestJS API、数据库、replica set 初始化、本地模型服务与模型拉取均运行在容器中。
-- MongoDB 使用单节点 replica set；数据库、上传文件和 Ollama 模型均挂载命名 volume，容器重启后保留数据。
-- 开发镜像挂载源码并启用 Web/API 热更新；文档解析任务由 API 容器执行，上传文件写入共享的 `uploads` volume。
-- 默认使用 Compose 内部的 Ollama；仅在显式配置时允许 API 读取 `.env` 中的兼容远程模型地址和密钥。
-- 本地 RAG 仅适用于小规模验证：知识 chunk 数量设置上限，检索使用内存中的余弦相似度计算。上线前再迁移至 MongoDB Atlas Vector Search 或专用向量数据库。
+- MVP does not deploy online services and does not rely on MongoDB Atlas, object storage, managed queues or cloud real-time services.
+- The entire project can only be launched through Docker Compose; no native installation of Node.js, MongoDB, Ollama or other runtime services is required.
+- Compose default arrangements `web`, `api`, `mongodb`, `mongo-init`, `ollama` and `ollama-init`: frontend, NestJS API, database, replica set initialization, local model serving and model pulling all run in containers.
+- MongoDB uses a single-node replica set; the database, uploaded files, and Ollama models are all mounted with named volumes, and the data is retained after the container is restarted.
+- The development image mounts the source code and enables Web/API hot updates; the document parsing task is performed by the API container, and the uploaded files are written to the shared `uploads` volume.
+- Uses Ollama internal to Compose by default; only allows the API to read compatible remote model addresses and keys in `.env` when explicitly configured.
+- Local RAG is only suitable for small-scale verification: the number of knowledge chunks is capped, and retrieval uses in-memory cosine similarity calculations. Migrate to MongoDB Atlas Vector Search or a dedicated vector database before going online.
 
-### Docker Compose 拓扑与约定
+### Docker Compose topology and conventions
 
 ```text
 browser -> web:3000 -> api:3001 -> mongodb:27017
                          |-> ollama:11434
                          |-> uploads volume
 
-mongo-init: 初始化 MongoDB replica set 后退出
-ollama-init: 拉取聊天与 embedding 模型后退出
+mongo-init: Exit after initializing MongoDB replica set
+ollama-init: Exit after pulling chat and embedding models
 ```
 
-- 统一命令：`docker compose up --build`；首次启动会初始化 replica set、执行 Prisma `db push`/seed，并拉取配置的 Ollama 模型。
-- 停止但保留数据：`docker compose down`；完全重置：`docker compose down -v`。重置命令必须在 README 中明确标注会删除本地数据库、上传文件和模型缓存。
-- 提供 `.env.example`，包含端口、MongoDB 数据库名、JWT secret、Ollama 模型名、上传大小上限和可选的远程 Provider 配置；真实 `.env` 不提交。
-- 所有服务必须定义 healthcheck。`api` 仅在 MongoDB replica set 可用且初始化完成后启动；`web` 仅在 API health endpoint 可用后启动。
-- macOS 默认使用 CPU 运行 Ollama；GPU 映射只作为 Linux/NVIDIA 的可选 Compose override，不作为 MVP 前提。
+- Unified command: `docker compose up --build`; the first startup will initialize the replica set, execute Prisma `db push`/seed, and pull the configured Ollama model.
+- Stop but keep data: `docker compose down`; full reset: `docker compose down -v`. The reset command must be clearly noted in the README that it will delete the local database, uploaded files, and model cache.
+- Provides `.env.example`, containing port, MongoDB database name, JWT secret, Ollama model name, upload size limit, and optional remote provider configuration; true `.env` is not submitted.
+- All services must define healthcheck. `api` is started only after the MongoDB replica set is available and initialization is complete; `web` is started only after the API health endpoint is available.
+- macOS uses the CPU to run Ollama by default; GPU mapping is only an optional Compose override for Linux/NVIDIA and is not a prerequisite for MVP.
 
-## 4. 信息架构与核心界面
+## 4. Information architecture and core interface
 
-### 工作台布局
+### Workbench layout
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Workspace Header: 工作区切换、成员、通知、账户                 │
+│ Workspace Header: Workspace switching, members, notifications, accounts │
 ├───────────────┬──────────────────────────────┬───────────────┤
-│ 左侧导航       │ 中间会话区                    │ 右侧 AI Context │
-│ Workspace     │ 当前频道消息 / AI 流式回答     │ 当前 Agent      │
-│ Channels      │ 输入框、@AI、引用与快捷提示    │ 已注入 Memory   │
-│ Knowledge     │                                │ 关联 Knowledge  │
-│ Memory        │                                │ 模型/引擎状态   │
+│ Left navigation │ Middle conversation area │ Right AI Context │
+│ Workspace │ Current channel message/AI streaming answer │ Current Agent │
+│ Channels │ Input box, @AI, references and shortcut tips │ Injected into Memory │
+│ Knowledge │ │ Related Knowledge │
+│ Memory │ │ Model/Engine Status │
 │ Agents        │                                │                 │
 │ Settings      │                                │                 │
 └───────────────┴──────────────────────────────┴───────────────┘
 ```
 
-### 页面范围
+### Page range
 
-1. 认证页：注册、登录、退出与会话恢复。
-2. Workspace 首页：频道导航、当前频道会话与 Context 面板。
-3. Knowledge：上传、索引状态、文档列表、重建索引、删除。
-4. Memory：个人/团队/项目记忆浏览、创建、编辑、删除与启用状态。
-5. Agents：默认 Agent 配置、模型 Provider、能力开关；首期仅支持一个 Default Chat Engine。
-6. Settings：工作区基本信息、成员列表和成员角色。
+1. Authentication page: registration, login, logout and session recovery.
+2. Workspace homepage: channel navigation, current channel session and Context panel.
+3. Knowledge: upload, index status, document list, reindex, delete.
+4. Memory: personal/team/project memory browsing, creation, editing, deletion and activation status.
+5. Agents: Default Agent configuration, model provider, capability switch; only one Default Chat Engine is supported in the first phase.
+6. Settings: basic information of the workspace, member list and member roles.
 
-## 5. 领域模型与数据表
+## 5. Domain model and data table
 
-所有业务数据必须带 `workspaceId`，服务端任何读写均应先做成员资格校验。
+All business data must contain `workspaceId`, and any reading or writing on the server side must first be verified for membership.
 
-### 用户与协作
+### Users and Collaboration
 
 ```text
 users
@@ -160,7 +160,7 @@ channels
 - updatedAt
 ```
 
-### 消息与 Agent
+### Message and Agent
 
 ```text
 messages
@@ -171,7 +171,7 @@ messages
 - senderId
 - content
 - status: PENDING | STREAMING | COMPLETED | FAILED
-- replyToMessageId (optional, MVP 可不做 UI)
+- replyToMessageId (optional, MVP does not need to do UI)
 - createdAt
 - updatedAt
 
@@ -187,7 +187,7 @@ agents
 - updatedAt
 ```
 
-### 知识与记忆
+### Knowledge and Memory
 
 ```text
 knowledge_documents
@@ -215,7 +215,7 @@ knowledge_chunks
 memories
 - id
 - workspaceId
-- userId (PERSONAL 必填，其他类型为空)
+- userId (required for PERSONAL, empty for other types)
 - type: PERSONAL | TEAM | PROJECT
 - content
 - sourceMessageId (optional)
@@ -226,22 +226,22 @@ memories
 - updatedAt
 ```
 
-建议的普通索引：`workspace_members(workspaceId, userId)`、`channels(workspaceId)`、`messages(channelId, createdAt)`、`knowledge_chunks(workspaceId, documentId)`。
+Recommended normal indexes: `workspace_members(workspaceId, userId)`, `channels(workspaceId)`, `messages(channelId, createdAt)`, `knowledge_chunks(workspaceId, documentId)`.
 
-`knowledge_chunks.embedding` 保存为浮点数组。Prisma 负责常规 CRUD；`KnowledgeRepository` 读取当前 workspace 的候选 chunk，在 NestJS 进程内计算 cosine similarity 并返回 Top-K。该实现故意只服务于本地 MVP：必须限制单个 workspace 的 chunk 数量和单次候选集大小。未来接入 Atlas 后，将此 Repository 替换为带 `workspaceId`、`documentId` 过滤条件的 `$vectorSearch` 查询，调用方无需改变。
+`knowledge_chunks.embedding` is saved as a floating point array. Prisma is responsible for regular CRUD; `KnowledgeRepository` reads the candidate chunks of the current workspace, calculates cosine similarity in the NestJS process and returns Top-K. This implementation intentionally only serves local MVPs: the number of chunks in a single workspace and the size of a single candidate set must be limited. After connecting to Atlas in the future, this Repository will be replaced with the `$vectorSearch` query with `workspaceId` and `documentId` filter conditions. The caller does not need to change.
 
-## 6. 架构边界与目录
+## 6. Architecture boundaries and directories
 
 ```text
 apps/
-├── web/                    # Next.js 前端
+├── web/ # Next.js front-end
 │   └── src/
-│       ├── app/            # 路由与页面，不承载业务 API
+│ ├── app/ # Routing and page, does not carry business API
 │       ├── components/
 │       ├── features/
 │       ├── theme/antd.ts
 │       └── styles/globals.css
-└── api/                    # NestJS 后端
+└── api/ # NestJS backend
   └── src/
     ├── auth/
     ├── workspace/
@@ -250,16 +250,16 @@ apps/
     ├── memory/
     ├── agents/
     ├── ai/             # providers、engines、prompts、retrieval
-    ├── prisma/         # PrismaService、schema 与数据访问基线
-    ├── repositories/   # 本地向量检索等非 Prisma 查询
+    ├── prisma/ # PrismaService, schema and data access baseline
+    ├── repositories/ # Non-Prisma queries such as local vector retrieval
     └── common/         # guard、filter、config、DTO
 ```
 
-依赖方向：`web app/components -> web features -> NestJS API -> domain service/repository -> Prisma/MongoDB`。前端不直接访问数据库；NestJS controller 不直接包含领域编排；Provider 与 Agent Engine 不依赖前端页面组件。
+Dependency direction: `web app/components -> web features -> NestJS API -> domain service/repository -> Prisma/MongoDB`. The front end does not directly access the database; NestJS controller does not directly include domain orchestration; Provider and Agent Engine do not rely on front-end page components.
 
-## 7. AI 契约与上下文策略
+## 7. AI Contract and Contextual Strategy
 
-### Provider 抽象
+### Provider Abstraction
 
 ```ts
 export interface AIProvider {
@@ -268,9 +268,9 @@ export interface AIProvider {
 }
 ```
 
-Provider 负责模型调用、鉴权、错误归一化和 token 流；不负责工作区权限、消息持久化或 RAG 拼装。
+Provider is responsible for model invocation, authentication, error normalization and token flow; it is not responsible for workspace permissions, message persistence or RAG assembly.
 
-### Engine 抽象
+### Engine Abstraction
 
 ```ts
 export interface AgentEngine {
@@ -280,31 +280,31 @@ export interface AgentEngine {
 }
 ```
 
-MVP 只实现 `DefaultChatEngine`。Engine 负责：读取近期频道消息、检索工作区知识、选择可用 Memory、调用 Provider，并把流式事件提供给 NestJS SSE Controller。
+MVP only implements `DefaultChatEngine`. The Engine is responsible for: reading recent channel messages, retrieving workspace knowledge, selecting available Memory, calling Providers, and providing streaming events to the NestJS SSE Controller.
 
-### 请求流程
+### Request process
 
 ```text
-用户发送 @AI 消息
--> 校验 workspace 成员资格
--> 保存用户消息
--> 组装近期聊天 + 可用 Memory + Top-K Knowledge chunks
--> DefaultChatEngine 调用 AIProvider.stream
--> NestJS SSE 返回 token
--> 增量保存/最终保存 Agent 消息
--> 广播完成事件
+User sends @AI message
+-> Verify workspace membership
+-> Save user messages
+-> Assemble recent chat + available Memory + Top-K Knowledge chunks
+-> DefaultChatEngine calls AIProvider.stream
+-> NestJS SSE returns token
+-> Incremental save/final save Agent message
+-> Broadcast completion event
 ```
 
-### 上下文控制
+###Context control
 
-- 只注入当前 workspace 可见的数据，Personal Memory 仅对其所属用户可见。
-- Memory 按类型、启用状态与相关度筛选；首期可采用规则排序，后续再引入 embedding 检索。
-- Knowledge 使用本地余弦相似度的文档 chunk Top-K 检索，并在回答中保留可追溯的文档引用元数据。
-- 不把完整频道历史和全部知识库直接拼入 prompt；必须设置消息数量、token 和 Top-K 上限。
+- Only inject data visible to the current workspace, and Personal Memory is only visible to the user to whom it belongs.
+- Memory is filtered by type, activation status and relevance; the first issue can be sorted by rules, and embedding retrieval will be introduced later.
+- Knowledge retrieves top-K document chunks using local cosine similarity and preserves traceable document reference metadata in answers.
+- Do not put the complete channel history and the entire knowledge base directly into the prompt; the number of messages, token and Top-K upper limits must be set.
 
-## 8. API 与权限原则
+## 8. API and Permission Principles
 
-核心 API 以 workspace 为授权边界：
+The core API uses workspace as the authorization boundary:
 
 ```text
 POST   /api/auth/register
@@ -332,134 +332,134 @@ PATCH  /api/memories/:memoryId
 DELETE /api/memories/:memoryId
 ```
 
-- 认证由 NestJS 签发和校验的 session/JWT 负责，浏览器不保存数据库访问凭据或 Provider 密钥。
-- 每个 workspace 路由先验证登录，再验证成员关系；写操作按 OWNER/MEMBER 的最小权限定义。
-- 上传需校验 MIME、大小、文件名，并异步执行提取与向量化。
-- Provider 密钥只保留在服务端环境变量或受控 secrets 中。
+- Authentication is handled by the session/JWT signed and verified by NestJS, and the browser does not save database access credentials or Provider keys.
+- Each workspace route first verifies login and then membership; write operations are defined according to the minimum permissions of OWNER/MEMBER.
+- Uploading needs to verify MIME, size, and file name, and perform extraction and vectorization asynchronously.
+- Provider keys are only kept in server-side environment variables or controlled secrets.
 
-## 9. 分阶段实施计划
+## 9. Phased implementation plan
 
-### Phase 0：架构确认与工程基线
+### Phase 0: Architecture confirmation and engineering baseline
 
-目标：冻结关键决策，避免在业务开发中切换框架。
+Goal: Freeze key decisions and avoid switching frameworks during business development.
 
-- 初始化 monorepo、Next.js 16、React 19、TypeScript、Ant Design 6、Ant Design X 与 NestJS。
-- 提供完整 Docker Compose：Web、API、MongoDB Community 7 单节点 replica set、Mongo 初始化、Ollama、模型初始化与持久化 volumes。
-- 为 Web/API 制作开发 Dockerfile，挂载源码并支持容器内热更新；提供生产 Dockerfile 仅作后续部署准备，不在 MVP 发布。
-- 配置 Prisma MongoDB Provider、Compose 内部连接字符串、schema 推送流程与种子数据。
-- 配置共享 `uploads` volume；不使用宿主机 `data/uploads` 作为运行时依赖。
-- 在 README 中写明启动、停止、查看日志、重置数据、执行 Prisma 操作和切换 Ollama 模型的 Docker 命令。
-- 建立 ESLint、格式化、单测和最小 e2e 骨架。
-- 建立主题 token、全局样式与应用外壳。
-- 写入 `docs/architecture.md`、`docs/database.md`、`docs/api-contracts.md`。
+- Initialize monorepo, Next.js 16, React 19, TypeScript, Ant Design 6, Ant Design X and NestJS.
+- Provides complete Docker Compose: Web, API, MongoDB Community 7 single-node replica set, Mongo initialization, Ollama, model initialization and persistence volumes.
+- Develop Dockerfile for Web/API, mount source code and support hot updates within the container; provide production Dockerfile only for subsequent deployment preparation, not for MVP release.
+- Configure Prisma MongoDB Provider, Compose internal connection string, schema push process and seed data.
+- Configure shared `uploads` volume; do not use host `data/uploads` as runtime dependency.
+- Write the Docker commands for starting, stopping, viewing logs, resetting data, performing Prisma operations and switching Ollama models in the README.
+- Build ESLint, formatting, single testing and minimal e2e skeletons.
+- Create theme tokens, global styles and application shells.
+- Write `docs/architecture.md`, `docs/database.md`, `docs/api-contracts.md`.
 
-验收：执行 `docker compose up --build` 后，所有服务均健康；浏览器可访问 Web，Web 可调用 API，API 可连接 MongoDB 与 Ollama；Prisma 可将 schema 推送至空 MongoDB；上传 volume 可读写；CI 能跑 lint、typecheck、单测。
+Acceptance: After executing `docker compose up --build`, all services are healthy; the browser can access the Web, the Web can call the API, and the API can connect MongoDB and Ollama; Prisma can push the schema to empty MongoDB; the uploaded volume can be read and written; CI can run lint, typecheck, and single testing.
 
-### Phase 1：身份与 Workspace
+### Phase 1: Identity and Workspace
 
-目标：用户能进入受保护的工作区。
+Goal: Users can enter protected workspaces.
 
-- 注册、登录、登出、session 恢复。
-- 创建 workspace，创建者自动成为 OWNER。
-- 成员模型与成员列表。
-- 创建默认 `general` channel，创建/选择 channel。
-- 工作台左侧导航与空频道状态。
+- Registration, login, logout, session recovery.
+- Create a workspace, and the creator automatically becomes the OWNER.
+- Member model and member list.
+- Create default `general` channel, create/select channel.
+- Navigation on the left side of the workbench and empty channel status.
 
-验收：两个用户可以登录；Owner 创建 workspace；成员只能访问加入的 workspace；用户可切换频道。
+Acceptance: Two users can log in; Owner creates workspace; members can only access the joined workspace; users can switch channels.
 
-### Phase 2：持久化聊天与实时基础
+### Phase 2: Persistent chat and real-time foundation
 
-目标：频道成为可靠的协作载体。
+Goal: The channel becomes a reliable collaboration carrier.
 
-- 消息发送、列表、游标分页与时间排序。
-- 乐观更新、失败回滚、加载/空态/错误态。
-- 建立消息广播抽象；首期可先以刷新/轮询验证，后接实时服务。
-- 设计 `USER`、`AGENT` 消息渲染与状态机。
+- Message sending, list, cursor paging and time sorting.
+- Optimistic update, failure rollback, loading/empty/error state.
+- Establish a message broadcast abstraction; the first phase can be verified by refresh/polling, and then real-time service.
+- Design `USER`, `AGENT` message rendering and state machine.
 
-验收：两个浏览器会话可看到同一频道的消息；刷新后历史不丢失；无权限用户无法读取消息。
+Acceptance: Two browser sessions can see messages from the same channel; history is not lost after refreshing; users without permission cannot read messages.
 
-### Phase 3：Default Chat Agent 与流式回答
+### Phase 3: Default Chat Agent and Streaming Answers
 
-目标：`@AI` 可基于频道上下文稳定回答。
+Goal: `@AI` provides stable answers based on the context of the channel.
 
-- 实现 `AIProvider`、OpenAI-compatible Provider 和 `DefaultChatEngine`。
-- 实现 NestJS SSE endpoint、流式渲染、取消与失败状态。
-- 仅在消息含 `@AI` 时触发 Agent；保存用户/Agent 消息。
-- Markdown 安全渲染、代码块、引用/错误展示。
-- 引入最小 prompt 模板与 token 限制。
+- Implements `AIProvider`, OpenAI-compatible Provider and `DefaultChatEngine`.
+- Implement NestJS SSE endpoint, streaming rendering, cancellation and failure status.
+- Only trigger Agent if message contains `@AI`; save user/Agent messages.
+- Markdown safe rendering, code blocks, quote/error display.
+-Introduced minimum prompt template and token restrictions.
 
-验收：支持配置 OpenAI、DeepSeek 或 Ollama；AI 回复逐 token 展示；刷新后 Agent 回答保留；Provider 异常能显示可理解的失败状态。
+Acceptance: Supports configuration of OpenAI, DeepSeek or Ollama; AI responses are displayed token by token; Agent responses are retained after refresh; Provider exceptions can display understandable failure status.
 
-### Phase 4：Knowledge Base 与 RAG
+### Phase 4: Knowledge Base and RAG
 
-目标：AI 能引用工作区上传资料回答问题。
+Goal: AI can answer questions by referencing data uploaded in the workspace.
 
-- 文件上传至本地目录、进程内解析任务与索引状态。
-- `.md`、`.txt`、`.pdf` 的文本提取、分块、embedding 与 MongoDB `Float[]` 写入。
-- 使用应用层 cosine similarity 执行当前 workspace 内的 Top-K 检索，并限制候选 chunk 数量。
-- 文档列表、进度、失败原因、重试、删除与重建索引。
-- 在 Engine 中执行 Top-K 检索并注入引用块。
+- File upload to local directory, in-process parsing tasks and index status.
+- Text extraction, chunking, embedding of `.md`, `.txt`, `.pdf` and MongoDB `Float[]` writing.
+- Use application layer cosine similarity to perform Top-K retrieval within the current workspace and limit the number of candidate chunks.
+- Document list, progress, failure reasons, retry, deletion and re-indexing.
+- Perform Top-K retrieval in Engine and inject reference blocks.
 
-验收：上传一个支持的文档后可看到 `READY`；提问能得到基于文档的回答与来源；失败文档可重试；删除后不可再检索。
+Acceptance: You can see `READY` after uploading a supported document; you can ask questions to get answers and sources based on the document; failed documents can be retried; they cannot be retrieved after being deleted.
 
-### Phase 5：Memory 闭环
+### Phase 5: Memory closed loop
 
-目标：团队上下文可被控制地积累和复用。
+Goal: Team context can be accumulated and reused in a controlled manner.
 
-- Personal、Team、Project 三类 Memory 的 CRUD。
-- 从用户手动确认开始，避免 MVP 自动写入噪声记忆。
-- 在 Agent 请求前按权限和相关度注入记忆。
-- 提供 Memory 来源、启用/禁用与删除能力。
+- CRUD for three types of memory: Personal, Team, and Project.
+- Start with manual user confirmation to avoid MVP automatically writing noisy memory.
+- Inject memory by permission and relevance before Agent request.
+- Provides Memory source, enable/disable and delete capabilities.
 
-验收：用户可管理三类记忆；Personal Memory 不泄露给其他用户；禁用或删除后不会被注入；回答能体现选中的相关记忆。
+Acceptance: Users can manage three types of memory; Personal Memory is not leaked to other users; it will not be injected after being disabled or deleted; answers can reflect the selected relevant memories.
 
-### Phase 6：Agent 配置与可观测性
+### Phase 6: Agent configuration and observability
 
-目标：为后续多引擎演进预留稳定边界。
+Goal: Reserve a stable boundary for subsequent multi-engine evolution.
 
-- Agent 列表、默认 Agent、Provider/模型配置、能力展示。
-- 记录 AI 请求耗时、token、Provider 错误和检索命中，不记录敏感原始密钥。
-- 为 Provider、Engine、RAG 和 Memory 建立单元测试与集成测试。
+- Agent list, default Agent, Provider/model configuration, capability display.
+- Record AI request time, token, Provider errors and retrieval hits, and do not record sensitive original keys.
+- Build unit and integration tests for Provider, Engine, RAG and Memory.
 
-验收：可以在不改聊天 UI 的情况下切换 Provider；出现请求失败时可定位 provider、engine 或 retrieval 阶段。
+Acceptance: You can switch providers without changing the chat UI; you can locate the provider, engine or retrieval stage when a request fails.
 
-## 10. 测试与质量门槛
+## 10. Testing and quality thresholds
 
-- 纯函数、Provider 适配、Engine 上下文组装、权限服务必须有单元测试，目标行覆盖率不低于 90%。
-- Chat、上传、RAG、Memory 权限至少各有一个集成测试。
-- 关键用户路径至少有 e2e：注册/登录、创建 workspace、发送消息、`@AI` 流式回复、上传文档并检索。
-- 流式接口测试必须覆盖正常结束、取消、Provider 失败和持久化失败。
-- 文档解析与 embedding 必须可重试、可观测，并避免单次失败阻断聊天。
-- 所有 Prisma schema 变更必须有本地 `db push` 操作说明、兼容性策略与回滚说明；本地 MongoDB 初始化脚本与上传目录约定必须提交到仓库。
+- Pure functions, Provider adaptation, Engine context assembly, and permission services must have unit tests, and the target line coverage should be no less than 90%.
+- Chat, upload, RAG, and Memory permissions each have at least one integration test.
+- Key user paths are at least e2e: register/login, create workspace, send message, `@AI` streaming reply, upload document and retrieve.
+- Streaming interface tests must cover normal end, cancellation, provider failure and persistence failure.
+- Document parsing and embedding must be retryable and observable, and avoid blocking chat on a single failure.
+- All Prisma schema changes must have local `db push` operation instructions, compatibility policies, and rollback instructions; local MongoDB initialization scripts and upload directory conventions must be submitted to the warehouse.
 
-## 11. 主要风险与前置决策
+## 11. Main risks and pre-decisions
 
-1. 认证方案：在 Phase 0 确定 NestJS Passport + JWT/refresh token、session，或外部身份服务。前端只负责 token/session 使用，不承担鉴权业务逻辑。
-2. 实时服务：SSE 用于 AI token；本地多窗口消息同步可先使用轮询，后续再接入 NestJS WebSocket Gateway。
-3. PDF 提取与异步任务：MVP 使用进程内任务并持久化状态；长任务、失败重试和服务器重启恢复是后续队列化的前置风险。
-4. Embedding Provider：应与聊天模型 provider 解耦；本地优先使用 Ollama embedding model，远程模型仅通过本地环境变量配置。
-5. 本地向量检索规模：应用层余弦相似度不适合大规模 chunk；必须设置每个 workspace 的文档、chunk 和候选集上限。
-6. 数据隔离：RAG 查询、Memory 注入、文件下载都必须以 workspace/member 权限作为第一道约束。
-7. 数据删除：文档删除需级联删除本地文件、chunk 与 embedding；用户/工作区删除策略应在上线前定义。
+1. Authentication scheme: Determine NestJS Passport + JWT/refresh token, session, or external identity service in Phase 0. The front end is only responsible for token/session usage and is not responsible for authentication business logic.
+2. Real-time service: SSE is used for AI token; local multi-window message synchronization can use polling first, and then connect to NestJS WebSocket Gateway.
+3. PDF extraction and asynchronous tasks: MVP uses in-process tasks and persists state; long tasks, failed retries, and server restart recovery are the risks of subsequent queuing.
+4. Embedding Provider: should be decoupled from the chat model provider; the local Ollama embedding model is preferred, and the remote model is only configured through local environment variables.
+5. Local vector retrieval scale: Application layer cosine similarity is not suitable for large-scale chunks; upper limits for documents, chunks, and candidate sets for each workspace must be set.
+6. Data isolation: RAG query, Memory injection, and file download must have workspace/member permissions as the first constraint.
+7. Data deletion: Document deletion requires cascading deletion of local files, chunks and embeddings; user/workspace deletion strategies should be defined before going online.
 
-## 12. 后续路线图
+## 12. Follow-up roadmap
 
-在 MVP 已稳定运行、真实用户产生足够会话与文档数据后再进入以下方向：
+After the MVP has run stably and real users have generated enough session and document data, proceed to the following directions:
 
-- Agent Runtime：Planner、Tool Calling、任务执行、Reflection Loop。
-- 多 Agent：Frontend、Backend、QA、Research 等专用 Agent。
+- Agent Runtime: Planner, Tool Calling, task execution, Reflection Loop.
+- Multi-Agent: Frontend, Backend, QA, Research and other dedicated agents.
 - Engine Adapter：Hermes、Claude Code、OpenClaw、Custom Engine。
-- 更完善的成员邀请、角色和企业权限体系。
-- Harness Engineering：黄金数据集、离线评测、LLM Judge、回归基准、CI 质量门禁。
-- Agent/Provider Marketplace 与插件生态。
+- A more complete member invitation, role and enterprise permission system.
+- Harness Engineering: golden data set, offline evaluation, LLM Judge, regression benchmark, CI quality gate.
+- Agent/Provider Marketplace and plug-in ecosystem.
 
-## 13. 首次执行顺序
+## 13. First execution sequence
 
-实施不应一次性生成全量代码。建议严格遵循以下节奏：
+Implementations should not generate the entire amount of code at once. It is recommended to strictly follow the following rhythm:
 
-1. 先完成 Phase 0 的架构提案、依赖选择和数据模型评审。
-2. 审核通过后只实施一个 Phase。
-3. 每个 Phase 完成后运行对应测试、迁移和验收路径。
-4. 对真实用户反馈和错误数据做复盘，再进入下一 Phase。
+1. First complete the architecture proposal, dependency selection and data model review of Phase 0.
+2. Only one Phase will be implemented after passing the review.
+3. After each Phase is completed, run the corresponding testing, migration and acceptance paths.
+4. Review real user feedback and error data before entering the next phase.
 
-本计划是 MVP 的实施基线。任何新增模块应先说明其是否服务于“人类 + Agent + Knowledge + Memory”的核心闭环；若不能直接服务该闭环，则放入后续路线图。
+This plan is the baseline for MVP implementation. Any new module should first explain whether it serves the core closed loop of "human + agent + knowledge + memory"; if it cannot directly serve this closed loop, it will be placed on the subsequent roadmap.

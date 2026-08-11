@@ -48,7 +48,7 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @Get(":channelId/messages")
-  @ApiOperation({ summary: "获取频道消息列表" })
+  @ApiOperation({ summary: "Get channel messages" })
   @ApiBearerAuth()
   listMessages(
     @Req() request: ChannelAccessRequest,
@@ -62,7 +62,7 @@ export class ChatController {
 
   @Post(":channelId/messages")
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: "发送频道消息" })
+  @ApiOperation({ summary: "Send a channel message" })
   @ApiBearerAuth()
   createMessage(
     @Req() request: ChannelAccessRequest,
@@ -76,7 +76,7 @@ export class ChatController {
   }
 
   @Patch(":channelId/messages/:messageId/feedback")
-  @ApiOperation({ summary: "更新消息反馈" })
+  @ApiOperation({ summary: "Update message feedback" })
   @ApiBearerAuth()
   updateMessageFeedback(
     @Req() request: ChannelAccessRequest,
@@ -96,7 +96,7 @@ export class ChatController {
 
   @Post(":channelId/generate-title")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "调用模型为对话生成标题并更新频道名" })
+  @ApiOperation({ summary: "Generate a conversation title with the model and update the channel name" })
   @ApiBearerAuth()
   generateChannelTitle(
     @Req() request: ChannelAccessRequest,
@@ -109,7 +109,7 @@ export class ChatController {
 
   @Post(":channelId/ai/stream")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "流式获取 AI 回复" })
+  @ApiOperation({ summary: "Stream an AI response" })
   @ApiBearerAuth()
   async streamAiReply(
     @Req() request: StreamingRequest,
@@ -151,7 +151,7 @@ export class ChatController {
       if (!abortController.signal.aborted && !response.writableEnded) {
         this.writeSseEvent(response, {
           type: "error",
-          message: error instanceof Error ? error.message : "AI 回复失败"
+          message: error instanceof Error ? error.message : "AI response failed"
         });
       }
     } finally {

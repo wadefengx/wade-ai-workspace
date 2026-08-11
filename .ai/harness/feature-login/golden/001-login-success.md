@@ -1,10 +1,10 @@
 # 001 Login Success
 
-## 场景
+## Scenario
 
-- 已注册用户使用正确邮箱和密码登录,系统返回新的访问令牌与刷新令牌。
+- A registered user signs in with the correct email and password, and the system returns new access and refresh tokens.
 
-## 输入
+## Input
 
 - Endpoint: `POST /api/auth/login`
 - Body:
@@ -16,16 +16,16 @@
 }
 ```
 
-## 期望输出
+## Expected output
 
 - HTTP 200
-- 返回 `accessToken`
-- 返回 `refreshToken`
-- 返回 `user.id / user.email / user.role`
+- Returns `accessToken`
+- Returns `refreshToken`
+- Returns `user.id / user.email / user.role`
 
-## 断言
+## Assertions
 
-1. `accessToken` 为非空字符串。
-2. `refreshToken` 为非空字符串。
-3. `user.email` 等于请求邮箱。
-4. 响应不包含错误字段 `statusCode`。
+1. `accessToken` is a non-empty string.
+2. `refreshToken` is a non-empty string.
+3. `user.email` equals the requested email.
+4. The response does not include the `statusCode` error field.

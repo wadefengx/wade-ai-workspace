@@ -13,7 +13,7 @@ export class MembersController {
   constructor(private readonly workspaceService: WorkspaceService) {}
 
   @Patch(":memberId")
-  @ApiOperation({ summary: "更新成员角色" })
+  @ApiOperation({ summary: "Update member role" })
   @ApiBearerAuth()
   updateMemberRole(
     @Param("memberId") memberId: string,
@@ -24,7 +24,7 @@ export class MembersController {
   }
 
   @Delete(":memberId")
-  @ApiOperation({ summary: "移除工作区成员" })
+  @ApiOperation({ summary: "Remove workspace member" })
   @ApiBearerAuth()
   removeMember(@Param("memberId") memberId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.workspaceService.removeMember(memberId, user.id);

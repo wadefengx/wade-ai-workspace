@@ -6,91 +6,91 @@ created: 2026-08-05
 owner: wadefengx
 ---
 
-# Phase 15:LLM Provider 化(API key + 本地)+ RAG 去重
+# Phase 15: LLM Provider Support (API Key + Local) + RAG Deduplication
 
 ## Goal
 
-用户诉求:
-1. **不用 ollama 作为唯一 LLM**:支持 **API key 接入**(OpenAI-compatible/DeepSeek/Anthropic 等)+ **本地部署**(ollama),两者并存。不假设每个人的电脑都装了 ollama。
-2. **文档 RAG 持久化到 DB,避免重复切片**:文档 reindex 时用内容 hash 去重,内容没变就跳过,不重复 embedding/切片。
+User requests:
+1. **Do not use Ollama as the only LLM:** support **API-key integration** (OpenAI-compatible/DeepSeek/Anthropic, etc.) alongside **local deployment** (Ollama). Do not assume every user has Ollama installed.
+2. **Persist document RAG in the DB and avoid duplicate chunking:** deduplicate by content hash during document reindexing; skip unchanged content instead of repeating embedding/chunking.
 
-## 现状(已勘察)
+## Current State (inspected)
 
-**已有(精华,保留)**:
-- Agent 模型已支持 `type: OLLAMA | OPENAI_COMPATIBLE | ANTHROPIC | OPENCLAW | HERMES` + providerConfigRef(baseUrl/apiKey/model),engine 按 type 选 provider ✅
-- RAG 骨架:KnowledgeDocument + KnowledgeChunk(embedding Float[])、splitIntoChunks、searchSimilarChunks 余弦相似度 ✅
-- default-chat.engine buildPromptMessages 已检索相似 chunks 注入上下文 ✅
-- Agents 页 6 预设(OpenAI/DeepSeek/Ollama/Claude/OpenClaw/Hermes)✅
+**Already present (retain the good parts):**
+- The Agent model supports `type: OLLAMA | OPENAI_COMPATIBLE | ANTHROPIC | OPENCLAW | HERMES` + `providerConfigRef(baseUrl/apiKey/model)`; the engine selects a provider by `type` ✅
+- RAG foundation: `KnowledgeDocument` + `KnowledgeChunk(embedding Float[])`, `splitIntoChunks`, and cosine `searchSimilarChunks` ✅
+- `default-chat.engine` already retrieves similar chunks and injects context in `buildPromptMessages` ✅
+- The Agents page already has six presets (OpenAI/DeepSeek/Ollama/Claude/OpenClaw/Hermes) ✅
 
-**糟粕(要改)**:
-1. **embedding 锁死 ollama**:knowledge.service 和 default-chat.engine 直接调 `ollamaService.embed()`——没有 ollama 就整个 RAG 挂掉。
-2. **重复切片**:reindex 无条件 `deleteMany` + 全量重建,无内容 hash 去重。
-3. **默认 Agent 依赖 ollama**:seed 默认 agent 指向 ollama;无 ollama 环境对话/RAG 都不可用。
-4. **OPENAI_COMPATIBLE 空壳**:apiKey 可配但没验证;预设 baseUrl 需要用户填。
+**Problems to change:**
+1. **Embeddings are locked to Ollama:** `knowledge.service` and `default-chat.engine` directly call `ollamaService.embed()` — without Ollama, the whole RAG pipeline fails.
+2. **Duplicate chunking:** reindexing unconditionally runs `deleteMany` plus a full rebuild, with no content-hash deduplication.
+3. **The default Agent depends on Ollama:** the seed’s default Agent points to Ollama, so chat/RAG cannot work in an environment without it.
+4. **`OPENAI_COMPATIBLE` is a shell:** API keys can be configured but are not verified; preset `baseUrl` values must be filled manually.
 
-## 方案(参考 Dify/AnythingLLM/OpenWebUI + 2026 RAG 基准)
+## Approach (referencing Dify/AnythingLLM/OpenWebUI + 2026 RAG benchmarks)
 
-调研结论(卡卡西式汲取):
-- **AnythingLLM/Dify**:provider 抽象 + API key 存 DB 只写不回 + workspace 级模型选择——我们 Agent 系统已有雏形,补"默认不锁 ollama"即可。
-- **2026 RAG 基准**(Firecrawl/Databricks/premai):递归 512-token 切片 + 10-20% overlap 是通用最优(69% 准确率);短文档(<200 token)不切;语义/LLM 切片贵 14-50 倍不划算;**切片质量 > embedding 模型**。
-- **去重**:内容 hash(sha256)是 Dify/AnythingLLM 标配——同内容文档跳过 reindex,避免重复切片。
+Research conclusions (selectively adopted):
+- **AnythingLLM/Dify:** provider abstraction + write-only API keys in DB + Workspace-level model selection — the existing Agent system is already a foundation; only “do not lock the default to Ollama” is missing.
+- **2026 RAG benchmark** (Firecrawl/Databricks/premai): recursive 512-token chunks with 10–20% overlap are generally optimal (69% accuracy); short documents (<200 tokens) should not be split; semantic/LLM chunking costs 14–50× more and is not cost-effective; **chunk quality > embedding model**.
+- **Deduplication:** a content hash (sha256) is standard in Dify/AnythingLLM — skip reindexing identical content to prevent repeated chunking.
 
-### Task 1:Embedding Provider 抽象(核心)
+### Task 1: Embedding Provider Abstraction (core)
 
-新建 `EmbeddingService`(或扩展 ollama.service),支持两种 embedding 来源,按 Agent 配置路由:
+Create `EmbeddingService` (or extend `ollama.service`) to support two embedding sources and route by Agent configuration:
 
 ```ts
 // src/ai/embedding.service.ts
-// - OLLAMA: GET {OLLAMA_BASE_URL}/api/embed(现有逻辑迁入)
-// - OPENAI_COMPATIBLE: POST {baseUrl}/embeddings(OpenAI 兼容协议,DeepSeek/硅基流动/OpenAI 通用)
-// 选择逻辑:优先 Agent.providerConfig 里的 embedding 配置;
-//          无则退回 env OLLAMA_BASE_URL(兼容现部署);
-//          都没有则 RAG 功能 graceful 降级(检索跳过 embedding,返回空上下文,不 500)
+// - OLLAMA: GET {OLLAMA_BASE_URL}/api/embed (move existing logic here)
+// - OPENAI_COMPATIBLE: POST {baseUrl}/embeddings (OpenAI-compatible protocol; works for DeepSeek/SiliconFlow/OpenAI)
+// Selection: prioritize embedding configuration in Agent.providerConfig;
+//            otherwise fall back to env OLLAMA_BASE_URL (compatibility with deployed environments);
+//            if neither exists, gracefully degrade RAG (skip embedding/retrieval and return empty context, never 500).
 ```
 
-- `knowledge.service.ts`:注入 EmbeddingService,替换 `ollamaService.embed`。
-- `default-chat.engine.ts`:注入 EmbeddingService,替换 buildPromptMessages 里的 `ollamaService.embed`。
-- Agent 增加 embedding 配置字段:`embeddingModel`/`embeddingBaseUrl`(可空,空则用 chat model 同源或默认)。
-- RAG embedding 失败时:**记录 warn + 返回空上下文**,对话照常进行(不中断)。
+- `knowledge.service.ts`: inject `EmbeddingService` and replace `ollamaService.embed`.
+- `default-chat.engine.ts`: inject `EmbeddingService` and replace `ollamaService.embed` in `buildPromptMessages`.
+- Add optional Agent embedding fields: `embeddingModel` / `embeddingBaseUrl`; when empty, use the chat-model source or default.
+- On RAG embedding failure: **log a warning and return empty context**; normal chat continues uninterrupted.
 
-### Task 2:文档去重 + 切片升级
+### Task 2: Document Deduplication + Improved Chunking
 
-**去重(核心)**:
-- KnowledgeDocument 增加 `contentHash String?`。
-- reindex 流程:提取文本 → `sha256(content)` → 查同 workspace 下同 hash 的 READY 文档:
-  - **存在 → 直接 return**(跳过切片/embedding,状态 READY,不重复入库)。
-  - **不存在 → 正常切片 + embedding + 入库**,记录 contentHash。
-- 已有 chunks 更新逻辑:仅当 hash 变化才 deleteMany 重建;hash 相同直接 return。
+**Deduplication (core):**
+- Add `contentHash String?` to `KnowledgeDocument`.
+- Reindex flow: extract text → `sha256(content)` → find a READY document with the same hash in the same Workspace:
+  - **Exists → return immediately** (skip chunking/embedding; status remains READY; do not duplicate records).
+  - **Does not exist → perform normal chunking + embedding + insert**, recording `contentHash`.
+- Existing-chunk update logic: only `deleteMany` and rebuild when the hash changes; return immediately if it is identical.
 
-**切片升级(2026 基准)**:
-- `splitIntoChunks` 改为**递归切片**:优先按段落(`\n\n`)、行(`\n`)、句(`。.！？!?`)、字符回退,chunkSize 默认 **512 token 约 1500 字符**(中文 1 字≈1 token,保守 800-1000 字符)+ **15% overlap**(约 120-150 字符)。
-- 短文档(<200 token,约 600 字符)**不切分**,整篇做单个 chunk。
-- 保留现有 splitIntoChunks 导出签名兼容测试,内部改递归策略。
+**Improved chunking (2026 benchmark):**
+- Change `splitIntoChunks` to **recursive chunking**: paragraphs (`\n\n`) first, then lines (`\n`), sentences (`。.！？!?`), then character fallback; default chunk size is **approximately 512 tokens / 1,500 characters** (Chinese is about one character per token; conservatively 800–1,000 characters) with **15% overlap** (about 120–150 characters).
+- Do **not split** short documents (<200 tokens, approximately 600 characters); embed the whole document as one chunk.
+- Preserve the existing exported `splitIntoChunks` signature for test compatibility; change only internal strategy.
 
-### Task 3:默认 Agent 去 ollama 化
+### Task 3: Remove Ollama Dependency from the Default Agent
 
-- seed 默认 Agent:改为 `OPENAI_COMPATIBLE` + baseUrl 留空(用户首次进 Agents 页填 DeepSeek/OpenAI key),**不再默认 ollama**。
-- docker-compose:`ollama` 服务保留但 api/web 的 `depends_on` 不再强制 ollama(ollama-init 模型拉取失败不应阻塞 api)。OLLAMA_* env 保留,作为"本地部署"选项。
-- 对话无任何 provider 配置时:返回友好错误("请先在 Agents 页配置 LLM API Key"),不 500。
+- Seed default Agent: use `OPENAI_COMPATIBLE` with empty `baseUrl` (the user supplies a DeepSeek/OpenAI key on the first Agents-page visit); **do not default to Ollama**.
+- `docker-compose`: retain the `ollama` service, but remove mandatory Ollama dependency from API/web `depends_on` (a failed Ollama model pull must not block the API). Retain `OLLAMA_*` env variables as the “local deployment” option.
+- When no provider is configured for chat: return a friendly error (“Configure an LLM API Key on the Agents page first”), not a 500.
 
-### Task 4:Agents 页 UI 补强
+### Task 4: Strengthen Agents-page UI
 
-- 预设填 baseUrl 时校验格式;apiKey 输入提示"仅写入不回显"(已有)。
-- Ollama 预设标注"需要本地运行 ollama";DeepSeek/OpenAI 预设标注"需要 API Key"。
-- Agent 表单增加 embedding 配置折叠区(可选,默认跟随 chat provider)。
+- Validate the format when presets fill `baseUrl`; retain the existing API-key hint “written only; never displayed”.
+- Label the Ollama preset “requires Ollama running locally”; label DeepSeek/OpenAI presets “requires API Key”.
+- Add a collapsible optional embedding-configuration section to the Agent form; by default it follows the chat provider.
 
 ## Acceptance
 
-- [ ] 无 ollama 环境(纯 API key):对话走 DeepSeek/OpenAI key 正常;文档上传→切片→RAG 检索正常(embedding 走 API)
-- [ ] 有 ollama 环境:现有行为不回归
-- [ ] 同一文档重复上传/reindex:第二次跳过切片(DB 里 chunk 不重复增长)
-- [ ] embedding 失败:对话降级不中断,日志 warn
-- [ ] 默认 Agent 不依赖 ollama;docker compose 起栈无 ollama 也可用(填 key 后)
-- [ ] `npm run lint && typecheck && build` 全绿;API 单测通过(80+)
-- [ ] 浏览器验收:Agents 页配 key → 对话 → 上传文档 → 问文档内容 → 回答引用文档
+- [ ] Without Ollama (API key only): chat through DeepSeek/OpenAI works; document upload → chunking → RAG retrieval works using API embeddings.
+- [ ] With Ollama: existing behavior does not regress.
+- [ ] Re-uploading/reindexing the same document skips chunking on the second run (DB chunk count does not grow redundantly).
+- [ ] If embedding fails: chat degrades without interruption and logs a warning.
+- [ ] The default Agent does not depend on Ollama; `docker compose` works without Ollama once a key is provided.
+- [ ] `npm run lint && typecheck && build` all pass; API unit tests pass (80+).
+- [ ] Browser acceptance: configure a key on Agents → chat → upload a document → ask about its content → answer cites the document.
 
 ## Non-goals
 
-- 不做向量数据库迁移(MongoDB 余弦够用,MVP 规模)。
-- 不做多租户 API key 加密(apiKey 已只写不回,够用)。
-- 不做 OPENCLAW/HERMES harness 真实调用(Phase 16)。
+- Do not migrate to a vector database (MongoDB cosine similarity is sufficient at MVP scale).
+- Do not encrypt multi-tenant API keys (`apiKey` already writes only and never reads back; sufficient for now).
+- Do not make real OPENCLAW/HERMES harness calls (Phase 16).

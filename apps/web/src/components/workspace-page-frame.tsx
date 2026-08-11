@@ -23,7 +23,7 @@ export function WorkspacePageFrame({
 }: WorkspacePageFrameProps) {
   const screens = Grid.useBreakpoint();
   const { selectedWorkspace, members } = useWorkspacePageContext();
-  // 统一由 pageScrollBody 提供滚动,scrollableContent 保留兼容调用方
+  // pageScrollBody provides scrolling; scrollableContent remains for compatibility.
   void scrollableContent;
 
   return (
@@ -32,10 +32,10 @@ export function WorkspacePageFrame({
         <header className={shellStyles.topbar}>
           <div className={shellStyles.workspaceMeta}>
             <Typography.Title level={4} className={shellStyles.topbarTitle}>
-              {selectedWorkspace?.name ?? "创建你的第一个 Workspace"}
+              {selectedWorkspace?.name ?? "Create your first workspace"}
             </Typography.Title>
             <Typography.Text type="secondary">
-              {selectedWorkspace ? description : "先创建 Workspace，再管理知识库与记忆。"}
+              {selectedWorkspace ? description : "Create a workspace before managing knowledge and memory."}
             </Typography.Text>
           </div>
 
@@ -70,11 +70,11 @@ export function WorkspacePageFrame({
               className={shellStyles.workspaceEmpty}
               align="left"
               icon={<DatabaseOutlined />}
-              title="还没有 Workspace"
-              description="先创建一个 Workspace，随后就能在这里管理文档、技能和成员。"
+              title="No workspace yet"
+              description="Create a workspace to manage documents, skills, and members here."
               action={
                 <Button type="primary" onClick={() => window.location.assign("/")}>
-                  返回 Workspace
+                  Back to workspace
                 </Button>
               }
             />

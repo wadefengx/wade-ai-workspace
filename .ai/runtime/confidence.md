@@ -1,45 +1,45 @@
 # Confidence
 
-## 评分维度
+## Scoring dimensions
 
-| 维度 | 分值范围 | 权重 | 评分准则 |
+| Dimension | Score range | Weight | Scoring criteria |
 |---|---|---|---|
-| 实现完整性 | 0.0-1.0 | 0.35 | 需求与验收覆盖比例,缺口越少越高 |
-| 测试/验证覆盖 | 0.0-1.0 | 0.30 | 现有测试、脚本、人工验证证据是否覆盖变更面 |
-| API/契约符合度 | 0.0-1.0 | 0.25 | DTO、response shape、文档契约是否一致 |
-| 依赖健康度 | 0.0-1.0 | 0.10 | 前置 lane、外部条件、回滚路径是否清晰 |
+| Implementation completeness | 0.0-1.0 | 0.35 | Share of requirements and acceptance criteria covered; fewer gaps score higher |
+| Test/validation coverage | 0.0-1.0 | 0.30 | Whether existing tests, scripts, and manual-validation evidence cover the changed surface |
+| API/contract conformance | 0.0-1.0 | 0.25 | Whether DTOs, response shapes, and documented contracts are consistent |
+| Dependency health | 0.0-1.0 | 0.10 | Whether prerequisite lanes, external conditions, and rollback paths are clear |
 
-## 计算规则
+## Calculation rules
 
 - `confidence = completeness*0.35 + validation*0.30 + contract*0.25 + dependency*0.10`
-- 分值保留两位小数,由 lane owner 在 `Review` 后首次提交,`QA` 后可重算一次。
-- 任何关键维度为 `0` 时,总分不得高于 `0.49`。
+- Keep two decimal places; the lane owner first submits after `Review` and may recalculate once after `QA`.
+- When any key Dimension is `0`, the total score cannot be higher than `0.49`.
 
-## 阈值策略
+## Threshold policy
 
-| 区间 | 处理动作 | 默认 owner |
+| Range | Action | Default owner |
 |---|---|---|
-| `>= 0.85` | 可直接进入 merge 决策 | lane owner |
-| `0.70 - 0.84` | 正常 review + QA | lane owner + QA |
-| `< 0.70` | 自动触发 Architect Review | Architect |
-| `< 0.50` | Architect Review + 外部 review | Architect + 外部 reviewer |
+| `>= 0.85` | May proceed directly to a merge decision | lane owner |
+| `0.70 - 0.84` | Normal review + QA | lane owner + QA |
+| `< 0.70` | Automatically trigger Architect Review | Architect |
+| `< 0.50` | Architect Review + external review | Architect + external reviewer |
 
-## 触发点
+## Trigger points
 
-1. Planner: 先给 `initial_confidence`,低于 `0.70` 说明拆分或依赖仍不稳。
-2. Review: 提交 `review_confidence`,作为是否进入 QA 的门槛。
-3. QA: 提交 `release_confidence`,作为 merge 决策输入。
+1. Planner: Give `initial_confidence` first, lower than `0.70` Description split or dependency is still unstable.
+2. Review: Submit `review_confidence` as the gate for entering QA.
+3. QA: Submit `release_confidence` as merge decision input.
 
-## 记录字段
+## Recorded fields
 
-| 字段 | 含义 |
+| Field | Meaning |
 |---|---|
-| `initial_confidence` | Planner 估计值 |
-| `review_confidence` | 自检后估计值 |
-| `release_confidence` | QA 后估计值 |
-| `confidence_reason` | 降分理由,最多 3 条 |
+| `initial_confidence` | Planner estimate |
+| `review_confidence` | Estimate after self-review |
+| `release_confidence` | Estimate after QA |
+| `confidence_reason` | Reasons for a score reduction, at most 3 |
 
 ## Dashboard hooks
 
-- 计数键: `low_confidence_lane_count`, `external_review_count`
-- 分布键: `confidence_histogram`, `confidence_by_owner`
+- Count keys: `low_confidence_lane_count`, `external_review_count`
+- Distribution keys: `confidence_histogram`, `confidence_by_owner`

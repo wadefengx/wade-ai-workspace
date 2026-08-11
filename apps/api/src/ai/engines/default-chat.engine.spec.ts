@@ -121,20 +121,20 @@ describe("DefaultChatEngine", () => {
       channelId: "channel-1",
       senderType: MessageSenderType.USER,
       senderId: "user-1",
-      content: "@AI 总结文档",
+      content: "@AI summarize the document",
       status: MessageStatus.COMPLETED,
       createdAt: new Date("2024-01-01T00:00:00.000Z"),
       updatedAt: new Date("2024-01-01T00:00:00.000Z")
     }]);
     memoryService.listPromptMemories.mockResolvedValue([{
       type: "PERSONAL",
-      content: "我负责 API"
+      content: "I am responsible for the API"
     }, {
       type: "TEAM",
-      content: "团队默认用中文"
+      content: "The team defaults to Chinese"
     }, {
       type: "PROJECT",
-      content: "项目目标是知识库问答"
+      content: "The project goal is knowledge-base Q&A"
     }]);
     prisma.knowledgeDocument.findFirst.mockResolvedValue({
       id: "document-1"
@@ -144,7 +144,7 @@ describe("DefaultChatEngine", () => {
       chunkId: "chunk-1",
       documentId: "document-1",
       filename: "guide.md",
-      content: "这里是文档片段",
+      content: "This is a document excerpt",
       chunkIndex: 0,
       similarity: 1
     }]);
@@ -154,13 +154,13 @@ describe("DefaultChatEngine", () => {
       workspaceId: "workspace-1",
       channelId: "channel-1",
       userId: "user-1",
-      latestUserMessage: "@AI 总结文档"
+      latestUserMessage: "@AI summarize the document"
     }));
 
     const systemPrompt = openAICompatibleProvider.stream.mock.calls[0][0].messages[0].content as string;
-    expect(systemPrompt).toContain("记忆上下文");
+    expect(systemPrompt).toContain("Memory context");
     expect(systemPrompt).toContain("guide.md");
-    expect(embeddingService.embed).toHaveBeenCalledWith("@AI 总结文档");
+    expect(embeddingService.embed).toHaveBeenCalledWith("@AI summarize the document");
   });
 
   it("passes provider config to the openai-compatible provider for non-anthropic agents", async () => {

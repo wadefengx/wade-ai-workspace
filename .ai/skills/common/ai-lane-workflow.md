@@ -1,34 +1,34 @@
 ---
 name: ai-lane-workflow
-description: 多 Lane 并行开发工作流:Hermes 直接执行,按领域切 lane,harness 验收后回流 memory。
+description: Multi-lane parallel-development workflow: Hermes executes directly, divides lanes by domain, and feeds results back to memory after harness acceptance.
 tags:
   - workflow
   - lane
   - sdd
 ---
 
-# AI Lane Workflow(多 Lane 并行开发)
+# AI Lane Workflow (Multi-Lane Parallel Development)
 
-## 触发
+## Triggers
 
-- 一期需求包含多个领域(后端 / 前端基础 / 前端页面 / 文档 / AIOS)。
-- 用户要求"全员参与 / 并行开发"。
+- A phase requirement spans multiple domains (backend / frontend foundation / frontend pages / documentation / AIOS).
+- The user requests "all-hands participation / parallel development".
 
-## 流程
+## Process
 
-1. **PM 系分**:写 `specs/SPEC-phaseN.md`——目标、范围、不做项、API 契约、验收标准、任务拆分。
-2. **切 Lane**:按领域切(后端 / 前端基础 / 前端页面 / Dashboard / AIOS 文档),每个 lane 独占一组文件;跨 lane 共享文件(导航、布局、context)指定单一 owner;契约先定死,并行不联调。
-3. **执行**:每 lane 遵守 ponytail(最短实现 / 根因修复);lint/typecheck 逐 lane 过。
-4. **QA 验收**(编排者):全量 lint + typecheck + test + build;harness regression 脚本实跑;浏览器逐条验证(登录/刷新恢复/导航/表单/流式/反馈/深色)。
-5. **回流**:lessons/decisions 写 `.ai/memory/`;可复用做法沉淀 skill。
-6. **Commit**:功能粒度,`feat(scope): 描述`。
+1. **PM analysis**: write `specs/SPEC-phaseN.md`—goals, scope, non-goals, API contracts, acceptance criteria, and task decomposition.
+2. **Split lanes**: divide by domain (backend / frontend foundation / frontend pages / Dashboard / AIOS docs); each lane exclusively owns a file group; designate one owner for files shared across lanes (navigation, layout, context); lock contracts first and avoid cross-lane integration while parallel.
+3. **Execute**: each lane follows ponytail (smallest implementation / root-cause fix); pass lint/typecheck lane by lane.
+4. **QA acceptance** (orchestrator): full lint + typecheck + test + build; execute harness regression scripts; verify browser behavior item by item (login/refresh restoration/navigation/forms/streaming/feedback/dark mode).
+5. **Feed back**: write lessons/decisions to `.ai/memory/`; distill reusable practices into skills.
+6. **Commit**: at feature granularity, `feat(scope): description`.
 
-## Lane 状态机
+## Lane State Machine
 
-`Draft → Ready → Running → Review → QA → Done → Merged`;卡住(多轮无进展)→ `Blocked`。
+`Draft → Ready → Running → Review → QA → Done → Merged`; Blocked (no progress across multiple rounds) → `Blocked`.
 
-## 坑
+## Pitfalls
 
-- Prisma schema 变更后 dev server 热重载不可靠 → 手动 `prisma generate` + 重启。
-- kill npm wrapper 后子进程残留占端口 → `lsof -ti :PORT | xargs kill -9`。
-- 并行 lane 修改同一文件会冲突 → 切 lane 时就锁文件归属。
+- After Prisma schema changes, dev-server hot reload is unreliable → run `prisma generate` manually and restart.
+- Killing the npm wrapper can leave child processes holding the port → `lsof -ti :PORT | xargs kill -9`.
+- Parallel lanes modifying the same file conflict → lock file ownership when splitting lanes.

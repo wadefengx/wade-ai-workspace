@@ -16,7 +16,7 @@ export class AgentsController {
 
   @Get("workspaces/:workspaceId/agents")
   @UseGuards(WorkspaceMemberGuard)
-  @ApiOperation({ summary: "获取工作区 Agent 列表" })
+  @ApiOperation({ summary: "Get workspace agents" })
   @ApiBearerAuth()
   listWorkspaceAgents(@Param("workspaceId") workspaceId: string) {
     return this.agentsService.listWorkspaceAgents(workspaceId);
@@ -24,7 +24,7 @@ export class AgentsController {
 
   @Post("workspaces/:workspaceId/agents")
   @UseGuards(WorkspaceMemberGuard)
-  @ApiOperation({ summary: "创建工作区 Agent" })
+  @ApiOperation({ summary: "Create a workspace agent" })
   @ApiBearerAuth()
   createAgent(
     @Param("workspaceId") workspaceId: string,
@@ -35,7 +35,7 @@ export class AgentsController {
   }
 
   @Patch("agents/:agentId")
-  @ApiOperation({ summary: "更新 Agent 配置" })
+  @ApiOperation({ summary: "Update agent configuration" })
   @ApiBearerAuth()
   updateAgent(
     @Param("agentId") agentId: string,
@@ -46,14 +46,14 @@ export class AgentsController {
   }
 
   @Post("agents/:agentId/test")
-  @ApiOperation({ summary: "测试 Agent Provider 连接" })
+  @ApiOperation({ summary: "Test the agent provider connection" })
   @ApiBearerAuth()
   testConnection(@Param("agentId") agentId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.agentsService.testConnection(agentId, user.id);
   }
 
   @Delete("agents/:agentId")
-  @ApiOperation({ summary: "删除 Agent" })
+  @ApiOperation({ summary: "Delete an agent" })
   @ApiBearerAuth()
   deleteAgent(@Param("agentId") agentId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.agentsService.deleteAgent(agentId, user.id);

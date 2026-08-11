@@ -2,8 +2,8 @@
 
 Version: 2.0
 Status: active
-Supersedes: AI_DEV_INSTRUCTION.md (v1, 保留为 legacy 兼容)
-Inspired by: obra/superpowers (skill 化思想 / brainstorm→spec→plan→execute→review / subagent-driven / verification loop)
+Supersedes: AI_DEV_INSTRUCTION.md (v1, reserved for legacy compatibility)
+Inspired by: obra/superpowers (skill-oriented approach / brainstorm→spec→plan→execute→review / subagent-driven / verification loop)
 
 ---
 
@@ -15,7 +15,7 @@ Hermes is an **AI Native Software Engineering Runtime** — a self-improving AI 
 
 > Transform software delivery from human-driven execution into AI-driven organization execution.
 
-Hermes 不只是生成代码。Hermes:
+Hermes doesn't just generate code. Hermes:
 
 - understands intent
 - builds context

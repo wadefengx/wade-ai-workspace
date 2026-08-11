@@ -1,37 +1,37 @@
 # Backlog
 
-## 队列
+## Queues
 
-| 队列 | 含义 | 进入条件 | 退出条件 |
+| Queues | Meaning | Entry condition | Exit condition |
 |---|---|---|---|
-| Backlog | 已记录未承诺 | Requirement/Story 已登记 | 拆清依赖与 owner 后进 `Ready` |
-| Ready | 可拉起 | deps、验收、owner 齐全 | 开工进 `Running` |
-| Running | 正在执行 | lane 已启动 | 提交产出进 `Review` |
-| Blocked | 因依赖或冲突停滞 | 触发 blocked 规则 | 原因解除回原队列 |
-| Review | 进入 review workflow | 自检材料齐全 | 通过进 `Done`,失败回 `Running` |
-| Done | 完成交付 | review/QA 通过 | 上层 Epic/Story 归档后移出活跃看板 |
+| Backlog | Recorded but not committed | Requirement/Story registered | Move to `Ready` once dependencies and the owner are clear |
+| Ready | Ready to start | Dependencies, acceptance criteria, and owner are complete | Move to `Running` when work starts |
+| Running | In progress | Lane has started | Move to `Review` when deliverables are submitted |
+| Blocked | Stalled by a dependency or conflict | Blocked rule triggered | Return to the original queue when the cause is resolved |
+| Review | Enter the review workflow | Self-review evidence is complete | Move to `Done` on pass; return to `Running` on failure |
+| Done | Delivery completed | Review/QA passed | Remove from the active board when the parent Epic/Story is archived |
 
-## 条目格式
+## Item format
 
-| 字段 | 说明 |
+| Field | Description |
 |---|---|
-| `epic` | 主题标识 |
-| `story` | 可验收场景 |
-| `task` | 交付面 |
-| `lane` | 执行单元 |
+| `epic` | Theme identifier |
+| `story` | Acceptable scenario |
+| `task` | Delivery surface |
+| `lane` | Execution unit |
 | `status` | Backlog/Ready/Running/Blocked/Review/Done |
-| `confidence` | 当前置信度 |
-| `deps` | 直接依赖列表 |
-| `owner` | 默认责任角色 |
+| `confidence` | Current confidence |
+| `deps` | Direct dependency list |
+| `owner` | Default responsible role |
 
-## 维护规则
+## Maintenance rules
 
-1. 看板按 `status` 分组维护,同组内按 `priority -> updated_at` 排序。
-2. 一个 Task 可挂多个 Lane,但每个 Lane 只能出现在一个队列。
-3. `Blocked` 条目必须写 `blocked_reason` 和 `next_check_at`。
-4. `Done` 条目保留最近一次 `confidence` 与 `review_result` 供审计。
+1. Maintain the board grouped by `status`; sort each group by `priority -> updated_at`.
+2. A Task may have multiple Lanes, but each Lane may appear in only one queue.
+3. A `Blocked` item must include `blocked_reason` and `next_check_at`.
+4. A `Done` item retains its latest `confidence` and `review_result` for auditing.
 
-## 最小示例
+## Minimal example
 
 | epic | story | task | lane | status | confidence | deps | owner |
 |---|---|---|---|---|---|---|---|
@@ -39,5 +39,5 @@
 
 ## Dashboard hooks
 
-- 计数键: `backlog_count`, `ready_count`, `running_count`, `blocked_count`, `review_count`, `done_count`
-- 维度键: `queue_count_by_owner`, `queue_count_by_epic`
+- Count keys: `backlog_count`, `ready_count`, `running_count`, `blocked_count`, `review_count`, `done_count`
+- Dimension keys: `queue_count_by_owner`, `queue_count_by_epic`

@@ -1,100 +1,100 @@
-# SPEC-Phase 11 — 聊天体验重构 + AI Organization Dashboard + Feedback Dashboard
+# SPEC-Phase 11 — Chat Experience Refactor + AI Organization Dashboard + Feedback Dashboard
 
-版本:1.0(2026-08-01 深夜冲刺)
+Version: 1.0 (2026-08-01 late-night sprint)
 
-## 1. 目标
+## 1. Goals
 
-1. **滚动隔离 + 自动到底**:chat/memory 页内容区独立滚动(侧边栏/header 固定不滚);打开 chat 自动滚到底部;新消息到达自动跟随。
-2. **移除右侧 AI Context / Workspace Members 面板**(workspace-shell 右侧 complementary)。
-3. **ChatGPT 式新建对话**:点击"新建 Chat"直接创建新 channel 并进入(不弹选择);对话即 channel,零摩擦。
-4. **AI 回答增强**:thinking progress 展示(流式时显示思考动画/过程);回答 hover 右下角操作按钮:like / dislike / regenerate / copy。
-5. **输入框状态**:等待 AI 回应时输入框 loading + 状态跑马灯;使用 @ant-design/x 现成组件(Bubble / Thinking / Sender loading)重构。
-6. **AI Organization Dashboard**:Agents 状态、Running Lanes 进度、Pipeline 阶段、知识资产计数(Skills/Specs/Memory/ADR/Harness)、Today's Improvements;反馈统计(Feedback Dashboard)。
-7. 全部完成后 lint/typecheck/test/build + 浏览器全量验收。
+1. **Scroll isolation + auto-scroll to bottom:** chat/memory content scrolls independently while the sidebar/header stay fixed; opening chat scrolls to the bottom automatically; new messages follow automatically.
+2. **Remove the right-side AI Context / Workspace Members panel** (the `complementary` area in `workspace-shell`).
+3. **ChatGPT-style new chat:** clicking “New Chat” directly creates and enters a new channel without a selection dialog; a conversation is a channel, with zero friction.
+4. **Enhanced AI answers:** show thinking progress (thinking animation/process during streaming); show like / dislike / regenerate / copy controls at the bottom right on answer hover.
+5. **Input state:** show loading and a status marquee while waiting for AI; rebuild with existing `@ant-design/x` components (`Bubble` / `Thinking` / Sender loading).
+6. **AI Organization Dashboard:** Agent status, Running Lanes progress, pipeline stages, knowledge-asset counts (Skills/Specs/Memory/ADR/Harness), Today’s Improvements, and feedback statistics (Feedback Dashboard).
+7. After all work, run lint/typecheck/tests/build and full browser acceptance.
 
-## 2. 滚动隔离(第 1 条,根因修复)
+## 2. Scroll Isolation (item 1, root-cause fix)
 
-- 根因:内容区无独立滚动容器,页面整体滚动。
-- 方案:`(workspace)/layout.tsx` 的 shell 改 `height: 100vh; overflow: hidden`,侧边栏/header/内容区各自 `overflow-y: auto`(内容区 `flex:1; min-height:0`)。
-- chat 消息区:新建 `ChatMessageList` 用 ref + `scrollTo({top: scrollHeight})`;打开/新消息自动到底;用户上滚查看历史时不强制跟随(距离底部 <100px 才自动跟)。
-- memory 页:复用同一滚动容器模式(内容区 overflow auto)。
-- 验证:滚动内容区时侧边栏/header 纹丝不动(浏览器实测 getBoundingClientRect 前后一致)。
+- Root cause: the content area has no independent scroll container, so the whole page scrolls.
+- Solution: change the shell in `(workspace)/layout.tsx` to `height: 100vh; overflow: hidden`; give the sidebar/header/content area their own `overflow-y: auto` (content area: `flex:1; min-height:0`).
+- Chat message area: add `ChatMessageList` with a ref and `scrollTo({top: scrollHeight})`; auto-scroll to the bottom when opening or receiving messages; do not force-follow when users scroll up for history (only auto-follow if within 100px of the bottom).
+- Memory page: reuse the same scroll-container pattern (`overflow: auto` in the content area).
+- Verification: when scrolling content, the sidebar/header must not move (verify identical before/after `getBoundingClientRect` values in the browser).
 
-## 3. 移除右面板(第 2 条)
+## 3. Remove the Right Panel (item 2)
 
-- workspace-shell.tsx:删除右侧 complementary(AI Context / Workspace Members),内容区占满剩余宽度。
+- `workspace-shell.tsx`: remove the right-side `complementary` section (AI Context / Workspace Members); let the content area fill remaining width.
 
-## 4. ChatGPT 式新建对话(第 3 条)
+## 4. ChatGPT-style New Chat (item 3)
 
-- workspace-navigation:CHATS 区"新建 Chat"按钮改为直接 `createChannel(workspaceId, {name: auto 生成})` → 进入新对话;不弹 Modal。
-- 新对话命名:`对话 <N>`(取当前最大序号);空对话的 channel 展示"开始新的对话"占位。
-- 现有频道列表保留(历史对话),分组逻辑不变。
+- `workspace-navigation`: change the CHATS-area “New Chat” button to directly call `createChannel(workspaceId, {name: auto-generated})` and enter the new chat; do not show a Modal.
+- New-chat naming: `Chat <N>` (use the current maximum sequence number); show the placeholder “Start a new conversation” for empty channels.
+- Preserve the existing channel list (conversation history) and grouping behavior.
 
-## 5. AI 回答增强(第 4 条)
+## 5. Enhanced AI Answers (item 4)
 
-- **thinking 展示**:流式接口若返回 reasoning 内容则展示为可折叠"思考过程"(气泡内上方,淡色块);否则显示 Thinking 动画(antdx `<Thinking />` 或 Bubble loading 状态:三点脉冲)。
-- **操作按钮**:AI 消息 hover 时右下角浮出操作条(like / dislike / regenerate / copy):
-  - like/dislike:`PATCH /api/messages/:messageId/feedback {type: "like"|"dislike"}`(幂等,再点取消);按钮态高亮。
-  - regenerate:前端重发同 user prompt(找到该 AI 消息对应的用户消息),流式追加新 AI 回复(不删除旧的,新回复作为后续消息)。
-  - copy:复制 AI 文本到剪贴板 + Tooltip "已复制"。
-- 用户消息 hover 只显示 copy。
+- **Thinking display:** when the streaming API returns reasoning content, display it as a collapsible “Thinking process” above the bubble in a light-colored block; otherwise show a Thinking animation (antdx `<Thinking />` or Bubble loading state with three-dot pulse).
+- **Controls:** on AI-message hover, show a bottom-right control bar (like / dislike / regenerate / copy):
+  - like/dislike: `PATCH /api/messages/:messageId/feedback {type: "like"|"dislike"}` (idempotent; clicking again clears it); highlight active state.
+  - regenerate: resend the corresponding user prompt from the frontend (find the user message for the AI message); stream and append a new AI answer without deleting the old one.
+  - copy: copy AI text to the clipboard and show Tooltip “Copied”.
+- On user-message hover, show copy only.
 
-## 6. 输入框状态与 antdx 组件(第 5 条)
+## 6. Input State and antdx Components (item 5)
 
-- 用 antdx `<Sender>` 的 `loading` prop(发送后 loading=true,流式结束 false,期间 Sender 禁用发送 + 动画点)。
-- 状态跑马灯:流式开始时输入框上方出现状态条(`<Bubble loading>` 或自定义跑马灯:"正在思考…"(Thinking 动画));显示 agent 名 + 模型。
-- 保留现有 @ 提及 / emoji / 快捷发送逻辑。
+- Use the `loading` prop of antdx `<Sender>` (`loading=true` after sending and `false` at stream completion); disable sending and animate dots while it is active.
+- Status marquee: show a status strip above the input at stream start (`<Bubble loading>` or custom marquee: “Thinking…” with Thinking animation); display Agent name + model.
+- Retain existing @mention / emoji / quick-send behavior.
 
-## 7. AI Organization Dashboard(第 6 条)
+## 7. AI Organization Dashboard (item 6)
 
-### 数据 API(后端)
+### Data API (backend)
 ```
 GET /api/stats/organization → {
-  assets: { specs, skills, memory, adr, harness, knowledge },   // 读 .ai/ 目录递归计数
-  lanes: [{id, title, status, confidence}],                      // 读 .ai/registry/lanes.yaml(不存在→从 git log 最近 commits 推断最近 lanes)
-  pipeline: [{stage, status}],                                   // 从 lanes 状态推导
-  improvements: { skills: +n, adr: +n, memory: +n, harness: +n, specs: +n } // 最近 24h git log --stat 计数(近似)
+  assets: { specs, skills, memory, adr, harness, knowledge },   // recursively count the .ai/ directory
+  lanes: [{id, title, status, confidence}],                      // read .ai/registry/lanes.yaml (if absent, infer recent lanes from git-log commits)
+  pipeline: [{stage, status}],                                   // derive from lane status
+  improvements: { skills: +n, adr: +n, memory: +n, harness: +n, specs: +n } // approximate count from git log --stat in the last 24h
 }
 GET /api/stats/feedback → {
   total, like, dislike, ratio,
   byChannel: [{channelId, channelName, total, like}],
-  byDay: [{date, total, like}]                                  // 近 7 天
+  byDay: [{date, total, like}]                                  // last 7 days
 }
 ```
-- `GET /api/stats/feedback` 聚合 Message.feedback 字段;无反馈数据时返回零值(页面显示空状态)。
-- 单测:stats service 计数逻辑(注入 mock fs/目录结构)+ feedback 聚合。
+- `GET /api/stats/feedback` aggregates `Message.feedback`; when no feedback exists, return zero values and show an empty state.
+- Unit tests: Stats-service count logic (inject mock fs/directory structures) and feedback aggregation.
 
-### 页面(Dashboard)
-- 路由:`app/(workspace)/dashboard/page.tsx` + `components/dashboard-page.tsx`;导航菜单加"Dashboard"(icon: DashboardOutlined,Knowledge 上方)。
-- 布局(参考 GPT 蓝图 + 现代 SaaS dashboard):
-  - 顶部:标题 + 更新时间 + 刷新按钮。
-  - Agents 状态卡:PM/FE/BE/QA/UX/Architect 六角色,圆点在线态(🟢/🟡/🔵)+ 当前 lane。
-  - Running Lanes 卡:每个 lane 名称 + 进度条(状态→百分比:Ready 10 / Running 60 / Review 80 / QA 90 / Done 100)+ confidence 标签。
-  - Pipeline 卡:Planner → Spec → Implement → Review → Harness → Memory 阶段列表,✔/⏳/○ 状态灯。
-  - 资产统计卡:Skills/Specs/Memory/ADR/Harness/Knowledge 大数字 + icon(计数动画 framer-motion 数字滚动)。
-  - Today's Improvements 卡:+n 列表(带 icon)。
-  - Feedback Dashboard 卡:like/dislike 比率环形图(antd Progress type=circle)+ 近 7 天柱状(纯 CSS/div 柱形,不引图表库)+ 按频道 Top 列表。
-- 动效:framer-motion 卡片入场 stagger、数字滚动、进度条动画;Apple 风格(毛玻璃卡/圆角/渐变)。
+### Page (Dashboard)
+- Route: `app/(workspace)/dashboard/page.tsx` + `components/dashboard-page.tsx`; add “Dashboard” above Knowledge in navigation (`DashboardOutlined`).
+- Layout (inspired by a GPT blueprint + modern SaaS dashboards):
+  - Header: title + updated time + refresh button.
+  - Agent status cards: six roles — PM/FE/BE/QA/UX/Architect — with online dots (🟢/🟡/🔵) + current lane.
+  - Running Lanes card: each lane name + progress bar (status → percent: Ready 10 / Running 60 / Review 80 / QA 90 / Done 100) + confidence tag.
+  - Pipeline card: Planner → Spec → Implement → Review → Harness → Memory stage list with ✔/⏳/○ status lights.
+  - Asset-stat cards: large count + icon for Skills/Specs/Memory/ADR/Harness/Knowledge (Framer Motion count animation).
+  - Today’s Improvements card: `+n` list with icons.
+  - Feedback Dashboard card: like/dislike ratio ring (`antd` `Progress type=circle`) + recent seven-day bars (plain CSS/div bars; no chart library) + top channels.
+- Motion: Framer Motion staggered card entry, count animation, and progress-bar animation; Apple-style glass cards, rounded corners, and gradients.
 
-## 8. 任务拆分(并行 lane)
+## 8. Task Breakdown (parallel lanes)
 
-- **Lane A(后端)**:Message.feedback schema + PATCH feedback API(幂等切换)+ stats API(organization/feedback)+ 单测。文件:`apps/api/src/{chat,stats(新),prisma}`。
-- **Lane B(前端-聊天)**:滚动隔离(共享滚动容器 CSS)+ 移除右面板 + 自动到底 + ChatGPT 式新建 + Bubble/Thinking/Sender loading + 消息操作按钮(like/dislike/regenerate/copy)+ 导航加 Dashboard 菜单项。文件:`(workspace)/layout.tsx`、`workspace-shell.tsx`、`workspace-shell.module.css`、`workspace-navigation.tsx`、`workspace-context.tsx`(createChannel 已有,可能需要直接进入逻辑)、`memory-page.tsx`。
-- **Lane C(前端-Dashboard)**:dashboard 路由 + 页面组件(全部新文件)+ framer-motion 动效 + 与 stats API 对接。文件:`app/(workspace)/dashboard/page.tsx`、`components/dashboard-page.tsx`(新)、`components/dashboard-page.module.css`(新)。
-- 依赖:B 先加菜单项(路由字符串,不 import C);C 按 spec 契约调 stats API;A 的 stats API 契约以本 spec 为准。
+- **Lane A (backend):** `Message.feedback` schema + PATCH feedback API (idempotent toggle) + stats APIs (organization/feedback) + unit tests. Files: `apps/api/src/{chat,stats(new),prisma}`.
+- **Lane B (frontend — chat):** scroll isolation (shared scroll-container CSS) + remove right panel + auto-scroll-to-bottom + ChatGPT-style creation + Bubble/Thinking/Sender loading + message controls (like/dislike/regenerate/copy) + Dashboard nav item. Files: `(workspace)/layout.tsx`, `workspace-shell.tsx`, `workspace-shell.module.css`, `workspace-navigation.tsx`, `workspace-context.tsx` (existing `createChannel`, possibly needs direct-entry logic), `memory-page.tsx`.
+- **Lane C (frontend — Dashboard):** Dashboard route + page components (all new) + Framer Motion + stats API integration. Files: `app/(workspace)/dashboard/page.tsx`, new `components/dashboard-page.tsx`, new `components/dashboard-page.module.css`.
+- Dependency: B adds the menu item first (route string only; do not import C); C calls the stats API per this spec contract; A’s stats API contract is authoritative.
 
-## 9. 验收
+## 9. Acceptance
 
-1. lint/typecheck/test/build(api、web)全过。
-2. 浏览器:
-   - chat 打开自动到底;滚动内容区,侧边栏/header 固定(坐标实测);memory 页同。
-   - 右侧面板消失,内容区加宽。
-   - 新建 Chat 一键创建进入,无弹窗。
-   - @AI 提问:输入框 loading + 状态跑马灯;回复出现 thinking 展示;hover 回复右下角 like/dislike/regenerate/copy 可用(regenerate 产生新回复;copy 剪贴板)。
-   - Dashboard:资产计数非零、lane 进度条、pipeline 状态灯、feedback 比率图(即使零数据也有空态)。
-   - 深色模式全兼容。
-3. AGENTS.md Change Log + 记忆更新。
+1. Lint/typecheck/tests/build (API and web) all pass.
+2. Browser:
+   - Opening chat auto-scrolls to the bottom; when scrolling content, the sidebar/header remain fixed (coordinate verification); same for Memory.
+   - The right panel is gone and the content area is wider.
+   - New Chat creates and enters a chat in one click, without a dialog.
+   - Ask `@AI`: input shows loading + status marquee; answer shows thinking state; on answer hover, like/dislike/regenerate/copy work (regenerate creates a new answer; copy reaches clipboard).
+   - Dashboard: nonzero asset count, lane progress bars, pipeline status lights, and a feedback ratio chart (with an empty state even when data is zero).
+   - Dark mode is fully supported.
+3. Update the `AGENTS.md` Change Log and memory.
 
-## 10. 不做(后续)
+## 10. Out of Scope (later)
 
-- 消息编辑/删除;多模型对比;流式 reasoning 持久化展示(本次仅动画+文本兜底);Dashboard 实时 WebSocket(手动刷新即可);图表库引入(纯 CSS 实现)。
+- Message editing/deletion; multi-model comparison; persistent display of streaming reasoning (this iteration only has animation + text fallback); real-time Dashboard WebSocket (manual refresh is sufficient); adding a chart library (use pure CSS).

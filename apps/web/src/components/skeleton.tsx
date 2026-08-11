@@ -4,9 +4,9 @@ import styled, { keyframes } from "styled-components";
 import { Skeleton } from "antd";
 
 /**
- * 仿 Workspace 布局的骨架屏:左侧栏 + 顶栏 + 内容区。
- * 用于登录恢复 / 刷新 / 初次加载,减少等待焦虑。
- * 样式使用 styled-components 组件化。
+ * Workspace-layout skeleton: sidebar, header, and content area.
+ * Used for session restoration, refreshes, and initial loading to reduce perceived wait time.
+ * Styles are componentized with styled-components.
  */
 
 const shimmer = keyframes`

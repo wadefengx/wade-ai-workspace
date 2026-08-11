@@ -81,7 +81,7 @@ describe("KnowledgeService", () => {
   });
 
   it("splits long documents into multiple overlapping chunks", () => {
-    const content = Array.from({ length: 20 }, (_, index) => `第${index}段落内容重复填充文字。`.repeat(30)).join("\n\n");
+    const content = Array.from({ length: 20 }, (_, index) => `Repeated filler text for paragraph ${index}.`.repeat(30)).join("\n\n");
 
     const chunks = splitIntoChunks(content);
 

@@ -86,32 +86,32 @@ const roleItems = [
   {
     key: "pm",
     label: "PM",
-    detail: "拆目标、定范围、拉齐验收。"
+    detail: "Break down goals, define scope, and align acceptance criteria."
   },
   {
     key: "fe",
     label: "FE",
-    detail: "搭页面、控状态、打磨交互。"
+    detail: "Build pages, manage state, and refine interactions."
   },
   {
     key: "be",
     label: "BE",
-    detail: "守契约、聚数据、稳接口。"
+    detail: "Honor contracts, aggregate data, and stabilize interfaces."
   },
   {
     key: "qa",
     label: "QA",
-    detail: "盯回归、补场景、收风险。"
+    detail: "Watch regressions, cover scenarios, and reduce risk."
   },
   {
     key: "ux",
     label: "UX",
-    detail: "做层级、调节奏、看可用性。"
+    detail: "Create hierarchy, tune pacing, and assess usability."
   },
   {
     key: "architect",
     label: "Architect",
-    detail: "控边界、保复用、降复杂度。"
+    detail: "Control boundaries, preserve reuse, and reduce complexity."
   }
 ] as const;
 
@@ -239,7 +239,7 @@ function getLaneProgress(status: string) {
 
 function formatRefreshTime(timestamp: number) {
   if (!timestamp) {
-    return "刚刚";
+    return "Just now";
   }
 
   return formatDateTime(new Date(timestamp).toISOString());
@@ -290,7 +290,7 @@ function RetryCard({
         description={description}
         action={
           <Button type="primary" onClick={onRetry}>
-            重试
+            Retry
           </Button>
         }
       />
@@ -373,7 +373,7 @@ function DashboardContent() {
   return (
     <WorkspacePageFrame
       title="Dashboard"
-      description="查看 AI Organization、lane 流转、知识资产增长和团队反馈热度。"
+      description="View the AI organization, lane flow, knowledge-asset growth, and team feedback activity."
     >
       <motion.div initial="hidden" animate="visible" variants={containerVariants} className={styles.page}>
         <motion.section variants={cardVariants} className={`${styles.card} ${styles.heroCard}`}>
@@ -384,12 +384,12 @@ function DashboardContent() {
                 AI Organization
               </Typography.Title>
               <Typography.Paragraph type="secondary" className={styles.heroDescription}>
-                一眼看清角色在线状态、lane 推进速度、知识资产沉淀和真实用户反馈。
+                See role availability, lane progress, accumulated knowledge assets, and real user feedback at a glance.
               </Typography.Paragraph>
             </div>
             <Space size={12} wrap className={styles.heroActions}>
               <div className={styles.updatedAt}>
-                <span className={styles.updatedLabel}>更新时间</span>
+                <span className={styles.updatedLabel}>Updated</span>
                 <strong>{formatRefreshTime(latestUpdatedAt)}</strong>
               </div>
               <Button
@@ -399,7 +399,7 @@ function DashboardContent() {
                   void Promise.all([organizationQuery.refetch(), feedbackQuery.refetch()]);
                 }}
               >
-                刷新
+                Refresh
               </Button>
             </Space>
           </div>
@@ -414,8 +414,8 @@ function DashboardContent() {
             {organizationUnavailable ? (
               <motion.section variants={cardVariants} className={`${styles.spanThree} ${styles.cardShell}`}>
                 <RetryCard
-                  title="组织面板加载失败"
-                  description="没有拿到最新的 AI Organization 数据，请重试。"
+                  title="Failed to load organization dashboard"
+                  description="Could not retrieve the latest AI organization data. Please retry."
                   onRetry={() => {
                     void organizationQuery.refetch();
                   }}
@@ -427,7 +427,7 @@ function DashboardContent() {
                   <div className={styles.sectionHeader}>
                     <div>
                       <Typography.Title level={5}>Agents</Typography.Title>
-                      <Typography.Text type="secondary">六个常驻角色全部在线，职责各守一段。</Typography.Text>
+                      <Typography.Text type="secondary">All six core roles are online, each covering its own responsibilities.</Typography.Text>
                     </div>
                     <Tag color="success">6 / 6 Online</Tag>
                   </div>
@@ -448,7 +448,7 @@ function DashboardContent() {
                   <div className={styles.sectionHeader}>
                     <div>
                       <Typography.Title level={5}>Pipeline</Typography.Title>
-                      <Typography.Text type="secondary">Planner 到 Memory 的竖排流转灯。</Typography.Text>
+                      <Typography.Text type="secondary">Vertical flow indicators from Planner to Memory.</Typography.Text>
                     </div>
                   </div>
                   <div className={styles.pipelineList}>
@@ -477,7 +477,7 @@ function DashboardContent() {
                         <div className={styles.pipelineCopy}>
                           <Typography.Text strong>{item.stage}</Typography.Text>
                           <Typography.Text type="secondary">
-                            {item.status === "done" ? "已完成" : item.status === "running" ? "处理中" : "待进入"}
+                            {item.status === "done" ? "Done" : item.status === "running" ? "In progress" : "Pending"}
                           </Typography.Text>
                         </div>
                       </div>
@@ -489,7 +489,7 @@ function DashboardContent() {
                   <div className={styles.sectionHeader}>
                     <div>
                       <Typography.Title level={5}>Running Lanes</Typography.Title>
-                      <Typography.Text type="secondary">按状态映射进度，并显示每条 lane 的 confidence。</Typography.Text>
+                      <Typography.Text type="secondary">Map progress by status and show each lane’s confidence.</Typography.Text>
                     </div>
                   </div>
                   {lanes.length ? (
@@ -521,8 +521,8 @@ function DashboardContent() {
                     <EmptyState
                       compact
                       icon={<ToolOutlined />}
-                      title="当前没有 lane 在推进"
-                      description="当 registry 中出现活跃 lane 后，这里会展示它们的进度和 confidence。"
+                      title="No lanes are currently in progress"
+                      description="Active lanes from the registry will appear here with their progress and confidence."
                     />
                   )}
                 </motion.section>
@@ -531,7 +531,7 @@ function DashboardContent() {
                   <div className={styles.sectionHeader}>
                     <div>
                       <Typography.Title level={5}>Today&apos;s Improvements</Typography.Title>
-                      <Typography.Text type="secondary">最近 24 小时的知识资产增量。</Typography.Text>
+                      <Typography.Text type="secondary">Knowledge-asset growth over the last 24 hours.</Typography.Text>
                     </div>
                   </div>
                   {hasImprovements ? (
@@ -543,7 +543,7 @@ function DashboardContent() {
                             <span className={styles.metricIcon}>{item.icon}</span>
                             <div className={styles.improvementMeta}>
                               <Typography.Text strong>{item.label}</Typography.Text>
-                              <Typography.Text type="secondary">今天新增</Typography.Text>
+                              <Typography.Text type="secondary">Added today</Typography.Text>
                             </div>
                             <div className={styles.improvementDelta}>
                               <ArrowUpOutlined />
@@ -553,7 +553,7 @@ function DashboardContent() {
                         ))}
                     </div>
                   ) : (
-                    <div className={styles.zeroState}>今日无变更</div>
+                    <div className={styles.zeroState}>No changes today</div>
                   )}
                 </motion.section>
 
@@ -561,7 +561,7 @@ function DashboardContent() {
                   <div className={styles.sectionHeader}>
                     <div>
                       <Typography.Title level={5}>Assets</Typography.Title>
-                      <Typography.Text type="secondary">AI 原生工作流沉淀出来的六类核心资产。</Typography.Text>
+                      <Typography.Text type="secondary">Six core asset types produced by the AI-native workflow.</Typography.Text>
                     </div>
                   </div>
                   <div className={styles.assetGrid}>
@@ -580,8 +580,8 @@ function DashboardContent() {
             {feedbackUnavailable ? (
               <motion.section variants={cardVariants} className={`${styles.card} ${styles.spanThree}`}>
                 <RetryCard
-                  title="反馈面板加载失败"
-                  description="没有拿到最新反馈聚合结果，请重试。"
+                  title="Failed to load feedback dashboard"
+                  description="Could not retrieve the latest feedback summary. Please retry."
                   onRetry={() => {
                     void feedbackQuery.refetch();
                   }}
@@ -592,7 +592,7 @@ function DashboardContent() {
                 <div className={styles.sectionHeader}>
                   <div>
                     <Typography.Title level={5}>Feedback</Typography.Title>
-                    <Typography.Text type="secondary">点赞率、近 7 天趋势和频道热度一屏收齐。</Typography.Text>
+                    <Typography.Text type="secondary">See like rate, the seven-day trend, and channel activity in one view.</Typography.Text>
                   </div>
                 </div>
 
@@ -612,23 +612,23 @@ function DashboardContent() {
                       <div className={styles.feedbackTotals}>
                         <div className={styles.totalBadge}>
                           <LikeOutlined />
-                          <span>{feedbackLike} 赞</span>
+                          <span>{feedbackLike} likes</span>
                         </div>
                         <div className={styles.totalBadge}>
                           <AuditOutlined />
-                          <span>{feedbackDislike} 踩</span>
+                          <span>{feedbackDislike} dislikes</span>
                         </div>
                         <div className={styles.totalBadge}>
                           <SmileOutlined />
-                          <span>{feedbackTotal} 总反馈</span>
+                          <span>{feedbackTotal} total feedback</span>
                         </div>
                       </div>
                     </div>
 
                     <div className={styles.chartCard}>
                       <div className={styles.chartHeader}>
-                        <Typography.Text strong>近 7 天</Typography.Text>
-                        <Typography.Text type="secondary">纯 CSS 柱形图</Typography.Text>
+                        <Typography.Text strong>Last 7 days</Typography.Text>
+                        <Typography.Text type="secondary">Pure CSS bar chart</Typography.Text>
                       </div>
                       <div className={styles.dayChart}>
                         {feedbackByDay.map((item) => {
@@ -656,7 +656,7 @@ function DashboardContent() {
                     <div className={styles.channelCard}>
                       <div className={styles.chartHeader}>
                         <Typography.Text strong>Top Channels</Typography.Text>
-                        <Typography.Text type="secondary">按反馈总数排序</Typography.Text>
+                        <Typography.Text type="secondary">Sorted by total feedback</Typography.Text>
                       </div>
                       <div className={styles.channelList}>
                         {feedbackByChannel.slice(0, 5).map((item) => {
@@ -665,8 +665,8 @@ function DashboardContent() {
                           return (
                             <div key={item.channelId} className={styles.channelItem}>
                               <div className={styles.channelRow}>
-                                <Typography.Text strong>{item.channelName || "未命名频道"}</Typography.Text>
-                                <Typography.Text type="secondary">{item.total} 条反馈</Typography.Text>
+                                <Typography.Text strong>{item.channelName || "Untitled channel"}</Typography.Text>
+                                <Typography.Text type="secondary">{item.total} feedback items</Typography.Text>
                               </div>
                               <div className={styles.channelRow}>
                                 <div className={styles.channelProgress} aria-hidden="true">
@@ -683,8 +683,8 @@ function DashboardContent() {
                 ) : (
                   <EmptyState
                     icon={<RobotOutlined />}
-                    title="还没有反馈"
-                    description="还没有反馈,去聊天里给 AI 回复点个赞吧"
+                    title="No feedback yet"
+                    description="No feedback yet. Like an AI response in chat to get started."
                   />
                 )}
               </motion.section>

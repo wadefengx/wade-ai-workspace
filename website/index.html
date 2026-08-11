@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -134,9 +134,9 @@
   <div class="nav-inner">
     <div class="logo"><span>🧠</span> Wade AI Workspace</div>
     <div class="nav-links">
-      <a href="#features">能力</a>
-      <a href="#architecture">架构</a>
-      <a href="#quickstart">快速开始</a>
+      <a href="#features">Features</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#quickstart">Quick start</a>
       <a href="https://github.com/wadefengx/wade-ai-workspace">GitHub</a>
     </div>
     <a class="btn" href="https://github.com/wadefengx/wade-ai-workspace">Star on GitHub</a>
@@ -146,11 +146,11 @@
 <header class="hero">
   <div class="glow"></div>
   <div class="badge">✦ AI-Native Workspace · Spec-Driven · Open Source</div>
-  <h1>让团队的工作区<br>成为活的软件工厂</h1>
-  <p class="sub">专家 Agent、分层记忆、RAG 知识库与团队协作,一个空间全部沉淀。AI 记住该记住的,人专注于判断与创造。</p>
+  <h1>Turn your team's workspace<br>into a living software factory</h1>
+  <p class="sub">Expert agents, layered memory, RAG knowledge, and collaboration in one place. AI retains context so people can focus on judgment and creation.</p>
   <div class="cta-row">
-    <a class="btn" href="#quickstart">快速开始</a>
-    <a class="btn ghost" href="https://github.com/wadefengx/wade-ai-workspace">查看源码</a>
+    <a class="btn" href="#quickstart">Quick start</a>
+    <a class="btn ghost" href="https://github.com/wadefengx/wade-ai-workspace">View source</a>
   </div>
   <div class="stats">
     <div class="stat"><b>16+</b><small>Spec-Driven Phases</small></div>
@@ -162,22 +162,22 @@
 
 <section id="features">
   <div class="section-tag">Features</div>
-  <h2>一个工作区,沉淀一切</h2>
-  <p class="lead">从对话到知识到记忆,AI 原生地融入团队协作的每一个环节。</p>
+  <h2>One workspace, durable team context</h2>
+  <p class="lead">From conversation to knowledge and memory, AI is native to every part of team collaboration.</p>
   <div class="grid">
-    <div class="card"><span class="emoji">🧠</span><h3>专家 Agent</h3><p>无需 @AI 即可对话;@专家名 路由到指定专家。Agent 自带 emoji、角色、描述与 system prompt,可自由配置。</p></div>
-    <div class="card"><span class="emoji">🔌</span><h3>任意 LLM Provider</h3><p>DeepSeek / OpenAI / Anthropic / OpenAI 兼容端点,或本地 Ollama。一键预设 + 连接测试,Workspace 级默认 Agent。</p></div>
-    <div class="card"><span class="emoji">📚</span><h3>RAG 知识库</h3><p>递归切片 + Embedding + 向量检索。内容 hash 去重避免重复切片,回答以 [^n] 上标引用来源。</p></div>
-    <div class="card"><span class="emoji">🗂️</span><h3>分层记忆 L0→L3</h3><p>对话 → 原子事实 → 场景 → 画像,单次 LLM 结构化抽取。渐进式披露:画像引导召回,事实按需下钻。</p></div>
-    <div class="card"><span class="emoji">👥</span><h3>团队与 RBAC</h3><p>Workspace、频道、成员;全局管理员与 Workspace 角色双体系,权限清晰隔离。</p></div>
-    <div class="card"><span class="emoji">📊</span><h3>AI 组织仪表盘</h3><p>AI 组织总览、反馈看板、Specs 与 Skills 浏览,团队 AI 资产一目了然。</p></div>
+    <div class="card"><span class="emoji">🧠</span><h3>Expert agents</h3><p>Chat without @AI, or mention an expert to route a prompt to a specific persona. Agents have configurable emoji, role, description, and system prompt.</p></div>
+    <div class="card"><span class="emoji">🔌</span><h3>Any LLM provider</h3><p>Use DeepSeek, OpenAI, Anthropic, any OpenAI-compatible endpoint, or local Ollama. Presets, connection tests, and a workspace default agent are included.</p></div>
+    <div class="card"><span class="emoji">📚</span><h3>RAG knowledge base</h3><p>Recursive chunking, embeddings, and vector retrieval. Content hashes prevent duplicate indexing; answers cite sources with [^n] references.</p></div>
+    <div class="card"><span class="emoji">🗂️</span><h3>Layered memory, L0–L3</h3><p>Conversation becomes atomic facts, scenes, and a persona through one structured LLM extraction. Progressive disclosure retrieves context only when needed.</p></div>
+    <div class="card"><span class="emoji">👥</span><h3>Teams and RBAC</h3><p>Workspaces, channels, and members with distinct global-admin and workspace-role models.</p></div>
+    <div class="card"><span class="emoji">📊</span><h3>AI organization dashboard</h3><p>Organization overview, feedback insights, and browsable specs and skills make team AI assets visible.</p></div>
   </div>
 </section>
 
 <section id="architecture">
   <div class="section-tag">Architecture</div>
-  <h2>技术栈</h2>
-  <p class="lead">前后端分离,Provider 抽象让 LLM 自由切换。</p>
+  <h2>Technology stack</h2>
+  <p class="lead">A separated web and API architecture with interchangeable LLM providers.</p>
   <div class="arch"><span class="hl">Frontend</span>  Next.js 16 · React 18 · Ant Design X · styled-components
 <span class="hl">Backend</span>   NestJS · Prisma · MongoDB (replica set)
 <span class="hl">AI</span>        OpenAI-compatible Provider · Anthropic · Ollama (local)
@@ -187,8 +187,8 @@
 
 <section id="quickstart">
   <div class="section-tag">Quick Start</div>
-  <h2>两分钟跑起来</h2>
-  <p class="lead">Docker Compose 一键启动:Web + API + MongoDB + 可选 Ollama。</p>
+  <h2>Running in two minutes</h2>
+  <p class="lead">Start the web app, API, MongoDB, and optional Ollama with Docker Compose.</p>
   <div class="arch"><span class="hl">$</span> cp .env.example .env
 <span class="hl">$</span> docker compose up --build
 
@@ -196,15 +196,15 @@ Web:      http://localhost:3000
 API:      http://localhost:3001/api/health
 Swagger:  http://localhost:3001/api/swagger</div>
   <div style="margin-top: 32px; display: flex; gap: 14px; flex-wrap: wrap;">
-    <a class="btn" href="https://github.com/wadefengx/wade-ai-workspace/blob/main/README.md">阅读 README</a>
-    <a class="btn ghost" href="https://github.com/wadefengx/wade-ai-workspace/blob/main/README_CN.md">中文版</a>
+    <a class="btn" href="https://github.com/wadefengx/wade-ai-workspace/blob/main/README.md">Read the README</a>
+    <a class="btn ghost" href="https://github.com/wadefengx/wade-ai-workspace/blob/main/README_CN.md">Chinese documentation</a>
   </div>
 </section>
 
 <footer>
-  <p>Wade AI Workspace · <a href="https://github.com/wadefengx/wade-ai-workspace">GitHub</a> · <a href="https://github.com/wadefengx/wade-ai">wade-ai 知识库</a> · MIT License</p>
+  <p>Wade AI Workspace · <a href="https://github.com/wadefengx/wade-ai-workspace">GitHub</a> · <a href="https://github.com/wadefengx/wade-ai">wade-ai knowledge base</a> · MIT License</p>
 </footer>
 
 </body>
 </html>
-# Pages 已启用,重新触发部署
+<!-- GitHub Pages deployment trigger. -->

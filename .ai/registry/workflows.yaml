@@ -54,37 +54,37 @@ workflows:
 runtime_docs:
   planner:
     path: runtime/planner.md
-    description: Requirement -> Epic -> Story -> Task -> Lane 拆解规则
+    description: Requirement -> Epic -> Story -> Task -> Lane decomposition rules
     tags: [planning, decomposition, lanes]
     owner: pm-architect
     reference: runtime/pipeline.md
   lane-states:
     path: runtime/lane-states.md
-    description: Lane 主状态机与 blocked 覆盖规则
+    description: Lane primary state machine and blocked-overlay rules
     tags: [states, lanes, dashboard]
     owner: pm-qa
     reference: runtime/pipeline.md
   confidence:
     path: runtime/confidence.md
-    description: Lane confidence 评分与升级阈值
+    description: Lane confidence scoring and escalation thresholds
     tags: [quality, score, review]
     owner: architect-qa
     reference: workflows/review.md
   dependency-graph:
     path: runtime/dependency-graph.md
-    description: Task DAG 声明、等待语义与拓扑顺序
+    description: Task DAG declaration, waiting semantics, and topological ordering
     tags: [dag, deps, scheduling]
     owner: architect
     reference: runtime/planner.md
   backlog:
     path: runtime/backlog.md
-    description: Backlog 队列分组与条目字段
+    description: Backlog queue groupings and item fields
     tags: [queue, planning, dashboard]
     owner: pm
     reference: runtime/lane-states.md
   memory-to-skill:
     path: runtime/memory-to-skill.md
-    description: Lesson 到 skill 的晋升流程
+    description: Lesson-to-skill promotion flow
     tags: [memory, skill, learning]
     owner: architect
     reference: workflows/review.md

@@ -112,7 +112,7 @@ function MermaidBlock({ code }: { code: string }) {
       {status === "loading" ? (
         <div className={shellStyles.markdownDiagramCard}>
           <Typography.Text type="secondary">
-            <LoadingOutlined spin /> 正在渲染 Mermaid 图表…
+            <LoadingOutlined spin /> Rendering Mermaid diagram…
           </Typography.Text>
         </div>
       ) : null}
@@ -152,12 +152,12 @@ function PlantUmlBlock({ code }: { code: string }) {
       <div className={shellStyles.markdownDiagramCard}>
         <div className={shellStyles.markdownDiagramActions}>
           <Button href={plantUmlUrl} target="_blank" rel="noreferrer" type="link" disabled={!plantUmlUrl}>
-            在 PlantUML 服务器打开 ↗
+            Open in PlantUML server ↗
           </Button>
-          <Typography.Text type="secondary">当前版本提供外链预览，原始源码仍可展开查看。</Typography.Text>
+          <Typography.Text type="secondary">This version provides an external preview; the source can still be expanded.</Typography.Text>
         </div>
         <details className={shellStyles.markdownDiagramDetails}>
-          <summary className={shellStyles.markdownDiagramSummary}>查看原文</summary>
+          <summary className={shellStyles.markdownDiagramSummary}>View source</summary>
           <pre className={`${shellStyles.markdownCodeBlock} ${shellStyles.markdownDiagramSource}`}>
             <code>{code}</code>
           </pre>

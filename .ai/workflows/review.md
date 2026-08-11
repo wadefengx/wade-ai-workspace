@@ -2,34 +2,34 @@
 
 ## Input
 
-- Lane 产出、相关 spec、变更路径、当前 confidence、依赖状态。
+- Lane Output, related spec, change path, current confidence, dependency State.
 
 ## Flow
 
-| 阶段 | 动作 | 产出 |
+| Stage | Action | Output |
 |---|---|---|
-| Self Review | 对照 spec、Task、Lane 边界做自检 | 缺口清单或通过结论 |
-| Harness | 运行最小现有验证并记录结果 | 通过/失败证据 |
-| Confidence Gate | 依据 `runtime/confidence.md` 重算分值 | `review_confidence` / `release_confidence` |
-| Memory Update | 记录 durable facts、decision、lesson | memory 增量 |
-| Merge Decision | 结合状态、confidence、依赖做去留判断 | `merge`, `rework`, `escalate` |
+| Self Review | Self-check against spec, Task, and Lane boundaries | Gap list or pass conclusion |
+| Harness | Run minimal existing verification and log Result | Pass/fail evidence |
+| Confidence Gate | Recalculate score using `runtime/confidence.md` | `review_confidence` / `release_confidence` |
+| Memory Update | Record durable facts, decisions, and lessons | Memory increment |
+| Merge Decision | Combine State, confidence, and dependencies to make decisions about whether to retain or leave | `merge`, `rework`, `escalate` |
 
 ## Self review checklist
 
-1. 产出是否完整覆盖 Story/Task 验收。
-2. 是否改到了正确共享接缝而不是单一路径补丁。
-3. 文档、索引、状态、依赖是否同步更新。
-4. 是否存在未解释的降级、跳过或已知风险。
+1. Check whether the Output completely covers the Story/Task.
+2. Did it change the correct shared seam rather than patch a single path?
+3. Whether the document, index, state, and dependencies are updated synchronously.
+4. Are there unexplained degradations, skips, or known risks?
 
 ## Decision rules
 
-| 条件 | 结果 |
+| Condition | Result |
 |---|---|
-| harness 失败 | 回 `Running` 修复 |
-| confidence `< 0.70` | 升级 Architect Review |
-| confidence `< 0.50` | 增加外部 review |
-| memory 未更新 | 不得进入 merge |
-| 依赖 lane 未完成 | 保持 `Done` 但不 merge |
+| Harness fails | Return to `Running` to fix |
+| confidence `< 0.70` | Escalate to Architect Review |
+| confidence `< 0.50` | Add external review |
+| Memory not updated | Must not enter merge |
+| Dependency lane unfinished | Remain `Done` but do not merge |
 
 ## Output
 
@@ -37,5 +37,5 @@
 
 ## Notes
 
-- Review 是 workflow,不是聊天线程; 所有结论必须落到状态、分值、证据或 memory。
-- 若 lane 仅产出文档,仍要执行自检、confidence 记录和 memory 更新。
+- Review is a workflow, not a chat thread; all conclusions must fall to State, score, evidence or memory.
+- If the lane only outputs documents, self-test, confidence record and memory update must still be performed.

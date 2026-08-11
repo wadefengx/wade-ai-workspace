@@ -2,16 +2,16 @@ tools:
   copilot-cli:
     path: runtime/tool-policy.md
     type: agent-runtime
-    description: 主执行入口,负责读写仓库与调用工具
+    description: Primary execution entry point; reads and writes the repository and invokes tools
   npm:
     type: package-manager
-    description: 安装依赖并运行 lint/typecheck/test
+    description: Installs dependencies and runs lint/typecheck/test
   mongosh:
     type: database-shell
-    description: MongoDB 数据检查与手工验证
+    description: MongoDB data inspection and manual verification
   ollama:
     type: local-model-runtime
-    description: 本地模型服务与推理入口
+    description: Local model service and inference entry point
   hermes:
     type: model-provider
-    description: OpenAI-compatible 评测或推理目标
+    description: OpenAI-compatible evaluation or inference target

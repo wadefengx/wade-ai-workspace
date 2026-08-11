@@ -27,21 +27,21 @@ export class WorkspaceController {
   constructor(private readonly workspaceService: WorkspaceService) {}
 
   @Get()
-  @ApiOperation({ summary: "获取当前用户可见工作区" })
+  @ApiOperation({ summary: "Get workspaces visible to the current user" })
   @ApiBearerAuth()
   list(@CurrentUser() user: AuthenticatedUser) {
     return this.workspaceService.listForUser(user.id);
   }
 
   @Post()
-  @ApiOperation({ summary: "创建工作区" })
+  @ApiOperation({ summary: "Create a workspace" })
   @ApiBearerAuth()
   create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateWorkspaceDto) {
     return this.workspaceService.createWorkspace(user.id, dto);
   }
 
   @Patch(":workspaceId")
-  @ApiOperation({ summary: "更新工作区信息" })
+  @ApiOperation({ summary: "Update workspace information" })
   @ApiBearerAuth()
   updateWorkspace(
     @Param("workspaceId") workspaceId: string,
@@ -52,7 +52,7 @@ export class WorkspaceController {
   }
 
   @Post(":workspaceId/transfer")
-  @ApiOperation({ summary: "转交工作区 OWNER" })
+  @ApiOperation({ summary: "Transfer workspace ownership" })
   @ApiBearerAuth()
   transferOwnership(
     @Param("workspaceId") workspaceId: string,
@@ -63,7 +63,7 @@ export class WorkspaceController {
   }
 
   @Delete(":workspaceId")
-  @ApiOperation({ summary: "删除工作区" })
+  @ApiOperation({ summary: "Delete a workspace" })
   @ApiBearerAuth()
   deleteWorkspace(@Param("workspaceId") workspaceId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.workspaceService.deleteWorkspace(workspaceId, user.id);
@@ -71,7 +71,7 @@ export class WorkspaceController {
 
   @Get(":workspaceId/members")
   @UseGuards(WorkspaceMemberGuard)
-  @ApiOperation({ summary: "获取工作区成员列表" })
+  @ApiOperation({ summary: "Get workspace members" })
   @ApiBearerAuth()
   listMembers(@Param("workspaceId") workspaceId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.workspaceService.listMembers(workspaceId, user.id);
@@ -79,7 +79,7 @@ export class WorkspaceController {
 
   @Get(":workspaceId/channels")
   @UseGuards(WorkspaceMemberGuard)
-  @ApiOperation({ summary: "获取工作区频道列表" })
+  @ApiOperation({ summary: "Get workspace channels" })
   @ApiBearerAuth()
   listChannels(@Param("workspaceId") workspaceId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.workspaceService.listChannels(workspaceId, user.id);
@@ -87,7 +87,7 @@ export class WorkspaceController {
 
   @Post(":workspaceId/channels")
   @UseGuards(WorkspaceMemberGuard)
-  @ApiOperation({ summary: "创建工作区频道" })
+  @ApiOperation({ summary: "Create a workspace channel" })
   @ApiBearerAuth()
   createChannel(
     @Param("workspaceId") workspaceId: string,
@@ -99,7 +99,7 @@ export class WorkspaceController {
 
   @Post(":workspaceId/members")
   @UseGuards(WorkspaceMemberGuard)
-  @ApiOperation({ summary: "添加工作区成员" })
+  @ApiOperation({ summary: "Add a workspace member" })
   @ApiBearerAuth()
   addMember(
     @Param("workspaceId") workspaceId: string,

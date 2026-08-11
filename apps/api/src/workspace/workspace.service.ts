@@ -79,7 +79,7 @@ export class WorkspaceService {
       });
 
       if (!agent) {
-        throw new BadRequestException("默认 Agent 必须属于当前工作区");
+        throw new BadRequestException("The default agent must belong to the current workspace");
       }
     }
 
@@ -130,15 +130,15 @@ export class WorkspaceService {
     ]);
 
     if (!currentOwner) {
-      throw new NotFoundException("工作区 OWNER 不存在");
+      throw new NotFoundException("Workspace owner not found");
     }
 
     if (!targetMembership) {
-      throw new BadRequestException("目标用户不是工作区成员");
+      throw new BadRequestException("The target user is not a workspace member");
     }
 
     if (targetMembership.userId === currentOwner.userId) {
-      throw new BadRequestException("不能转交给当前 OWNER");
+      throw new BadRequestException("Cannot transfer to the current owner");
     }
 
     await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -239,7 +239,7 @@ export class WorkspaceService {
     await this.ensureManager(workspaceId, operatorId);
 
     if (dto.role === WorkspaceRole.OWNER) {
-      throw new BadRequestException("不能直接授予 OWNER 角色");
+      throw new BadRequestException("Cannot assign the OWNER role directly");
     }
 
     const targetUser = await this.prisma.user.findUnique({
@@ -248,7 +248,7 @@ export class WorkspaceService {
     });
 
     if (!targetUser) {
-      throw new NotFoundException("该邮箱尚未注册");
+      throw new NotFoundException("This email address is not registered");
     }
 
     const existing = await this.prisma.workspaceMember.findFirst({
@@ -257,7 +257,7 @@ export class WorkspaceService {
     });
 
     if (existing) {
-      throw new ConflictException("该用户已是工作区成员");
+      throw new ConflictException("This user is already a workspace member");
     }
 
     return this.prisma.workspaceMember.create({
@@ -272,7 +272,7 @@ export class WorkspaceService {
 
   async updateMemberRole(memberId: string, operatorId: string, dto: UpdateMemberRoleDto) {
     if (dto.role === WorkspaceRole.OWNER) {
-      throw new BadRequestException("不能直接授予 OWNER 角色");
+      throw new BadRequestException("Cannot assign the OWNER role directly");
     }
 
     const membership = await this.prisma.workspaceMember.findUnique({
@@ -281,17 +281,17 @@ export class WorkspaceService {
     });
 
     if (!membership) {
-      throw new NotFoundException("成员不存在");
+      throw new NotFoundException("Member not found");
     }
 
     await this.ensureManager(membership.workspaceId, operatorId);
 
     if (membership.role === WorkspaceRole.OWNER) {
-      throw new ForbiddenException("不能修改 OWNER 的角色");
+      throw new ForbiddenException("Cannot change the OWNER role");
     }
 
     if (membership.userId === operatorId && dto.role !== WorkspaceRole.ADMIN) {
-      throw new BadRequestException("管理员不能降级自己，请让其他管理员操作");
+      throw new BadRequestException("Administrators cannot demote themselves; ask another administrator to do it");
     }
 
     return this.prisma.workspaceMember.update({
@@ -308,16 +308,16 @@ export class WorkspaceService {
     });
 
     if (!membership) {
-      throw new NotFoundException("成员不存在");
+      throw new NotFoundException("Member not found");
     }
 
     await this.ensureManager(membership.workspaceId, operatorId);
 
     if (membership.role === WorkspaceRole.OWNER) {
-      throw new ForbiddenException("不能移除工作区 OWNER");
+      throw new ForbiddenException("Cannot remove the workspace owner");
     }
 
-    // OWNER 不可被移除/降级,ownerCount 恒 ≥1,无需额外校验
+    // The OWNER cannot be removed or demoted; ownerCount is always ≥1, so no additional validation is needed.
 
     await this.prisma.workspaceMember.delete({ where: { id: memberId } });
 
@@ -338,10 +338,10 @@ export class WorkspaceService {
       }
 
       if (!membership) {
-        throw new ForbiddenException("无权访问该工作区");
+        throw new ForbiddenException("You do not have access to this workspace");
       }
 
-      throw new ForbiddenException("仅 OWNER 或 ADMIN 可执行该操作");
+      throw new ForbiddenException("Only an OWNER or ADMIN can perform this action");
     }
   }
 
@@ -362,10 +362,10 @@ export class WorkspaceService {
     }
 
     if (!membership) {
-      throw new ForbiddenException("无权访问该工作区");
+      throw new ForbiddenException("You do not have access to this workspace");
     }
 
-    throw new ForbiddenException("仅 OWNER 可执行该操作");
+    throw new ForbiddenException("Only the OWNER can perform this action");
   }
 
   async listChannels(workspaceId: string, userId: string) {
@@ -433,7 +433,7 @@ export class WorkspaceService {
         return;
       }
 
-      throw new ForbiddenException("无权访问该工作区");
+      throw new ForbiddenException("You do not have access to this workspace");
     }
   }
 
@@ -444,7 +444,7 @@ export class WorkspaceService {
     });
 
     if (!workspace) {
-      throw new NotFoundException("工作区不存在");
+      throw new NotFoundException("Workspace not found");
     }
   }
 

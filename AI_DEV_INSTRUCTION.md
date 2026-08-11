@@ -1,92 +1,92 @@
-# AI-Native 开发体系 Instruction(通用模板)
+# AI-Native development system Instruction (universal template)
 
-> 本文件是 Wade AI 项目沉淀出的 **AI-Native 开发体系**通用提取版。任何新项目启动时,直接读取本文件即可快速搭建 AI 配置、开发团队与迭代流程。**不依赖具体项目背景**。
-> 配套使用:ponytail 哲学(最短可行实现 / YAGNI / 根因修复)。
+> This document is a general extracted version of the **AI-Native development system** precipitated by the Wade AI project. When any new project is started, you can quickly set up AI configuration, development team and iteration process by directly reading this file. **Not dependent on specific project background**.
+> Supported use: ponytail philosophy (minimum viable implementation / YAGNI / root cause repair).
 
 ---
 
-## 1. 核心思想
+## 1. Core idea
 
-- **AI-first,人定目标**:人是 Supervisor,AI 是生产力。需求由人提出,spec 驱动,agent 执行,人验收。
-- **Spec 是唯一真相源**:实现前必须有 spec;代码/文档/对话与 spec 冲突时,以 spec 为准并回写 spec。
-- **一切沉淀回流**:每个完成的任务必须回流 `memory`(经验/决策/教训)→ `skill`(可复用能力)→ `knowledge`(参考),让 AI 越用越强,下个任务不重复踩坑。
+- **AI-first, people set goals**: People are Supervisors, AI is productivity. Requirements are proposed by people, driven by spec, executed by agents, and accepted by people.
+- **Spec is the only source of truth**: There must be spec before implementation; when code/documentation/dialogue conflicts with spec, spec shall prevail and spec will be written back.
+- **All precipitated reflow**: Each completed task must be reflowed `memory` (experience/decision/lesson) → `skill` (reusable ability) → `knowledge` (reference), so that the AI ​​will become stronger with more use, and the next task will not be repeated.
 
-## 2. 新项目启动步骤(15 分钟)
+## 2. New project startup steps (15 minutes)
 
-1. `git init -b main` + 写 `.gitignore`(node_modules/.next/dist/.env/上传目录)。
-2. 把本文件复制为 `AGENTS.md`(或保留本文件并在 AGENTS.md 引用它),按项目实际改 Mission 与目录索引。
-3. 创建 `.ai/` 目录骨架(见 §4;可直接从本仓库复制)。
-4. 配置依赖镜像源(见 §7,中国网络环境)。
-5. 写第一个 `specs/SPEC-001.md`(模板见 §4)→ 开发 → harness 验收 → commit。
+1. `git init -b main` + write `.gitignore`(node_modules/.next/dist/.env/upload directory).
+2. Copy this file as `AGENTS.md` (or keep this file and reference it in AGENTS.md), and change the Mission and directory index according to the actual project.
+3. Create the `.ai/` directory skeleton (see §4; can be copied directly from this repository).
+4. Configure dependent mirror sources (see §7, China Network Environment).
+5. Write the first `specs/SPEC-001.md` (see §4 for template) → develop → harness acceptance → commit.
 
-## 3. 每期需求迭代流程(SDD)
+## 3. Each period’s requirements iteration process (SDD)
 
 ```text
-需求提出 → PM 功能系分(范围/边界/不做项)
-→ 架构设计(PM+前端+后端:路由/契约/数据模型/权限)
-→ 任务拆分(PM:按领域拆 lane,保证文件不冲突)
-→ 并行开发(每 lane 独立,遵守 ponytail)
-→ QA 验收(单测 + harness regression + 浏览器实测)
-→ 回流(lessons/decisions 写 memory,通用做法沉淀 skill)
+Requirements raised → PM functional division (scope/boundary/excluding items)
+→ Architecture design (PM+front-end+back-end: routing/contract/data model/permissions)
+→ Task splitting (PM: Split lanes by field to ensure no file conflicts)
+→ Parallel development (each lane is independent, comply with ponytail)
+→ QA acceptance (single test + harness regression + browser actual test)
+→ Reflow (lessons/decisions write memory, common practice precipitates skill)
 → git commit
 ```
 
-**Lane 切分原则**:按领域(后端/前端基础/前端页面/文档/QA)切,每个 lane 独占一组文件;跨 lane 共享文件(如导航/布局)指定单一 owner;契约先定死(spec 里写清 API 签名),并行不联调。
+**Lane segmentation principle**: Split by domain (backend/frontend foundation/frontend page/documentation/QA), each lane has an exclusive set of files; cross-lane shared files (such as navigation/layout) specify a single owner; the contract is determined first (the API signature is written clearly in the spec), and there is no joint debugging in parallel.
 
-## 4. AIOS 组织层(.ai/ 目录)
+## 4. AIOS organization layer (.ai/ directory)
 
 ```text
 .ai/
-├── organization/     # AI 如何协作:constitution(五大对象模型)/team/roles/*/routing/topology
-├── runtime/          # AI 如何运行:pipeline(标准执行管线)/model-routing/tool-policy/coding-policy
-│                     #   + planner(需求→Epic→Story→Task→Lane)/lane-states(状态机)/confidence(置信度)
-├── workflows/        # 可复用流程:feature/bugfix/refactor/release/architecture/research/review
-├── registry/         # 运行时索引(关键!):skills.yaml/workflows.yaml/models.yaml/tools.yaml/roles.yaml
-│                     #   —— AI 先查 registry,不扫目录
-├── specs/            # TEMPLATE.md + active/ + completed/ + archived/(frontmatter 带 status)
-├── skills/           # 可复用技能(common/frontend/backend/...),frontmatter 带 metadata
-├── memory/           # 长期记忆(architecture/engineering/product/bug/lessons/glossary 分类)
-├── knowledge/        # 被动参考(business/product/engineering/framework/references)
+├── organization/ # How AI collaborates: constitution (five major object models)/team/roles/*/routing/topology
+├── runtime/ # How AI runs: pipeline (standard execution pipeline)/model-routing/tool-policy/coding-policy
+│ # + planner(Requirements→Epic→Story→Task→Lane)/lane-states(state machine)/confidence(confidence)
+├── workflows/ # Reusable processes: feature/bugfix/refactor/release/architecture/research/review
+├── registry/ # Runtime index (key!): skills.yaml/workflows.yaml/models.yaml/tools.yaml/roles.yaml
+│ # —— AI checks the registry first, without scanning the directory
+├── specs/ # TEMPLATE.md + active/ + completed/ + archived/(frontmatter with status)
+├── skills/ # Reusable skills (common/frontend/backend/...), frontmatter with metadata
+├── memory/ # Long-term memory (architecture/engineering/product/bug/lessons/glossary classification)
+├── knowledge/ # Passive reference (business/product/engineering/framework/references)
 ├── architecture/     # overview/tech-stack/modules/api-contract + adr/ADR-xxx.md
-├── harness/          # AI 质量系统:regression 脚本/golden case/evals/scorecards(AI CI)
-└── changelog/        # 历史归档
+├── harness/ # AI quality system:regression script/golden case/evals/scorecards(AI CI)
+└── changelog/ # Historical archive
 ```
 
-**五大对象模型**(写进 constitution):
-`Organization(协作) → Specification(做什么) → Workflow(怎么做) → Knowledge(知道什么) → Runtime(如何执行)`;`Memory / Skill / Harness` 是贯穿生命周期的三系统。
+**Five major object models** (written into constitution):
+`Organization (collaboration) → Specification (what to build) → Workflow (how to build it) → Knowledge (what the team knows) → Runtime (how to execute)`; `Memory / Skill / Harness` are three systems throughout the life cycle.
 
-**Spec 模板要点**:Background / Goal / Scope / Non-goals / UX / API 契约 / Database / Acceptance Criteria / Risks / Tasks / QA Checklist;frontmatter 带 `status: draft|approved|implementing|testing|done`。
+**Spec Template Essentials**: Background / Goal / Scope / Non-goals / UX / API Contract / Database / Acceptance Criteria / Risks / Tasks / QA Checklist; frontmatter with `status: draft|approved|implementing|testing|done`.
 
-## 5. 团队与 Lane 运行机制
+## 5. Team and Lane operating mechanism
 
-- **角色**:PM / Architect / UX / 前端 / 后端 / QA,各角色有自己的 `.ai/organization/roles/*.md`(使命/职责/输入/输出/边界/DoD)。
-- **执行模式**:编排者(Hermes 类 agent)负责拆 lane、派发、监控、验收;多 lane 并行,QA 最后统一验收。
-- **Lane 状态机**:`Draft → Ready → Running → Review → QA → Done → Merged`,卡住(多轮无进展)→ `Blocked`。
-- **Confidence 机制**:每个 lane 带置信度(实现完整性/测试覆盖/契约符合度打分);`<0.7` 自动 Architect Review,`<0.5` 外部 review。
-- **Review 是流程不是聊天**:Lane → Code → Self Review → Harness 跑分 → Memory 更新 → Merge 决策。
-- **Memory → Skill 晋升**:Lesson 积累 → Skill Candidate → Architect Review → Promote(组织学习)。
+- **Roles**: PM / Architect / UX / Front-end / Back-end / QA, each role has its own `.ai/organization/roles/*.md` (Mission/Responsibility/Input/Output/Boundary/DoD).
+- **Execution mode**: The orchestrator (Hermes class agent) is responsible for lane splitting, dispatching, monitoring, and acceptance; multiple lanes are parallel, and QA finally accepts them uniformly.
+- **Lane state machine**: `Draft → Ready → Running → Review → QA → Done → Merged`, stuck (no progress in multiple rounds) → `Blocked`.
+- **Confidence mechanism**: Each lane has confidence (implementation completeness/test coverage/contract compliance score); `<0.7` automatic Architect Review, `<0.5` external review.
+- **Review is a process, not a chat**: Lane → Code → Self Review → Harness score → Memory update → Merge decision.
+- **Memory → Skill promotion**: Lesson accumulation → Skill Candidate → Architect Review → Promote (organizational learning).
 
-## 6. 工程质量门禁(每期必须全绿)
+## 6. Project quality access control (must be all green in each phase)
 
-1. `lint` + `typecheck` + `test`(单元)+ `build`(生产构建)。
-2. **Harness regression**:关键流程有可执行验收脚本(如 `verify-phaseN.sh`),PASS/FAIL 计数,退出码;每个重要 workflow 一个 harness 目录。
-3. **浏览器实测清单**:核心用户路径逐条验证(登录/刷新恢复/导航/表单/流式/反馈/深色模式)。
-4. 测试账号固化在 README;错误消息用中文(除非 spec 另有规定)。
+1. `lint` + `typecheck` + `test` (unit) + `build` (production build).
+2. **Harness regression**: Key processes have executable acceptance scripts (such as `verify-phaseN.sh`), PASS/FAIL count, and exit codes; each important workflow has a harness directory.
+3. **Browser test list**: Core user paths are verified one by one (login/refresh recovery/navigation/form/streaming/feedback/dark mode).
+4. The test account is fixed in the README; error messages are in Chinese (unless the spec specifies otherwise).
 
-## 7. 中国网络环境配置
+## 7. China network environment configuration
 
-- npm → `https://registry.npmmirror.com`;GitHub 加速 → `gitclone.com`;Docker Hub 不可用 → `quay.io`;MongoDB 二进制 → `fastdl.mongodb.org`;本地大模型 → Ollama(ClashX `127.0.0.1:7890` 代理)。
-- 工具统一 Homebrew 管理;反对 npm global 安装。
+- npm → `https://registry.npmmirror.com`; GitHub accelerated → `gitclone.com`; Docker Hub not available → `quay.io`; MongoDB binary → `fastdl.mongodb.org`; Local large model → Ollama (ClashX `127.0.0.1:7890` proxy).
+- Tools unify Homebrew management; support npm global installation.
 
-## 8. 常用工程约定
+## 8. Common engineering conventions
 
-- **Ponytail 哲学**:最短可行实现;复用 > 新建;根因修复(一处 guard 优于每个调用点打补丁);不建无用的抽象。
-- **前端**:SPA 统一 layout + 状态管理用 zustand;时间处理 dayjs;动画 framer-motion;组件优先用已装 UI 库(antd / antd-x)。
-- **后端**:NestJS 风格模块化 + Swagger 文档;DTO 校验;错误消息中文。
-- **提交**:功能粒度 commit,message 用 `feat(scope): 描述`。
-- **运维坑**:kill npm wrapper 后子进程会残留占端口 → `lsof -ti :PORT` 清理;dev server 热重载对 schema 变更不可靠 → 改 Prisma schema 后手动 `prisma generate` + 重启。
-- **Dev 环境**:统一启动脚本 + README 记录(服务清单、端口、账号)。
+- **Ponytail philosophy**: shortest viable implementation; reuse > create new; root cause repair (one guard is better than patching every call point); do not build useless abstractions.
+- **Front end**: SPA unified layout + zustand for state management; time processing dayjs; animation framer-motion; components preferentially use the installed UI library (antd / antd-x).
+- **Backend**: NestJS-style modularization with Swagger documentation, DTO validation, and English error messages.
+- **Commit**: Commit at feature granularity; messages use `feat(scope): description`.
+- **Operation and maintenance pit**: After killing npm wrapper, the child process will still occupy the port → `lsof -ti :PORT` cleanup; dev server hot reload is not reliable for schema changes → manually `prisma generate` + restart after changing Prisma schema.
+- **Dev environment**: unified startup script + README record (service list, port, account).
 
 ---
 
-*本文件由 Wade AI(ai-workspace)项目实践沉淀,可自由复制到任何新项目按 §2 使用。*
+*This document is produced by the Wade AI (ai-workspace) project practice and can be freely copied to any new project for use in accordance with §2. *

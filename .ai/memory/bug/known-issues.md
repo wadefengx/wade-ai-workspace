@@ -6,7 +6,7 @@
 |---|---|---|
 | Resolved in Phase 9 | Full-page refresh dropped login state | Refresh-token flow is the planned fix path for the original issue |
 | Current reference | Swagger lives at `/api/swagger` | Keep docs references aligned with the moved endpoint |
-| Watch | 本地回归脚本依赖预置演示数据 | `admin/admin` 与 `alice/bob/carol` 账号需要在本地种子数据中可用,否则 harness 需先补种子 |
+| Watch | Local regression scripts depend on seeded demo data | The `admin/admin` and `alice/bob/carol` accounts must exist in local seed data; otherwise, seed them before running the harness. |
 
 ## Watch list
 

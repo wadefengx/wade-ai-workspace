@@ -60,7 +60,7 @@ export class DocsService {
 
   private async resolveMarkdownFile(directory: "specs" | "skills", name: string) {
     if (!DOC_NAME_PATTERN.test(name)) {
-      throw new NotFoundException("文档不存在");
+      throw new NotFoundException("Document not found");
     }
 
     const docsDir = await this.resolveDocsDir(directory);
@@ -68,7 +68,7 @@ export class DocsService {
     const filePath = files.find((file) => this.readDocName(file) === name);
 
     if (!filePath) {
-      throw new NotFoundException("文档不存在");
+      throw new NotFoundException("Document not found");
     }
 
     return filePath;
@@ -93,7 +93,7 @@ export class DocsService {
       }
     }
 
-    throw new NotFoundException("文档目录不存在");
+    throw new NotFoundException("Document directory not found");
   }
 
   private async listMarkdownFiles(directory: string): Promise<string[]> {

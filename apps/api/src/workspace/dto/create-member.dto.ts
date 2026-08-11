@@ -3,17 +3,17 @@ import { IsEmail, IsEnum, IsOptional } from "class-validator";
 import { WorkspaceRole } from "@prisma/client";
 
 export class CreateMemberDto {
-  @ApiProperty({ description: "待添加成员邮箱", example: "bob@wade.local", required: true })
-  @IsEmail({}, { message: "邮箱格式不正确" })
+  @ApiProperty({ description: "Email address of the member to add", example: "bob@wade.local", required: true })
+  @IsEmail({}, { message: "Invalid email address format" })
   email!: string;
 
   @ApiProperty({
-    description: "新成员工作区角色",
+    description: "Workspace role for the new member",
     example: WorkspaceRole.MEMBER,
     required: false,
     enum: WorkspaceRole
   })
   @IsOptional()
-  @IsEnum(WorkspaceRole, { message: "角色只能是 MEMBER 或 ADMIN" })
+  @IsEnum(WorkspaceRole, { message: "role must be MEMBER or ADMIN" })
   role?: WorkspaceRole;
 }

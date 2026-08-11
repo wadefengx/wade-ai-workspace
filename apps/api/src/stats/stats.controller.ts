@@ -12,14 +12,14 @@ export class StatsController {
   constructor(private readonly statsService: StatsService) {}
 
   @Get("organization")
-  @ApiOperation({ summary: "获取组织仪表盘统计" })
+  @ApiOperation({ summary: "Get organization dashboard statistics" })
   @ApiBearerAuth()
   getOrganizationStats(@CurrentUser() user: AuthenticatedUser) {
     return this.statsService.getOrganizationStats(user.id, user.role);
   }
 
   @Get("feedback")
-  @ApiOperation({ summary: "获取消息反馈统计" })
+  @ApiOperation({ summary: "Get message feedback statistics" })
   @ApiBearerAuth()
   getFeedbackStats(@CurrentUser() user: AuthenticatedUser) {
     return this.statsService.getFeedbackStats(user.id, user.role);

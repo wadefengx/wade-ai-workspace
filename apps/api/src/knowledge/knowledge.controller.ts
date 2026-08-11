@@ -28,7 +28,7 @@ export class KnowledgeController {
   @Post("workspaces/:workspaceId/knowledge")
   @UseGuards(WorkspaceMemberGuard)
   @UseInterceptors(FileInterceptor("file"))
-  @ApiOperation({ summary: "上传知识文档" })
+  @ApiOperation({ summary: "Upload a knowledge document" })
   @ApiBearerAuth()
   @ApiConsumes("multipart/form-data")
   @ApiBody({
@@ -53,14 +53,14 @@ export class KnowledgeController {
 
   @Get("workspaces/:workspaceId/knowledge")
   @UseGuards(WorkspaceMemberGuard)
-  @ApiOperation({ summary: "获取知识文档列表" })
+  @ApiOperation({ summary: "Get knowledge documents" })
   @ApiBearerAuth()
   listDocuments(@Param("workspaceId") workspaceId: string) {
     return this.knowledgeService.listDocuments(workspaceId);
   }
 
   @Patch("knowledge/:documentId")
-  @ApiOperation({ summary: "更新知识文档名称" })
+  @ApiOperation({ summary: "Update knowledge document name" })
   @ApiBearerAuth()
   updateName(
     @Param("documentId") documentId: string,
@@ -71,14 +71,14 @@ export class KnowledgeController {
   }
 
   @Post("knowledge/:documentId/reindex")
-  @ApiOperation({ summary: "重新索引知识文档" })
+  @ApiOperation({ summary: "Reindex a knowledge document" })
   @ApiBearerAuth()
   reindexDocument(@Param("documentId") documentId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.knowledgeService.reindexDocument(documentId, user.id);
   }
 
   @Delete("knowledge/:documentId")
-  @ApiOperation({ summary: "删除知识文档" })
+  @ApiOperation({ summary: "Delete a knowledge document" })
   @ApiBearerAuth()
   deleteDocument(@Param("documentId") documentId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.knowledgeService.deleteDocument(documentId, user.id);

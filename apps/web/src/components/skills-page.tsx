@@ -50,12 +50,12 @@ function SkillsContent() {
         <div className={styles.sectionHeader}>
           <div className={styles.helperStack}>
             <Typography.Title level={5}>Skills</Typography.Title>
-            <Typography.Text type="secondary">查看团队沉淀下来的通用技能与工作方式。</Typography.Text>
+            <Typography.Text type="secondary">View the reusable skills and ways of working established by the team.</Typography.Text>
           </div>
         </div>
 
         {skillsQuery.isLoading ? (
-          <LoadingState compact title="正在读取 Skills" description="同步团队沉淀下来的技能文档。" />
+          <LoadingState compact title="Loading skills" description="Syncing the team’s skill documents." />
         ) : skillItems.length ? (
           <div className={styles.selectionList}>
             {skillItems.map((item) => (
@@ -74,28 +74,28 @@ function SkillsContent() {
             ))}
           </div>
         ) : (
-          <EmptyState compact icon={<FolderOpenOutlined />} title="还没有可用 Skills" description="把可复用方法沉淀到仓库后，这里会自动展示。" />
+          <EmptyState compact icon={<FolderOpenOutlined />} title="No skills available yet" description="Reusable methods added to the repository appear here automatically." />
         )}
       </div>
 
       <div className={styles.pageCard}>
         <div className={styles.sectionHeader}>
           <div className={styles.helperStack}>
-            <Typography.Title level={5}>内容</Typography.Title>
+            <Typography.Title level={5}>Content</Typography.Title>
             <Typography.Text type="secondary">
-              {activeSelectedName ? activeSelectedName : "先从左侧选择一个 Skill 文件。"}
+              {activeSelectedName ? activeSelectedName : "Select a skill file from the left."}
             </Typography.Text>
           </div>
         </div>
 
         {skillDetailQuery.isLoading ? (
-          <LoadingState compact title="正在读取内容" description="马上展示选中的 Skill 原文。" />
+          <LoadingState compact title="Loading content" description="The selected skill source will appear shortly." />
         ) : skillDetailQuery.data ? (
           <div className={styles.scrollPanel}>
             <MarkdownContent content={skillDetailQuery.data.content} />
           </div>
         ) : (
-          <EmptyState compact icon={<ReadOutlined />} title="选择一个 Skill" description="从左侧挑一个技能文档后，这里会显示完整 Markdown 内容。" />
+          <EmptyState compact icon={<ReadOutlined />} title="Select a skill" description="Choose a skill document from the left to view its full Markdown content." />
         )}
       </div>
     </div>
@@ -106,7 +106,7 @@ export function SkillsPage() {
   return (
     <WorkspacePageFrame
       title="Skills"
-      description="浏览团队共用技能文档，在当前 Workspace 里快速对齐实现方式。"
+      description="Browse shared team skill documents to align implementation in the current workspace."
     >
       <SkillsContent />
     </WorkspacePageFrame>

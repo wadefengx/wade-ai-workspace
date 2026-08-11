@@ -328,7 +328,7 @@ export function useWorkspaceContext() {
     throw new Error("WorkspaceContext is missing");
   }
 
-  // zustand v5:selector 必须返回稳定引用,否则 useSyncExternalStore 无限循环
+  // zustand v5: selectors must return stable references or useSyncExternalStore loops indefinitely
   return useStore(store, useShallow((state) => ({
     workspaceId: state.workspaceId,
     workspaces: state.workspaces,

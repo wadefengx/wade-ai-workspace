@@ -19,7 +19,7 @@ import * as crypto from "node:crypto";
 
 const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN_DAYS = 30;
-const REFRESH_TOKEN_EXPIRED_MESSAGE = "登录已过期,请重新登录";
+const REFRESH_TOKEN_EXPIRED_MESSAGE = "Session has expired; please sign in again";
 
 @Injectable()
 export class AuthService {
@@ -34,7 +34,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException("该邮箱已被注册");
+      throw new ConflictException("This email address is already registered");
     }
 
     const passwordHash = await hash(dto.password, 10);
@@ -52,7 +52,7 @@ export class AuthService {
       return this.buildAuthResponse(user);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        throw new ConflictException("该邮箱已被注册");
+        throw new ConflictException("This email address is already registered");
       }
 
       throw error;
@@ -65,13 +65,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException("邮箱或密码错误");
+      throw new UnauthorizedException("Invalid email or password");
     }
 
     const passwordMatched = await compare(dto.password, user.passwordHash);
 
     if (!passwordMatched) {
-      throw new UnauthorizedException("邮箱或密码错误");
+      throw new UnauthorizedException("Invalid email or password");
     }
 
     return this.buildAuthResponse(user);
@@ -129,13 +129,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException("用户不存在");
+      throw new NotFoundException("User not found");
     }
 
     const passwordMatched = await compare(dto.currentPassword, user.passwordHash);
 
     if (!passwordMatched) {
-      throw new UnauthorizedException("当前密码错误");
+      throw new UnauthorizedException("Current password is incorrect");
     }
 
     const newPasswordHash = await hash(dto.newPassword, 10);

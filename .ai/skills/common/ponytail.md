@@ -1,6 +1,6 @@
 ---
 name: ponytail
-description: 团队 common skill——懒惰工程哲学(最短可行实现、YAGNI、根因修复)。
+description: Team common skill—lazy engineering philosophy (smallest viable implementation, YAGNI, root-cause fixes).
 owner: frontend
 version: "1.0"
 tags: [engineering, philosophy, all-roles]
@@ -14,36 +14,36 @@ confidence: stable
 
 ## The ladder
 
-按这个顺序判断,停在第一个足够的选项:
+Evaluate in this order and stop at the first sufficient option:
 
-1. 不需要就不做。
-2. 复用现有 helper、模块、模式。
-3. 用标准库。
-4. 用平台原生能力。
-5. 用已安装依赖。
-6. 能一行就一行。
-7. 最后才写最小实现。
+1. Do not do it if it is unnecessary.
+2. Reuse existing helpers, modules, and patterns.
+3. Use the standard library.
+4. Use native platform capabilities.
+5. Use installed dependencies.
+6. Use one line when one line works.
+7. Only then write the smallest implementation.
 
-## Bug fix = 根因修复
+## Bug fix = root-cause fix
 
-- 先追调用链,修共享根因,不要只补报错路径。
-- 优先改公共入口、共享校验、共用 helper,避免同类问题在兄弟路径复发。
+- Trace the call chain first; fix the shared root cause rather than only the failing path.
+- Prefer shared entry points, validations, and helpers to prevent recurrence in sibling paths.
 
-## 规则
+## Rule
 
-- 不加未被请求的抽象。
-- 删除优于新增,复用优于重写。
-- 最短 diff 胜出,前提是正确覆盖真实问题。
-- 有意保留的取舍用 `ponytail:` 注释标记,顺手写清已知上限和后续升级方向。
+- Do not add unrequested abstractions.
+- Deletion beats addition; reuse beats rewrites.
+- The shortest diff wins, provided it correctly covers the real problem.
+- Mark deliberate tradeoffs with a `ponytail:` comment and state known ceilings and the upgrade path.
 
-## 不做简化
+## Do not simplify
 
-- 信任边界输入校验。
-- 数据安全、权限、安全相关处理。
-- 用户或 spec 显式要求的能力、约束、验收项。
+- Input validation at trust boundaries.
+- Data safety, permissions, and security-related handling.
+- Capabilities, constraints, and acceptance items explicitly requested by the user or spec.
 
-## 输出风格
+## Output style
 
-- 先给结论,再给必要依据。
-- 控制复杂度:少文件、少抽象、少样板。
-- 只解释关键取舍,不做流程复述。
+- State the conclusion first, then necessary evidence.
+- Control complexity: fewer files, abstractions, and boilerplate.
+- Explain only key tradeoffs; do not restate the process.

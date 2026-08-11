@@ -3,35 +3,35 @@ import { Type } from "class-transformer";
 import { IsOptional, IsString, MinLength, ValidateNested } from "class-validator";
 
 class UpdateAgentProviderConfigDto {
-  @ApiProperty({ description: "Provider 基础地址", example: "http://127.0.0.1:11434/v1", required: false })
+  @ApiProperty({ description: "Provider base URL", example: "http://127.0.0.1:11434/v1", required: false })
   @IsOptional()
-  @IsString({ message: "baseUrl 必须是字符串" })
+  @IsString({ message: "baseUrl must be a string" })
   baseUrl?: string;
 
   @ApiProperty({ description: "Provider API Key", example: "sk-demo-key", required: false })
   @IsOptional()
-  @IsString({ message: "apiKey 必须是字符串" })
+  @IsString({ message: "apiKey must be a string" })
   apiKey?: string;
 
-  @ApiProperty({ description: "Provider 模型名称", example: "qwen3:8b", required: false })
+  @ApiProperty({ description: "Provider model name", example: "qwen3:8b", required: false })
   @IsOptional()
-  @IsString({ message: "model 必须是字符串" })
+  @IsString({ message: "model must be a string" })
   model?: string;
 }
 
 export class UpdateAgentDto {
-  @ApiProperty({ description: "harness 运行环境", example: "OLLAMA", required: false })
+  @ApiProperty({ description: "Harness runtime environment", example: "OLLAMA", required: false })
   @IsOptional()
-  @IsString({ message: "harness 必须是字符串" })
+  @IsString({ message: "harness must be a string" })
   harness?: string;
-  @ApiProperty({ description: "Agent 展示名称", example: "Workspace AI", required: false })
+  @ApiProperty({ description: "Agent display name", example: "Workspace AI", required: false })
   @IsOptional()
-  @IsString({ message: "名称必须是字符串" })
-  @MinLength(1, { message: "名称不能为空" })
+  @IsString({ message: "name must be a string" })
+  @MinLength(1, { message: "name must not be empty" })
   name?: string;
 
   @ApiProperty({
-    description: "Agent Provider 配置补丁",
+    description: "Agent provider configuration patch",
     example: {
       baseUrl: "http://127.0.0.1:11434/v1",
       model: "qwen3:8b"
@@ -44,33 +44,33 @@ export class UpdateAgentDto {
   @Type(() => UpdateAgentProviderConfigDto)
   providerConfig?: UpdateAgentProviderConfigDto;
 
-  @ApiProperty({ description: "专家 emoji 头像", example: "🧠", required: false })
+  @ApiProperty({ description: "Expert emoji avatar", example: "🧠", required: false })
   @IsOptional()
-  @IsString({ message: "emoji 必须是字符串" })
+  @IsString({ message: "emoji must be a string" })
   emoji?: string;
 
-  @ApiProperty({ description: "专家角色名", example: "资深前端工程师", required: false })
+  @ApiProperty({ description: "Expert role name", example: "Senior frontend engineer", required: false })
   @IsOptional()
-  @IsString({ message: "role 必须是字符串" })
+  @IsString({ message: "role must be a string" })
   role?: string;
 
-  @ApiProperty({ description: "专家能力描述", example: "擅长 React/性能优化", required: false })
+  @ApiProperty({ description: "Expert capability description", example: "Skilled in React and performance optimization", required: false })
   @IsOptional()
-  @IsString({ message: "description 必须是字符串" })
+  @IsString({ message: "description must be a string" })
   description?: string;
 
-  @ApiProperty({ description: "专家 system prompt", required: false })
+  @ApiProperty({ description: "Expert system prompt", required: false })
   @IsOptional()
-  @IsString({ message: "systemPrompt 必须是字符串" })
+  @IsString({ message: "systemPrompt must be a string" })
   systemPrompt?: string;
 
-  @ApiProperty({ description: "Embedding 模型名称，留空跟随 chat provider", required: false })
+  @ApiProperty({ description: "Embedding model name; leave empty to use the chat provider", required: false })
   @IsOptional()
-  @IsString({ message: "embeddingModel 必须是字符串" })
+  @IsString({ message: "embeddingModel must be a string" })
   embeddingModel?: string;
 
-  @ApiProperty({ description: "Embedding baseUrl，留空跟随 chat provider", required: false })
+  @ApiProperty({ description: "Embedding baseUrl; leave empty to use the chat provider", required: false })
   @IsOptional()
-  @IsString({ message: "embeddingBaseUrl 必须是字符串" })
+  @IsString({ message: "embeddingBaseUrl must be a string" })
   embeddingBaseUrl?: string;
 }

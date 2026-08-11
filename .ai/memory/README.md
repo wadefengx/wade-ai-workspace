@@ -1,17 +1,17 @@
 # Memory
 
-## 分类
+## Categories
 
 | Path | Use |
 |---|---|
-| `architecture/` | 架构形态、稳定决策、跨模块约束 |
-| `engineering/` | 工程约定、实现习惯、交付规则 |
-| `product/` | 产品快照、目标、范围共识 |
-| `bug/` | 已知问题、回归、修复跟踪 |
-| `lessons/` | 复盘经验与迁移教训 |
-| `glossary/` | 术语与统一词汇 |
+| `architecture/` | Architecture shape, stable decisions, and cross-module constraints |
+| `engineering/` | Engineering conventions, implementation habits, and delivery rules |
+| `product/` | Product snapshots, goals, and scope alignment |
+| `bug/` | Known issues, regressions, and fix tracking |
+| `lessons/` | Retrospective experience and migration lessons |
+| `glossary/` | Terms and shared vocabulary |
 
 ## Rule
 
-- 禁止单文件膨胀,新条目进对应分类。
-- 只有分类 README 和主题文件留在根分类目录,不要再把长期 memory 堆回 `.ai/memory/*.md`。
+- Disable single file expansion, and new entries will be entered into corresponding Categories.
+- Only Categories README and theme files remain in the root Categories directory, do not pile long-term memory back into `.ai/memory/*.md`.

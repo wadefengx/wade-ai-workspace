@@ -2,7 +2,7 @@
 
 **AI-Native Workspace for Teams** — a spec-driven AIOS organization layer that turns a workspace into a living software factory: multi-role agents, layered memory, RAG knowledge, and team collaboration in one place.
 
-[简体中文](./README_CN.md) · [Website](https://wadefengx.github.io/wade-ai-workspace/) · [Docs](./docs/architecture.md)
+[Chinese documentation](./README_CN.md) · [Website](https://wadefengx.github.io/wade-ai-workspace/) · [Docs](./docs/architecture.md)
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Capability | What it does |
 |---|---|
-| 🧠 **Expert Agents** | Chat with AI out of the box — no `@AI` needed. Mention an expert (`@架构师`) to route to its persona. Agents carry emoji, role, description, and a configurable system prompt. |
+| 🧠 **Expert Agents** | Chat with AI out of the box — no `@AI` needed. Mention an expert by name to route to its persona. Agents carry emoji, role, description, and a configurable system prompt. |
 | 🔌 **Any LLM Provider** | Bring your own API key (DeepSeek / OpenAI / Anthropic / any OpenAI-compatible endpoint) **or** point at a local model (Ollama). Per-workspace default agent, one-click provider presets, connection testing. |
 | 📚 **RAG Knowledge** | Upload documents → recursive chunking (512-token, 15% overlap) → embeddings → vector search. Content-hash dedup skips re-chunking identical files. Answers cite their sources with `[^n]` footnotes. |
 | 🗂️ **Layered Memory (L0→L3)** | Conversation → atomic facts → scenarios → persona, distilled by LLM in a single structured pass. Progressive disclosure: personas and scenes guide recall, atoms drill down on demand. Inspired by TencentDB Agent Memory. |
@@ -26,7 +26,23 @@
 | AI | OpenAI-compatible provider abstraction · Anthropic · Ollama (optional local) · EmbeddingService (API + local fallback) |
 | Infra | Docker Compose · Swagger (`/api/swagger`) |
 
+## 📚 Documentation & API
+
+- [Swagger UI (live local API)](http://localhost:3001/api/swagger) — interactive OpenAPI documentation; public API base path: `/api`.
+- [API contracts](./docs/api-contracts.md) — endpoints, authentication, streaming, and error responses.
+- [Architecture](./docs/architecture.md) — system boundaries, topology, AI flow, and memory pipeline.
+- [Database design](./docs/database.md) — MongoDB models, data relationships, and schema workflow.
+
 ## 🚀 Quick Start
+
+### Prerequisites
+
+Choose one development mode:
+
+- **Docker Compose:** Docker Desktop with Docker Compose v2.
+- **Host development:** Node.js 22+ and npm 10+, plus Docker Desktop for MongoDB.
+
+Do not commit `.env` or `apps/api/.env`; both contain machine-specific secrets.
 
 ### Docker Compose configuration
 
@@ -134,9 +150,32 @@ docker compose up --build
 
 Compose starts MongoDB, Ollama, API, and web together. Both modes access the same data only when host mode connects to the Compose MongoDB above.
 
+### Quality checks
+
+Run checks from the repository root:
+
 ```bash
 npm run typecheck && npm run lint && npm test
+npm run build
 ```
+
+| Command | Purpose |
+|---|---|
+| `npm run dev:web` | Start the Next.js web app on port 3000. |
+| `npm run dev:api` | Start the NestJS API on port 3001. |
+| `npm run db:push` | Push the Prisma schema and regenerate the client. |
+| `npm run db:seed` | Upsert the demo data without clearing existing records. |
+| `npm run lint` / `npm run typecheck` / `npm test` / `npm run build` | Validate all workspaces. |
+
+### Troubleshooting
+
+| Symptom | Check | Resolution |
+|---|---|---|
+| The web app is empty or requests fail | `curl http://localhost:3001/api/health` | Start MongoDB and the API. A healthy API returns `{"status":"ok"}`. |
+| Host API cannot connect to MongoDB | Check `apps/api/.env` | Use `127.0.0.1:27017` and keep `replicaSet=rs0&directConnection=true`. |
+| Existing data seems missing | Check `MONGO_DATABASE` | Restore `wade_workspace`; a different name selects a different database. |
+| Port already in use | Check `WEB_PORT`, `API_PORT`, or `MONGO_PORT` | Change the affected host mapping in `.env`, then restart Compose. |
+| AI replies fail | Open **Agents** and test the selected agent | Configure a working provider endpoint and API key, or run Ollama for a local agent. |
 
 ## 🤝 Related
 

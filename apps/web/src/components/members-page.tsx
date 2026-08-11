@@ -122,7 +122,7 @@ function MembersContent() {
   const addMemberMutation = useMutation({
     mutationFn: (values: AddMemberValues) => {
       if (!workspaceId) {
-        throw new Error("缺少 Workspace");
+        throw new Error("Workspace is required");
       }
 
       return apiFetch(`/workspaces/${workspaceId}/members`, {
@@ -137,10 +137,10 @@ function MembersContent() {
       form.resetFields();
       form.setFieldValue("role", "MEMBER");
       await queryClient.invalidateQueries({ queryKey: membersKeys.list(workspaceId) });
-      message.success("成员已添加");
+      message.success("Member added");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "添加成员失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to add member");
     }
   });
 
@@ -152,10 +152,10 @@ function MembersContent() {
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: membersKeys.list(workspaceId) });
-      message.success("成员角色已更新");
+      message.success("Member role updated");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "更新成员角色失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to update member role");
     }
   });
 
@@ -166,10 +166,10 @@ function MembersContent() {
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: membersKeys.list(workspaceId) });
-      message.success("成员已移除");
+      message.success("Member removed");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "移除成员失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to remove member");
     }
   });
 
@@ -186,7 +186,7 @@ function MembersContent() {
     () => {
       const baseColumns: TableColumnsType<WorkspaceMemberRecord> = [
         {
-          title: "成员",
+          title: "Member",
           dataIndex: "name",
           key: "name",
           width: 280,
@@ -200,21 +200,21 @@ function MembersContent() {
           )
         },
         {
-          title: "邮箱",
+          title: "Email",
           dataIndex: "email",
           key: "email",
           width: 260,
           render: (email: string) => <Typography.Text type="secondary">{email}</Typography.Text>
         },
         {
-          title: "角色",
+          title: "Role",
           dataIndex: "role",
           key: "role",
           width: 140,
           render: (role: string) => <Tag color={getRoleColor(role as WorkspaceRole)}>{role}</Tag>
         },
         {
-          title: "加入时间",
+          title: "Joined",
           dataIndex: "createdAt",
           key: "createdAt",
           width: 220,
@@ -229,7 +229,7 @@ function MembersContent() {
       return [
         ...baseColumns,
         {
-          title: "操作",
+          title: "Actions",
           key: "actions",
           width: 260,
           render: (_, record) => {
@@ -254,10 +254,10 @@ function MembersContent() {
                   }
                 />
                 <Popconfirm
-                  title="移除成员？"
-                  description="移除后对方将失去当前 Workspace 的访问权限。"
-                  okText="移除"
-                  cancelText="取消"
+                  title="Remove member?"
+                  description="This person will lose access to the current workspace."
+                  okText="Remove"
+                  cancelText="Cancel"
                   disabled={isOwner}
                   onConfirm={() => removeMemberMutation.mutate(record.id)}
                 >
@@ -267,7 +267,7 @@ function MembersContent() {
                     disabled={isOwner}
                     loading={isRemoving}
                   >
-                    移除
+                    Remove
                   </Button>
                 </Popconfirm>
               </div>
@@ -281,7 +281,7 @@ function MembersContent() {
 
   const tableLocale = useMemo(
     () => ({
-      emptyText: <EmptyState compact icon={<TeamOutlined />} title="还没有成员" description="把成员拉进来后，才能一起管理知识、记忆和 Agent。" />
+      emptyText: <EmptyState compact icon={<TeamOutlined />} title="No members yet" description="Add members to manage knowledge, memory, and agents together." />
     }),
     []
   );
@@ -291,9 +291,9 @@ function MembersContent() {
       <div className={styles.pageCard}>
         <div className={styles.sectionHeader}>
           <div className={styles.helperStack}>
-            <Typography.Title level={5}>成员列表</Typography.Title>
+            <Typography.Title level={5}>Members</Typography.Title>
             <Typography.Text type="secondary">
-              OWNER 不可被修改或移除；只有 OWNER 和 ADMIN 可以管理成员。
+              OWNER cannot be changed or removed; only OWNER and ADMIN can manage members.
             </Typography.Text>
           </div>
           {canManageMembers ? (
@@ -307,7 +307,7 @@ function MembersContent() {
                 form.setFieldsValue({ role: "MEMBER", email: "" });
               }}
             >
-              添加成员
+              Add member
             </Button>
           ) : null}
         </div>
@@ -326,9 +326,9 @@ function MembersContent() {
       <Modal
         destroyOnHidden
         open={isModalOpen}
-        title="添加成员"
-        okText="添加"
-        cancelText="取消"
+        title="Add member"
+        okText="Add"
+        cancelText="Cancel"
         confirmLoading={addMemberMutation.isPending}
         onCancel={() => {
           setIsModalOpen(false);
@@ -345,23 +345,23 @@ function MembersContent() {
           onFinish={(values) => addMemberMutation.mutate(values)}
         >
           <Form.Item
-            label="用户"
+            label="User"
             name="email"
-            rules={[{ required: true, message: "请选择要添加的成员" }]}
+            rules={[{ required: true, message: "Select a member to add" }]}
           >
             <Select
               showSearch
               filterOption={false}
-              placeholder="输入姓名或邮箱搜索用户"
+              placeholder="Search users by name or email"
               options={userOptions}
               notFoundContent={userSearchQuery.isFetching ? <Spin size="small" /> : null}
               onSearch={setSearchKeyword}
             />
           </Form.Item>
           <Form.Item
-            label="角色"
+            label="Role"
             name="role"
-            rules={[{ required: true, message: "请选择成员角色" }]}
+            rules={[{ required: true, message: "Select a member role" }]}
           >
             <Select options={addMemberRoleOptions} />
           </Form.Item>
@@ -375,7 +375,7 @@ export function MembersPage() {
   return (
     <WorkspacePageFrame
       title="Members"
-      description="查看当前 Workspace 成员，并按角色授予或回收管理权限。"
+      description="View workspace members and grant or revoke management permissions by role."
     >
       <MembersContent />
     </WorkspacePageFrame>

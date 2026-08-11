@@ -79,7 +79,7 @@ const providerPresets = [
     baseUrl: "https://api.openai.com/v1",
     model: "gpt-4o-mini",
     harness: "OPENAI",
-    hint: "需要 API Key"
+    hint: "Requires an API key"
   },
   {
     key: "deepseek",
@@ -88,7 +88,7 @@ const providerPresets = [
     baseUrl: "https://api.deepseek.com/v1",
     model: "deepseek-chat",
     harness: "OPENAI",
-    hint: "需要 API Key"
+    hint: "Requires an API key"
   },
   {
     key: "ollama",
@@ -97,7 +97,7 @@ const providerPresets = [
     baseUrl: "http://127.0.0.1:11434/v1",
     model: "qwen3:8b",
     harness: "OLLAMA",
-    hint: "需要本地运行 ollama"
+    hint: "Requires Ollama running locally"
   },
   {
     key: "claude",
@@ -106,7 +106,7 @@ const providerPresets = [
     baseUrl: "https://api.anthropic.com",
     model: "claude-sonnet-4-20250514",
     harness: "ANTHROPIC",
-    hint: "需要 API Key"
+    hint: "Requires an API key"
   },
   {
     key: "openclaw",
@@ -115,7 +115,7 @@ const providerPresets = [
     baseUrl: "http://localhost:18789/v1",
     model: "openclaw-7b",
     harness: "OPENCLAW",
-    hint: "需要本地运行 OpenClaw (openclaw gateway)"
+    hint: "Requires OpenClaw running locally (openclaw gateway)"
   },
   {
     key: "hermes",
@@ -124,7 +124,7 @@ const providerPresets = [
     baseUrl: "http://localhost:9119/v1",
     model: "hermes-3-llama-3.1-8b",
     harness: "HERMES",
-    hint: "需要本地运行 Hermes (hermes serve)"
+    hint: "Requires Hermes running locally (hermes serve)"
   }
 ] as const;
 
@@ -132,50 +132,50 @@ const expertPresets = [
   {
     key: "default",
     emoji: "🤖",
-    name: "默认助手",
-    role: "通用助手",
-    description: "回答通用问题，协助日常沟通与信息检索。",
-    systemPrompt: "你是工作区默认 AI 助手，请提供准确、简洁、有帮助的中文回答。"
+    name: "Default Assistant",
+    role: "General Assistant",
+    description: "Answers general questions and helps with everyday communication and information retrieval.",
+    systemPrompt: "You are the workspace default AI assistant. Provide accurate, concise, helpful answers in English."
   },
   {
     key: "architect",
     emoji: "🧠",
-    name: "架构师",
-    role: "资深架构师",
-    description: "负责系统设计、技术选型、架构评审与重构建议。",
-    systemPrompt: "你是一名资深系统架构师，擅长权衡可扩展性、可维护性与成本，给出结构化的架构建议。"
+    name: "Architect",
+    role: "Senior Architect",
+    description: "Handles system design, technology selection, architecture reviews, and refactoring recommendations.",
+    systemPrompt: "You are a senior systems architect skilled at balancing scalability, maintainability, and cost. Provide structured architecture recommendations."
   },
   {
     key: "designer",
     emoji: "🎨",
-    name: "设计师",
-    role: "产品/UI 设计师",
-    description: "负责交互设计、视觉规范与用户体验优化建议。",
-    systemPrompt: "你是一名产品与 UI 设计师，擅长交互设计、视觉规范与可用性优化，请给出具体可执行的设计建议。"
+    name: "Designer",
+    role: "Product/UI Designer",
+    description: "Handles interaction design, visual standards, and user experience improvement recommendations.",
+    systemPrompt: "You are a product and UI designer skilled in interaction design, visual standards, and usability improvements. Provide specific, actionable design recommendations."
   },
   {
     key: "frontend",
     emoji: "🔧",
-    name: "前端工程师",
-    role: "资深前端工程师",
-    description: "擅长 React/Next.js/性能优化与前端工程化。",
-    systemPrompt: "你是一名资深前端工程师，擅长 React、Next.js、性能优化与前端工程化，请给出可落地的代码级建议。"
+    name: "Frontend Engineer",
+    role: "Senior Frontend Engineer",
+    description: "Specializes in React, Next.js, performance optimization, and frontend engineering.",
+    systemPrompt: "You are a senior frontend engineer skilled in React, Next.js, performance optimization, and frontend engineering. Provide practical, code-level recommendations."
   },
   {
     key: "backend",
     emoji: "⚙️",
-    name: "后端工程师",
-    role: "资深后端工程师",
-    description: "擅长服务端架构、数据库设计与 API 实现。",
-    systemPrompt: "你是一名资深后端工程师，擅长服务端架构、数据库设计与 API 实现，请给出严谨、可落地的方案。"
+    name: "Backend Engineer",
+    role: "Senior Backend Engineer",
+    description: "Specializes in server architecture, database design, and API implementation.",
+    systemPrompt: "You are a senior backend engineer skilled in server architecture, database design, and API implementation. Provide rigorous, practical solutions."
   },
   {
     key: "qa",
     emoji: "✅",
-    name: "QA工程师",
-    role: "QA 测试工程师",
-    description: "负责测试用例设计、缺陷分析与质量保障建议。",
-    systemPrompt: "你是一名 QA 测试工程师，擅长测试用例设计、缺陷分析与质量保障，请给出严谨全面的测试建议。"
+    name: "QA Engineer",
+    role: "QA Test Engineer",
+    description: "Handles test-case design, defect analysis, and quality-assurance recommendations.",
+    systemPrompt: "You are a QA test engineer skilled in test-case design, defect analysis, and quality assurance. Provide rigorous, comprehensive testing recommendations."
   }
 ] as const;
 
@@ -198,38 +198,38 @@ function getDefaultBaseUrl(type: AgentType) {
 
 function getBaseUrlPlaceholder(type: AgentType) {
   if (type === "OLLAMA") {
-    return "留空使用默认 Ollama，例如 http://127.0.0.1:11434/v1";
+    return "Leave blank to use the default Ollama endpoint, e.g. http://127.0.0.1:11434/v1";
   }
 
   if (type === "ANTHROPIC") {
-    return "例如 https://api.anthropic.com";
+    return "e.g. https://api.anthropic.com";
   }
 
   if (type === "OPENCLAW" || type === "HERMES") {
     return getDefaultBaseUrl(type);
   }
 
-  return "例如 https://api.openai.com/v1";
+  return "e.g. https://api.openai.com/v1";
 }
 
 function getModelPlaceholder(type: AgentType) {
   if (type === "OLLAMA") {
-    return "留空使用默认模型，例如 qwen3:8b";
+    return "Leave blank to use the default model, e.g. qwen3:8b";
   }
 
   if (type === "ANTHROPIC") {
-    return "例如 claude-sonnet-4-20250514";
+    return "e.g. claude-sonnet-4-20250514";
   }
 
   if (type === "OPENCLAW") {
-    return "例如 openclaw-7b";
+    return "e.g. openclaw-7b";
   }
 
   if (type === "HERMES") {
-    return "例如 hermes-3-llama-3.1-8b";
+    return "e.g. hermes-3-llama-3.1-8b";
   }
 
-  return "例如 gpt-4o-mini";
+  return "e.g. gpt-4o-mini";
 }
 
 function supportsApiKey(type: AgentType) {
@@ -306,17 +306,17 @@ function AgentConfigCard({
           </Typography.Title>
           <Typography.Text type="secondary">
             {agent.role ? `${agent.role} · ` : ""}
-            {agent.engineType} · 配置保存后即时生效。
+            {agent.engineType} · Configuration changes take effect immediately.
           </Typography.Text>
         </div>
         <Space wrap>
           {agent.isDefault ? <Tag color="blue">DEFAULT</Tag> : null}
           <Tag color="default">harness: {agent.harness ?? "OLLAMA"}</Tag>
           <Popconfirm
-            title="删除 Agent？"
-            description="删除后不会保留当前 Workspace 的自定义 Provider 配置。"
-            okText="删除"
-            cancelText="取消"
+            title="Delete agent?"
+            description="The current workspace’s custom provider configuration will not be retained."
+            okText="Delete"
+            cancelText="Cancel"
             disabled={agent.isDefault || !canManageAgents}
             onConfirm={() => onDelete(agent.id)}
           >
@@ -327,7 +327,7 @@ function AgentConfigCard({
               disabled={agent.isDefault || !canManageAgents}
               loading={isDeleting}
             >
-              删除
+              Delete
             </Button>
           </Popconfirm>
         </Space>
@@ -355,11 +355,11 @@ function AgentConfigCard({
           })
         }
       >
-        <Form.Item label="type" name="type" rules={[{ required: true, message: "请选择 Agent 类型" }]}>
+        <Form.Item label="type" name="type" rules={[{ required: true, message: "Select an agent type" }]}>
           <Select options={typeOptions} onChange={(value) => handleTypeChange(value as AgentType)} />
         </Form.Item>
 
-        <Form.Item label="Provider 预设">
+        <Form.Item label="Provider preset">
           <Space wrap>
             {providerPresets.map((preset) => (
               <Button
@@ -392,7 +392,7 @@ function AgentConfigCard({
             {
               validator: async (_, value: string) => {
                 if (agentType !== "OLLAMA" && !(value ?? "").trim()) {
-                  throw new Error("当前类型需要填写 baseUrl");
+                  throw new Error("This type requires a baseUrl");
                 }
               }
             }
@@ -407,31 +407,31 @@ function AgentConfigCard({
 
         {supportsApiKey(agentType) ? (
           <Form.Item label="apiKey" name="apiKey">
-            <Input.Password placeholder={agent.providerConfig?.hasApiKey ? "已保存,留空保持不变" : "输入新的 API Key"} />
+            <Input.Password placeholder={agent.providerConfig?.hasApiKey ? "Saved; leave blank to keep unchanged" : "Enter a new API key"} />
           </Form.Item>
         ) : null}
 
         <Form.Item label="emoji" name="emoji">
-          <Input placeholder="例如 🧠" maxLength={8} />
+          <Input placeholder="e.g. 🧠" maxLength={8} />
         </Form.Item>
 
-        <Form.Item label="role（角色名）" name="role">
-          <Input placeholder="例如 资深前端工程师" />
+        <Form.Item label="Role" name="role">
+          <Input placeholder="e.g. Senior Frontend Engineer" />
         </Form.Item>
 
-        <Form.Item label="description（我能做什么）" name="description">
-          <Input.TextArea placeholder="简要描述该专家能做什么" autoSize={{ minRows: 2, maxRows: 4 }} />
+        <Form.Item label="Description" name="description">
+          <Input.TextArea placeholder="Briefly describe what this expert can do" autoSize={{ minRows: 2, maxRows: 4 }} />
         </Form.Item>
 
         <Form.Item label="systemPrompt" name="systemPrompt">
-          <Input.TextArea placeholder="留空使用默认 system prompt" autoSize={{ minRows: 2, maxRows: 6 }} />
+          <Input.TextArea placeholder="Leave blank to use the default system prompt" autoSize={{ minRows: 2, maxRows: 6 }} />
         </Form.Item>
 
-        <Form.Item label="harness（运行环境）" name="harness" initialValue="OLLAMA">
+        <Form.Item label="Harness (runtime)" name="harness" initialValue="OLLAMA">
           <Select
-            placeholder="选择 harness 运行环境"
+            placeholder="Select a harness runtime"
             options={[
-              { label: "OLLAMA（本地）", value: "OLLAMA" },
+              { label: "OLLAMA (local)", value: "OLLAMA" },
               { label: "OPENAI（API）", value: "OPENAI" },
               { label: "ANTHROPIC（API）", value: "ANTHROPIC" },
               { label: "HERMES（hermes serve :9119）", value: "HERMES" },
@@ -445,22 +445,22 @@ function AgentConfigCard({
           items={[
             {
               key: "embedding",
-              label: "Embedding 配置（可选，默认跟随 chat provider）",
+              label: "Embedding configuration (optional; defaults to the chat provider)",
               children: (
                 <>
                   <Form.Item
                     label="embeddingBaseUrl"
                     name="embeddingBaseUrl"
-                    tooltip="留空则跟随 chat provider 的 baseUrl（或本地 Ollama）"
+                    tooltip="Leave blank to use the chat provider’s baseUrl (or local Ollama)"
                   >
-                    <Input placeholder="例如 https://api.openai.com/v1" />
+                    <Input placeholder="e.g. https://api.openai.com/v1" />
                   </Form.Item>
                   <Form.Item
                     label="embeddingModel"
                     name="embeddingModel"
-                    tooltip="留空则使用默认 embedding 模型"
+                    tooltip="Leave blank to use the default embedding model"
                   >
-                    <Input placeholder="例如 text-embedding-3-small 或 nomic-embed-text" />
+                    <Input placeholder="e.g. text-embedding-3-small or nomic-embed-text" />
                   </Form.Item>
                 </>
               )
@@ -469,14 +469,14 @@ function AgentConfigCard({
         />
 
         <Button type="primary" loading={isSaving} onClick={() => form.submit()}>
-          保存配置
+          Save configuration
         </Button>
         <Button
           style={{ marginLeft: 8 }}
           loading={isTesting}
           onClick={() => onTest(agent.id)}
         >
-          测试连接
+          Test connection
         </Button>
       </Form>
     </div>
@@ -542,17 +542,17 @@ function AgentsContent() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: agentKeys.list(workspaceId) });
-      message.success("Agent 配置已保存");
+      message.success("Agent configuration saved");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "保存 Agent 配置失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to save agent configuration");
     }
   });
 
   const createMutation = useMutation({
     mutationFn: (values: CreateAgentValues) => {
       if (!workspaceId) {
-        throw new Error("缺少 Workspace");
+        throw new Error("Workspace is required");
       }
 
       return apiFetch(`/workspaces/${workspaceId}/agents`, {
@@ -565,10 +565,10 @@ function AgentsContent() {
       createForm.resetFields();
       createForm.setFieldValue("type", "OPENAI_COMPATIBLE");
       await queryClient.invalidateQueries({ queryKey: agentKeys.list(workspaceId) });
-      message.success("Agent 已创建");
+      message.success("Agent created");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "创建 Agent 失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to create agent");
     }
   });
 
@@ -579,10 +579,10 @@ function AgentsContent() {
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: agentKeys.list(workspaceId) });
-      message.success("Agent 已删除");
+      message.success("Agent deleted");
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "删除 Agent 失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to delete agent");
     }
   });
 
@@ -593,13 +593,13 @@ function AgentsContent() {
       }),
     onSuccess: (result) => {
       if (result.ok) {
-        message.success(result.message || "连接成功");
+        message.success(result.message || "Connection successful");
       } else {
-        message.error(result.message || "连接失败");
+        message.error(result.message || "Connection failed");
       }
     },
     onError: (error) => {
-      message.error(error instanceof ApiError ? error.message : "测试连接失败");
+      message.error(error instanceof ApiError ? error.message : "Connection test failed");
     }
   });
 
@@ -625,14 +625,14 @@ function AgentsContent() {
             <div className={styles.metaRow}>
               <Tag color={getTypeTagColor(agent.type)}>{getTypeLabel(agent.type)}</Tag>
               <Tag color="default">harness: {agent.harness ?? "OLLAMA"}</Tag>
-              {providerConfig.hasApiKey ? <Tag color="success">API Key 已保存</Tag> : null}
+              {providerConfig.hasApiKey ? <Tag color="success">API key saved</Tag> : null}
             </div>
             {agent.description ? (
               <Typography.Text type="secondary">{agent.description}</Typography.Text>
             ) : null}
             <div className={styles.agentMeta}>
-              <Typography.Text type="secondary">baseUrl：{providerConfig.baseUrl?.trim() || "使用默认值"}</Typography.Text>
-              <Typography.Text type="secondary">model：{providerConfig.model?.trim() || "使用默认值"}</Typography.Text>
+              <Typography.Text type="secondary">baseUrl：{providerConfig.baseUrl?.trim() || "Using default"}</Typography.Text>
+              <Typography.Text type="secondary">model：{providerConfig.model?.trim() || "Using default"}</Typography.Text>
             </div>
           </div>
         );
@@ -643,7 +643,7 @@ function AgentsContent() {
   if (agentsQuery.isLoading) {
     return (
       <div className={styles.pageCard}>
-        <LoadingState compact title="正在读取 Agents" description="同步默认 Agent 与 Provider 配置。" />
+        <LoadingState compact title="Loading agents" description="Syncing the default agent and provider configuration." />
       </div>
     );
   }
@@ -653,9 +653,9 @@ function AgentsContent() {
       <div className={styles.pageCard}>
         <div className={styles.sectionHeader}>
           <div className={styles.helperStack}>
-            <Typography.Title level={5}>默认 Agent</Typography.Title>
+            <Typography.Title level={5}>Default agent</Typography.Title>
             <Typography.Text type="secondary">
-              配置即时生效；不同 type 会切换对应 Provider 协议，预设按钮可快速填充常用参数。
+              Configuration changes take effect immediately. Different types use their matching provider protocol, and presets quickly fill common values.
             </Typography.Text>
           </div>
           {canManageAgents ? (
@@ -667,7 +667,7 @@ function AgentsContent() {
                 createForm.setFieldsValue({ name: "", type: "OPENAI_COMPATIBLE" });
               }}
             >
-              新增 Agent
+              Add agent
             </Button>
           ) : null}
         </div>
@@ -675,7 +675,7 @@ function AgentsContent() {
         {agents.length ? (
           <div className={styles.summaryGrid}>{summaryCards}</div>
         ) : (
-          <EmptyState compact icon={<RobotOutlined />} title="还没有可配置的 Agent" description="创建一个 Agent 后，就能按 Workspace 覆盖模型和 Provider 参数。" />
+          <EmptyState compact icon={<RobotOutlined />} title="No configurable agents yet" description="Create an agent to override model and provider settings by workspace." />
         )}
       </div>
 
@@ -683,8 +683,8 @@ function AgentsContent() {
         <div className={styles.pageCard}>
           <div className={styles.sectionHeader}>
             <div className={styles.helperStack}>
-              <Typography.Title level={5}>Provider 配置</Typography.Title>
-              <Typography.Text type="secondary">留空时继续使用服务端默认值；apiKey 仅写入，不会再次回显。</Typography.Text>
+              <Typography.Title level={5}>Provider configuration</Typography.Title>
+              <Typography.Text type="secondary">Leave blank to keep server defaults; apiKey is write-only and is never shown again.</Typography.Text>
             </div>
           </div>
 
@@ -709,9 +709,9 @@ function AgentsContent() {
       <Modal
         destroyOnHidden
         open={isCreateModalOpen}
-        title="新增 Agent"
-        okText="创建"
-        cancelText="取消"
+        title="Add agent"
+        okText="Create"
+        cancelText="Cancel"
         confirmLoading={createMutation.isPending}
         onCancel={() => {
           setIsCreateModalOpen(false);
@@ -725,7 +725,7 @@ function AgentsContent() {
           initialValues={{ name: "", type: "OPENAI_COMPATIBLE", emoji: "", role: "", description: "", systemPrompt: "" }}
           onFinish={(values) => createMutation.mutate(values)}
         >
-          <Form.Item label="专家预设">
+          <Form.Item label="Expert preset">
             <Space wrap>
               {expertPresets.map((preset) => (
                 <Button
@@ -746,23 +746,23 @@ function AgentsContent() {
               ))}
             </Space>
           </Form.Item>
-          <Form.Item label="名称" name="name" rules={[{ required: true, message: "请输入 Agent 名称" }]}>
-            <Input placeholder="例如 DeepSeek Assistant" />
+          <Form.Item label="Name" name="name" rules={[{ required: true, message: "Enter an agent name" }]}>
+            <Input placeholder="e.g. DeepSeek Assistant" />
           </Form.Item>
-          <Form.Item label="type" name="type" rules={[{ required: true, message: "请选择 Agent 类型" }]}>
+          <Form.Item label="type" name="type" rules={[{ required: true, message: "Select an agent type" }]}>
             <Select options={typeOptions} />
           </Form.Item>
           <Form.Item label="emoji" name="emoji">
-            <Input placeholder="例如 🧠" maxLength={8} />
+            <Input placeholder="e.g. 🧠" maxLength={8} />
           </Form.Item>
-          <Form.Item label="role（角色名）" name="role">
-            <Input placeholder="例如 资深前端工程师" />
+          <Form.Item label="Role" name="role">
+            <Input placeholder="e.g. Senior Frontend Engineer" />
           </Form.Item>
-          <Form.Item label="description（我能做什么）" name="description">
-            <Input.TextArea placeholder="简要描述该专家能做什么" autoSize={{ minRows: 2, maxRows: 4 }} />
+          <Form.Item label="Description" name="description">
+            <Input.TextArea placeholder="Briefly describe what this expert can do" autoSize={{ minRows: 2, maxRows: 4 }} />
           </Form.Item>
           <Form.Item label="systemPrompt" name="systemPrompt">
-            <Input.TextArea placeholder="留空使用默认 system prompt" autoSize={{ minRows: 2, maxRows: 6 }} />
+            <Input.TextArea placeholder="Leave blank to use the default system prompt" autoSize={{ minRows: 2, maxRows: 6 }} />
           </Form.Item>
         </Form>
       </Modal>
@@ -774,7 +774,7 @@ export function AgentsPage() {
   return (
     <WorkspacePageFrame
       title="Agents"
-      description="查看默认 Agent 的引擎与 Provider 配置，并按 Workspace 覆盖模型参数。"
+      description="View the default agent’s engine and provider configuration, and override model settings by workspace."
     >
       <AgentsContent />
     </WorkspacePageFrame>

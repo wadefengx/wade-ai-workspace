@@ -1,6 +1,6 @@
 ---
 name: skill-name
-description: 一句话说明这个 skill 解决的唯一问题。
+description: One-sentence description of the single problem this skill solves.
 owner: pm
 version: "1.0"
 tags: [replace-me]
@@ -14,26 +14,26 @@ confidence: draft
 
 ## Question
 
-- 这个 skill 只回答哪一个问题?
+- What single question does this skill answer?
 
 ## When to use
 
-- 触发条件。
+- Trigger conditions.
 
 ## Inputs
 
-- 需要提供的最小上下文。
+- Minimum required context.
 
 ## Steps
 
-1. 执行步骤 1。
-2. 执行步骤 2。
-3. 执行步骤 3。
+1. Perform step 1.
+2. Perform step 2.
+3. Perform step 3.
 
 ## Outputs
 
-- 预期产出。
+- Expected output.
 
 ## Non-goals
 
-- 明确不负责什么。
+- State what it explicitly does not cover.

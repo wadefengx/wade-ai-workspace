@@ -1,6 +1,6 @@
 .shell {
   display: flex;
-  /* antd Layout 默认 column,覆盖为左右布局 */
+  /* antd Layout defaults to column; override it for a horizontal layout */
   flex-direction: row;
   height: 100vh;
   overflow: hidden;
@@ -178,7 +178,7 @@
   letter-spacing: 0.08em;
 }
 
-/* 一级菜单(CHATS / WORKSPACE MENU)折叠按钮:紧凑,文字占满剩余空间 */
+/* Top-level menu (CHATS / WORKSPACE MENU) collapse button: compact, with text filling remaining space */
 .sectionCollapseToggle {
   display: inline-flex;
   align-items: center;
@@ -269,7 +269,7 @@
   padding-inline: 0 !important;
 }
 
-/* 折叠态统一 icon 条目盒模型:40×40 居中,消除参差 */
+/* Collapsed icon items use a consistent 40×40 centered box model to eliminate unevenness */
 .sidebarCollapsed .navButton,
 .sidebarCollapsed .channelButton,
 .sidebarCollapsed .iconOnlyButton,
@@ -425,7 +425,7 @@
   justify-content: flex-start;
 }
 
-/* ChatGPT 式:无边框文本消息 */
+/* ChatGPT-style borderless text messages */
 .messageBubble {
   position: relative;
   width: 100%;
@@ -750,7 +750,7 @@
   width: 100%;
 }
 
-/* @ant-design/x Sender:圆角输入卡片,与消息区等宽 */
+/* @ant-design/x Sender: rounded input card matching message area width */
 .composerInput :global(.ant-sender) {
   width: 100%;
   border-radius: 24px;

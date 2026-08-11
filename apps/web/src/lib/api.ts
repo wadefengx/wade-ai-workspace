@@ -31,7 +31,7 @@ export function resolveApiUrl(path: string) {
   return `${process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL}${path}`;
 }
 
-// API 列表接口返回裸数组(workspaces/channels/members),兼容 {items} 包装
+// API list endpoints return bare arrays (workspaces/channels/members) and also support an {items} wrapper
 export function unwrapItems<T>(data: T[] | { items: T[] } | undefined | null): T[] {
   if (!data) return [];
   return Array.isArray(data) ? data : data.items ?? [];
@@ -112,7 +112,7 @@ async function waitForRefreshSession() {
 }
 
 async function toApiError(response: Response) {
-  const fallbackMessage = response.statusText || "请求失败";
+  const fallbackMessage = response.statusText || "Request failed";
   let payload: ApiErrorPayload | null = null;
 
   try {

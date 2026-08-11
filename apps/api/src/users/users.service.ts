@@ -44,7 +44,7 @@ export class UsersService {
 
   async updateUserRole(operatorId: string, userId: string, dto: UpdateUserRoleDto) {
     await ensureGlobalAdmin(this.prisma, operatorId);
-    this.ensureNotSelf(operatorId, userId, "不能修改自己的角色");
+    this.ensureNotSelf(operatorId, userId, "Cannot change your own role");
 
     const targetUser = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -58,7 +58,7 @@ export class UsersService {
     });
 
     if (!targetUser) {
-      throw new NotFoundException("用户不存在");
+      throw new NotFoundException("User not found");
     }
 
     if (targetUser.role === UserRole.ADMIN && dto.role !== UserRole.ADMIN) {
@@ -80,7 +80,7 @@ export class UsersService {
 
   async removeUser(operatorId: string, userId: string) {
     await ensureGlobalAdmin(this.prisma, operatorId);
-    this.ensureNotSelf(operatorId, userId, "不能删除自己");
+    this.ensureNotSelf(operatorId, userId, "Cannot delete yourself");
 
     const targetUser = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -91,7 +91,7 @@ export class UsersService {
     });
 
     if (!targetUser) {
-      throw new NotFoundException("用户不存在");
+      throw new NotFoundException("User not found");
     }
 
     if (targetUser.role === UserRole.ADMIN) {
@@ -106,7 +106,7 @@ export class UsersService {
     });
 
     if (ownerWorkspace) {
-      throw new BadRequestException("请先转交该用户拥有的工作区");
+      throw new BadRequestException("Transfer the workspaces owned by this user first");
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -139,7 +139,7 @@ export class UsersService {
     });
 
     if (adminCount <= 1) {
-      throw new BadRequestException("系统至少需要保留一个全局管理员");
+      throw new BadRequestException("The system must retain at least one global administrator");
     }
   }
 }

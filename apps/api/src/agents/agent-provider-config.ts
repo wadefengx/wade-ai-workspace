@@ -20,11 +20,11 @@ export function parseAgentProviderConfigRef(providerConfigRef?: string | null): 
   try {
     payload = JSON.parse(providerConfigRef);
   } catch {
-    throw new Error("Agent 配置格式不正确");
+    throw new Error("Invalid agent configuration format");
   }
 
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    throw new Error("Agent 配置格式不正确");
+    throw new Error("Invalid agent configuration format");
   }
 
   const config = payload as Record<string, unknown>;

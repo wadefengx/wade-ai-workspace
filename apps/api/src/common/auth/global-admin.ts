@@ -20,5 +20,5 @@ export async function ensureGlobalAdmin(prisma: PrismaService, userId: string) {
     return;
   }
 
-  throw new ForbiddenException("仅全局管理员可执行该操作");
+  throw new ForbiddenException("Only a global administrator can perform this action");
 }

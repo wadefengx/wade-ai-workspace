@@ -2,8 +2,8 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsNotEmpty, IsString } from "class-validator";
 
 export class CreateMessageDto {
-  @ApiProperty({ description: "消息内容", example: "@AI 介绍一下这个工作区", required: true })
-  @IsString({ message: "消息内容必须是字符串" })
-  @IsNotEmpty({ message: "消息内容不能为空" })
+  @ApiProperty({ description: "Message content", example: "@AI introduce this workspace", required: true })
+  @IsString({ message: "message content must be a string" })
+  @IsNotEmpty({ message: "message content must not be empty" })
   content!: string;
 }

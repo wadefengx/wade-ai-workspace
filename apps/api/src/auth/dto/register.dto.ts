@@ -2,17 +2,17 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsString, MinLength } from "class-validator";
 
 export class RegisterDto {
-  @ApiProperty({ description: "用户姓名", example: "Wade", required: true })
-  @IsString({ message: "姓名必须是字符串" })
-  @IsNotEmpty({ message: "姓名不能为空" })
+  @ApiProperty({ description: "User name", example: "Wade", required: true })
+  @IsString({ message: "name must be a string" })
+  @IsNotEmpty({ message: "name must not be empty" })
   name!: string;
 
-  @ApiProperty({ description: "登录邮箱", example: "wade@example.com", required: true })
-  @IsEmail({}, { message: "邮箱格式不正确" })
+  @ApiProperty({ description: "Sign-in email", example: "wade@example.com", required: true })
+  @IsEmail({}, { message: "Invalid email address format" })
   email!: string;
 
-  @ApiProperty({ description: "登录密码", example: "password123", required: true })
-  @IsString({ message: "密码必须是字符串" })
-  @MinLength(8, { message: "密码至少需要 8 位" })
+  @ApiProperty({ description: "Sign-in password", example: "password123", required: true })
+  @IsString({ message: "password must be a string" })
+  @MinLength(8, { message: "password must be at least 8 characters long" })
   password!: string;
 }

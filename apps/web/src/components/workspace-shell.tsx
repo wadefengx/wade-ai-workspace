@@ -107,7 +107,7 @@ type FeedbackMutationVariables = {
 const PAGE_SIZE = 20;
 const RETRY_DUPLICATE_WINDOW_MS = 60_000;
 
-// 常用表情(轻量内置面板,不引入 emoji 库)
+// Common emoji (lightweight built-in panel; no emoji library)
 const EMOJIS = [
   "😀", "😄", "😂", "🤣", "😊", "😍", "😘", "🤔",
   "😅", "😎", "🙌", "👍", "👏", "💪", "🔥", "✨",
@@ -170,10 +170,10 @@ function pickFirstString(...values: Array<string | undefined>) {
 }
 
 /**
- * 判断一条消息是否应该触发 AI 流式回复:
- * - 含 @<agent name>(匹配某个 Agent) → 触发,交由后端按该 agent 回复。
- * - 含 @AI 或不含任何 @ → 触发默认 Agent。
- * - 仅含 @<成员名>(非 AI、非任何 agent) → 不触发,只保存消息。
+ * Determines whether a message should trigger a streaming AI response:
+ * - Contains @<agent name> (matching an agent) → trigger; backend replies with that agent.
+ * - Contains @AI or no @ mention → trigger the default agent.
+ * - Contains only @<member name> (not AI or an agent) → do not trigger; only save the message.
  */
 function resolveShouldTriggerAi(content: string, agents: AgentSummary[], members: { name: string }[]) {
   const mentionMatches = content.match(/@([^\s@]+)/g);
@@ -213,7 +213,7 @@ function getStatusLabel(message: Pick<ChatMessage, "senderType" | "status">) {
   }
 
   if (message.senderType === "USER" && message.status === "PENDING") {
-    return "发送中";
+    return "Sending";
   }
 
   return null;
@@ -327,8 +327,8 @@ function AgentInfoPanel({ agent }: { agent: AgentSummary }) {
         </div>
       ) : null}
       <div style={{ marginTop: 8 }}>
-        <Typography.Text type="secondary">我能做什么：</Typography.Text>
-        <div>{agent.description || "暂无描述"}</div>
+        <Typography.Text type="secondary">What I can do:</Typography.Text>
+        <div>{agent.description || "No description yet"}</div>
       </div>
     </div>
   );
@@ -479,14 +479,14 @@ export function WorkspaceShell() {
         ...current,
         feedback: context?.previousFeedback ?? variables.previousFeedback
       }));
-      message.error(error instanceof ApiError ? error.message : "反馈提交失败");
+      message.error(error instanceof ApiError ? error.message : "Failed to submit feedback");
     }
   });
 
   const streamAgentReply = useCallback(
     async (channelId: string, content: string, localAgentMessageId: string) => {
       if (!accessToken) {
-        throw new Error("登录状态已失效，请重新登录");
+        throw new Error("Your session has expired. Please sign in again.");
       }
 
       const abortController = new AbortController();
@@ -577,10 +577,10 @@ export function WorkspaceShell() {
             }
 
             if (payload.type === "error") {
-              streamErrorMessage = payload.message ?? "AI 回复失败";
+              streamErrorMessage = payload.message ?? "AI response failed";
               patchLocalMessage(localAgentMessageId, (current) => ({
                 ...current,
-                errorMessage: streamErrorMessage ?? "AI 回复失败",
+                errorMessage: streamErrorMessage ?? "AI response failed",
                 status: "FAILED"
               }));
               throw new Error(streamErrorMessage);
@@ -590,16 +590,16 @@ export function WorkspaceShell() {
 
         if (streamCompleted) {
           await refetchCurrentMessages();
-          // AI 回复完成后,若频道还是默认名,调用模型生成标题(DeepSeek 式)
+          // After the AI response completes, generate a title if the channel still has its default name (DeepSeek-style)
           const channelName = channelNameRef.current;
-          if (channelName && /^(对话\s*\d+|新对话)$/.test(channelName)) {
+          if (channelName && /^(Chat\s*\d+|New Chat|\u5bf9\u8bdd\s*\d+|\u65b0\u5bf9\u8bdd)$/.test(channelName)) {
             try {
               await apiFetch<{ title: string }>(`/channels/${channelId}/generate-title`, {
                 method: "POST"
               });
               queryClient.invalidateQueries({ queryKey: workspaceKeys.channels(workspaceId) });
             } catch {
-              // 标题生成失败不影响主流程
+              // Title generation failure does not affect the main flow
             }
           }
         }
@@ -610,7 +610,7 @@ export function WorkspaceShell() {
         }
 
         if (!streamErrorMessage) {
-          const fallbackMessage = error instanceof Error ? error.message : "AI 回复失败";
+          const fallbackMessage = error instanceof Error ? error.message : "AI response failed";
           patchLocalMessage(localAgentMessageId, (current) => ({
             ...current,
             errorMessage: fallbackMessage,
@@ -738,7 +738,7 @@ export function WorkspaceShell() {
         }
       } catch (error) {
         const errorMessage =
-          error instanceof ApiError || error instanceof Error ? error.message : "发送失败，请稍后重试";
+          error instanceof ApiError || error instanceof Error ? error.message : "Send failed. Please try again later.";
 
         if (options?.retryMessageId) {
           patchLocalMessage(options.retryMessageId, (current) => ({
@@ -921,7 +921,7 @@ export function WorkspaceShell() {
           copiedTooltipTimeoutRef.current = null;
         }, 1200);
       } catch (error) {
-        message.error(error instanceof Error ? error.message : "复制失败");
+        message.error(error instanceof Error ? error.message : "Failed to copy");
       }
     },
     [message]
@@ -958,7 +958,7 @@ export function WorkspaceShell() {
       const targetIndex = channelMessages.findIndex((item) => item.id === targetMessage.id);
 
       if (targetIndex <= 0) {
-        message.error("未找到可重新生成的上一条用户消息");
+        message.error("Could not find the previous user message to regenerate");
         return;
       }
 
@@ -968,7 +968,7 @@ export function WorkspaceShell() {
         .find((item) => item.senderType === "USER" && item.content.trim());
 
       if (!sourceMessage) {
-        message.error("未找到可重新生成的上一条用户消息");
+        message.error("Could not find the previous user message to regenerate");
         return;
       }
 
@@ -987,12 +987,12 @@ export function WorkspaceShell() {
         <header className={styles.topbar}>
           <div className={styles.workspaceMeta}>
             <Typography.Title level={4} className={styles.topbarTitle}>
-              {selectedWorkspace?.name ?? "创建你的第一个 Workspace"}
+              {selectedWorkspace?.name ?? "Create your first workspace"}
             </Typography.Title>
             <Typography.Text type="secondary">
               {selectedWorkspace
-                ? "团队协作与 AI 上下文在同一个工作区中沉淀。"
-                : "创建 Workspace 后会自动生成 #general 频道。"}
+                ? "Team collaboration and AI context accumulate in one workspace."
+                : "A #general channel is created automatically after you create a workspace."}
             </Typography.Text>
           </div>
 
@@ -1015,12 +1015,12 @@ export function WorkspaceShell() {
               <div className={styles.channelCard}>
                 <div className={styles.channelBody}>
                   <Typography.Title level={3} className={styles.channelTitle}>
-                    {selectedChannel ? `# ${selectedChannel.name}` : "选择一个频道"}
+                    {selectedChannel ? `# ${selectedChannel.name}` : "Select a channel"}
                   </Typography.Title>
                   <Typography.Text type="secondary">
                     {selectedChannel
-                      ? "消息支持历史加载、乐观发送与 @AI 流式回答。"
-                      : "当前 Workspace 还没有可用频道。"}
+                      ? "Messages support history loading, optimistic sending, and streaming @AI responses."
+                      : "The current workspace has no available channels."}
                   </Typography.Text>
                 </div>
               </div>
@@ -1034,19 +1034,19 @@ export function WorkspaceShell() {
                           {messagesQuery.isFetchingNextPage ? (
                             <>
                               <LoadingOutlined spin />
-                              正在加载更早消息...
+                              Loading earlier messages...
                             </>
                           ) : (
-                            "向上滚动加载更早消息"
+                            "Scroll up to load earlier messages"
                           )}
                         </div>
                       ) : channelMessages.length ? (
-                        <div className={styles.historyHint}>已显示全部消息</div>
+                        <div className={styles.historyHint}>All messages displayed</div>
                       ) : null}
 
                       {messagesQuery.isLoading ? (
                         <div className={styles.messageLoading}>
-                          <LoadingState compact title="正在同步消息" description="聊天记录马上就好。" />
+                          <LoadingState compact title="Syncing messages" description="Chat history will be ready shortly." />
                         </div>
                       ) : channelMessages.length ? (
                         <div className={styles.messageList}>
@@ -1088,13 +1088,13 @@ export function WorkspaceShell() {
                                     <>
                                       {hasThinking ? (
                                         <details className={styles.thinkingBlock} open={chatMessage.status === "STREAMING"}>
-                                          <summary className={styles.thinkingSummary}>思考过程</summary>
+                                          <summary className={styles.thinkingSummary}>Thinking process</summary>
                                           <div className={styles.thinkingContent}>{chatMessage.thinkingContent}</div>
                                         </details>
                                       ) : chatMessage.status === "STREAMING" ? (
                                         <div className={styles.thinkingIndicator}>
                                           <Bubble
-                                            content="正在思考…"
+                                            content="Thinking…"
                                             loading
                                             variant="outlined"
                                             rootClassName={styles.thinkingBubble}
@@ -1115,7 +1115,7 @@ export function WorkspaceShell() {
 
                                   {isFailed ? (
                                     <div className={styles.messageErrorRow}>
-                                      <span>{chatMessage.errorMessage ?? "请求失败，请稍后重试"}</span>
+                                      <span>{chatMessage.errorMessage ?? "Request failed. Please try again later."}</span>
                                       {chatMessage.requestContent ? (
                                         <Button
                                           size="small"
@@ -1124,7 +1124,7 @@ export function WorkspaceShell() {
                                           disabled={isSending}
                                           onClick={() => void retryMessage(chatMessage)}
                                         >
-                                          重试
+                                          Retry
                                         </Button>
                                       ) : null}
                                     </div>
@@ -1133,11 +1133,11 @@ export function WorkspaceShell() {
                                   <div className={styles.messageActions}>
                                     {isUserMessage ? null : (
                                       <>
-                                        <Tooltip title={feedback === "like" ? "取消喜欢" : "喜欢"}>
+                                        <Tooltip title={feedback === "like" ? "Remove like" : "Like"}>
                                           <Button
                                             type="text"
                                             size="small"
-                                            aria-label={feedback === "like" ? "取消喜欢" : "喜欢这条回复"}
+                                            aria-label={feedback === "like" ? "Remove like" : "Like this response"}
                                             className={`${styles.messageActionButton} ${
                                               feedback === "like" ? styles.messageActionButtonActive : ""
                                             }`}
@@ -1146,11 +1146,11 @@ export function WorkspaceShell() {
                                             onClick={() => handleFeedback(chatMessage, "like")}
                                           />
                                         </Tooltip>
-                                        <Tooltip title={feedback === "dislike" ? "取消不喜欢" : "不喜欢"}>
+                                        <Tooltip title={feedback === "dislike" ? "Remove dislike" : "Dislike"}>
                                           <Button
                                             type="text"
                                             size="small"
-                                            aria-label={feedback === "dislike" ? "取消不喜欢" : "不喜欢这条回复"}
+                                            aria-label={feedback === "dislike" ? "Remove dislike" : "Dislike this response"}
                                             className={`${styles.messageActionButton} ${
                                               feedback === "dislike" ? styles.messageActionButtonActive : ""
                                             }`}
@@ -1159,11 +1159,11 @@ export function WorkspaceShell() {
                                             onClick={() => handleFeedback(chatMessage, "dislike")}
                                           />
                                         </Tooltip>
-                                        <Tooltip title="重新生成">
+                                        <Tooltip title="Regenerate">
                                           <Button
                                             type="text"
                                             size="small"
-                                            aria-label="重新生成回复"
+                                            aria-label="Regenerate response"
                                             className={styles.messageActionButton}
                                             disabled={isSending}
                                             icon={<RedoOutlined />}
@@ -1172,11 +1172,11 @@ export function WorkspaceShell() {
                                         </Tooltip>
                                       </>
                                     )}
-                                    <Tooltip title="已复制" open={copiedMessageId === chatMessage.id ? true : undefined}>
+                                    <Tooltip title="Copied" open={copiedMessageId === chatMessage.id ? true : undefined}>
                                       <Button
                                         type="text"
                                         size="small"
-                                        aria-label="复制消息"
+                                        aria-label="Copy message"
                                         className={styles.messageActionButton}
                                         icon={<CopyOutlined />}
                                         onClick={() => void handleCopyMessage(chatMessage.id, chatMessage.content)}
@@ -1192,10 +1192,10 @@ export function WorkspaceShell() {
                         <div className={styles.emptyState}>
                           <EmptyState
                             icon={<RobotOutlined />}
-                            title="开始新的对话"
+                            title="Start a new conversation"
                             description={
                               <>
-                                发送普通消息开始协作，或输入 <strong>@AI</strong> 触发流式回答。
+                                Send a message to start collaborating, or enter <strong>@AI</strong> to trigger a streaming response.
                               </>
                             }
                           />
@@ -1206,11 +1206,11 @@ export function WorkspaceShell() {
                     <div className={styles.emptyState}>
                       <EmptyState
                         icon={<MessageOutlined />}
-                        title="还没有可用频道"
-                        description="创建一个频道后，团队消息和 AI 对话都会在这里沉淀。"
+                        title="No channels available yet"
+                        description="Create a channel to accumulate team messages and AI conversations here."
                         action={
                           <Button icon={<PlusOutlined />} onClick={() => window.dispatchEvent(new CustomEvent("wade-ai:create-channel"))}>
-                            新建 Chat
+                            Create chat
                           </Button>
                         }
                       />
@@ -1223,7 +1223,7 @@ export function WorkspaceShell() {
                 {streamStatus?.channelId === selectedChannelId ? (
                   <div className={styles.composerStatus}>
                     <Bubble
-                      content={`${streamStatus.agentName}${streamStatus.modelName ? ` · ${streamStatus.modelName}` : ""} 正在思考…`}
+                      content={`${streamStatus.agentName}${streamStatus.modelName ? ` · ${streamStatus.modelName}` : ""} Thinking…`}
                       loading
                       variant="outlined"
                     />
@@ -1244,15 +1244,15 @@ export function WorkspaceShell() {
                       return (
                         <Sender
                           ref={composerRef}
-                          aria-label="频道消息"
+                          aria-label="Channel message"
                           autoSize={{ minRows: 2, maxRows: 6 }}
                           loading={isSending}
                           value={draft}
                           disabled={!selectedChannel || isSending}
                           placeholder={
                             selectedChannel
-                              ? "发送消息与 AI 对话，@专家指定专家"
-                              : "先选择频道"
+                              ? "Send messages and chat with AI; @mention an expert to select one"
+                              : "Select a channel first"
                           }
                           onChange={(value) => {
                             setDraftState({
@@ -1274,7 +1274,7 @@ export function WorkspaceShell() {
                           }}
                           onKeyDown={(event) => {
                             if (event.key === " " && suggestionOpenRef.current) {
-                              // Suggestion 底层 Cascader 弹层会吞掉空格键 → 手动关闭弹层并插入空格
+                              // The Suggestion Cascader popup consumes the space key → close it manually and insert a space
                               suggestionOpenRef.current = false;
                               onTrigger(false);
                               const textarea = composerRef.current?.inputElement as HTMLTextAreaElement | null;
@@ -1320,7 +1320,7 @@ export function WorkspaceShell() {
                               >
                                 <Button
                                   type="text"
-                                  aria-label="插入表情"
+                                  aria-label="Insert emoji"
                                   icon={<SmileOutlined />}
                                   onClick={() => setEmojiOpen((prev) => !prev)}
                                 />
@@ -1332,7 +1332,7 @@ export function WorkspaceShell() {
                     }}
                   </Suggestion>
                   <Typography.Text type="secondary" className={styles.composerHint}>
-                    输入 <strong>@专家</strong> 指定专家回复，无 @ 默认由 AI 回复，<strong>@成员</strong> 仅提及不触发 AI，Shift + Enter 换行。
+                    Enter <strong>@Expert</strong> to select an expert; without @, AI replies by default; <strong>@Member</strong> only mentions a member and does not trigger AI; Shift + Enter adds a line break.
                   </Typography.Text>
                 </div>
               </div>
@@ -1342,11 +1342,11 @@ export function WorkspaceShell() {
               className={styles.workspaceEmpty}
               align="left"
               icon={<TeamOutlined />}
-              title="还没有 Workspace"
-              description="创建后会自动把你加入为 OWNER，并生成默认的 #general 频道。"
+              title="No workspace yet"
+              description="Creating one automatically adds you as OWNER and creates the default #general channel."
               action={
                 <Button type="primary" onClick={() => router.push("/")}>
-                  前往创建 Workspace
+                  Create a workspace
                 </Button>
               }
             />

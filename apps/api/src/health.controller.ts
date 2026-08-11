@@ -8,10 +8,10 @@ export class HealthController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
-  @ApiOperation({ summary: "获取服务健康状态" })
+  @ApiOperation({ summary: "Get service health status" })
   async getHealth() {
     await this.prisma.$runCommandRaw({ ping: 1 });
-    // ponytail: ollama 已从必需依赖降级为可选 LLM,健康检查只看 DB;ollama 状态由 Agents 页展示
+    // ponytail: Ollama is optional rather than required; health checks only verify the database, and the Agents page displays Ollama status.
     return { status: "ok" };
   }
 }

@@ -2,19 +2,19 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 
 export class UpdateWorkspaceDto {
-  @ApiProperty({ description: "工作区名称", example: "Wade AI", required: true })
-  @IsString({ message: "工作区名称必须是字符串" })
-  @IsNotEmpty({ message: "工作区名称不能为空" })
+  @ApiProperty({ description: "Workspace name", example: "Wade AI", required: true })
+  @IsString({ message: "workspace name must be a string" })
+  @IsNotEmpty({ message: "workspace name must not be empty" })
   name!: string;
 
-  @ApiPropertyOptional({ description: "工作区图标", example: "TeamOutlined" })
+  @ApiPropertyOptional({ description: "Workspace icon", example: "TeamOutlined" })
   @IsOptional()
-  @IsString({ message: "工作区图标必须是字符串" })
-  @MaxLength(50, { message: "工作区图标长度不能超过50个字符" })
+  @IsString({ message: "workspace icon must be a string" })
+  @MaxLength(50, { message: "workspace icon must not exceed 50 characters" })
   icon?: string;
 
-  @ApiPropertyOptional({ description: "默认 Agent ID，留空则清除默认 Agent", example: "65f0000000000000000000aa" })
+  @ApiPropertyOptional({ description: "Default agent ID; leave empty to clear the default agent", example: "65f0000000000000000000aa" })
   @IsOptional()
-  @IsString({ message: "defaultAgentId 必须是字符串" })
+  @IsString({ message: "defaultAgentId must be a string" })
   defaultAgentId?: string | null;
 }

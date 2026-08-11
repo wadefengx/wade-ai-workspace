@@ -60,8 +60,8 @@ export function EmptyState({
 }
 
 export function LoadingState({
-  title = "正在加载内容",
-  description = "请稍候，正在同步最新状态。",
+  title = "Loading content",
+  description = "Please wait while the latest status is syncing.",
   compact = false,
   fullscreen = false,
   align = "center",

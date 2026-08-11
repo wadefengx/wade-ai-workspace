@@ -30,11 +30,11 @@ export class ChannelMemberGuard implements CanActivate {
     const channelId = request.params.channelId;
 
     if (!request.user) {
-      throw new UnauthorizedException("未登录或登录已过期");
+      throw new UnauthorizedException("Not signed in or session has expired");
     }
 
     if (!channelId) {
-      throw new NotFoundException("频道不存在");
+      throw new NotFoundException("Channel not found");
     }
 
     const channel = await this.prisma.channel.findUnique({
@@ -46,7 +46,7 @@ export class ChannelMemberGuard implements CanActivate {
     });
 
     if (!channel) {
-      throw new NotFoundException("频道不存在");
+      throw new NotFoundException("Channel not found");
     }
 
     request.channelAccess = {
@@ -67,7 +67,7 @@ export class ChannelMemberGuard implements CanActivate {
     });
 
     if (!membership) {
-      throw new ForbiddenException("无权访问该工作区");
+      throw new ForbiddenException("You do not have access to this workspace");
     }
 
     return true;
@@ -76,7 +76,7 @@ export class ChannelMemberGuard implements CanActivate {
 
 export function requireChannelAccess(request: ChannelAccessRequest) {
   if (!request.channelAccess) {
-    throw new NotFoundException("频道不存在");
+    throw new NotFoundException("Channel not found");
   }
 
   return request.channelAccess;

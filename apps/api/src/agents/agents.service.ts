@@ -100,7 +100,7 @@ export class AgentsService {
     });
 
     if (!agent) {
-      throw new NotFoundException("Agent 不存在");
+      throw new NotFoundException("Agent not found");
     }
 
     await this.ensureWorkspaceMember(agent.workspaceId, userId);
@@ -166,13 +166,13 @@ export class AgentsService {
     });
 
     if (!agent) {
-      throw new NotFoundException("Agent 不存在");
+      throw new NotFoundException("Agent not found");
     }
 
     await this.ensureWorkspaceManager(agent.workspaceId, userId);
 
     if (agent.isDefault) {
-      throw new BadRequestException("默认 Agent 不可删除");
+      throw new BadRequestException("The default agent cannot be deleted");
     }
 
     await this.prisma.agent.delete({
@@ -194,7 +194,7 @@ export class AgentsService {
     });
 
     if (!agent) {
-      throw new NotFoundException("Agent 不存在");
+      throw new NotFoundException("Agent not found");
     }
 
     await this.ensureWorkspaceMember(agent.workspaceId, userId);
@@ -210,7 +210,7 @@ export class AgentsService {
     } catch (error) {
       return {
         ok: false,
-        message: error instanceof Error ? error.message : "连接测试失败"
+        message: error instanceof Error ? error.message : "Connection test failed"
       };
     }
   }
@@ -238,10 +238,10 @@ export class AgentsService {
 
     if (!response.ok) {
       const bodyText = await response.text();
-      return { ok: false, message: bodyText || `连接失败，状态码 ${response.status}` };
+      return { ok: false, message: bodyText || `Connection failed with status ${response.status}` };
     }
 
-    return { ok: true, message: "连接成功" };
+    return { ok: true, message: "Connection successful" };
   }
 
   private async testAnthropicConnection(config: AgentProviderConfig) {
@@ -265,10 +265,10 @@ export class AgentsService {
 
     if (!response.ok) {
       const bodyText = await response.text();
-      return { ok: false, message: bodyText || `连接失败，状态码 ${response.status}` };
+      return { ok: false, message: bodyText || `Connection failed with status ${response.status}` };
     }
 
-    return { ok: true, message: "连接成功" };
+    return { ok: true, message: "Connection successful" };
   }
 
   private mergeProviderConfig(providerConfigRef: string | null, patch?: UpdateAgentDto["providerConfig"]) {
@@ -308,7 +308,7 @@ export class AgentsService {
         return;
       }
 
-      throw new ForbiddenException("无权访问该工作区");
+      throw new ForbiddenException("You do not have access to this workspace");
     }
   }
 
@@ -327,10 +327,10 @@ export class AgentsService {
     }
 
     if (!membership) {
-      throw new ForbiddenException("无权访问该工作区");
+      throw new ForbiddenException("You do not have access to this workspace");
     }
 
-    throw new ForbiddenException("仅 OWNER 或 ADMIN 可执行该操作");
+    throw new ForbiddenException("Only an OWNER or ADMIN can perform this action");
   }
 
   private toResponse(agent: {

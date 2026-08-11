@@ -7,7 +7,7 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 ## Context loading order
 
 1. This `AGENTS.md`.
-2. `.ai/runtime/AI_INSTRUCTION_V2.md` — **Runtime Operating Model 2.0**(Goal-First / Skill 触发 / 动态 Subagent / Verification Iron Law / Self-Evolution Loop / Governance)。与本文档冲突时以 v2 为准。
+2. `.ai/runtime/AI_INSTRUCTION_V2.md` — **Runtime Operating Model 2.0** (Goal-First / Skill triggers / dynamic subagents / Verification Iron Law / Self-Evolution Loop / Governance). If it conflicts with this document, v2 takes precedence.
 3. `.ai/organization/` for team model, routing, communication, and role contracts.
 4. `.ai/runtime/` for context, prompt, model, tool, and coding policy.
 5. Relevant `.ai/specs/` files for active scope; legacy `specs/` stays readable during migration.
@@ -36,10 +36,10 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 
 1. Spec is the source of truth when code, docs, and chat disagree.
 2. Run existing lint, typecheck, and test gates for the smallest scope that proves the task.
-3. Keep user-facing errors and validation copy in Chinese unless a spec says otherwise.
+3. Keep user-facing errors and validation copy in English unless a future localized UI is explicitly specified.
 4. Prefer copy-safe migrations over move/delete when parallel lanes may still read old paths.
 5. Reuse helpers, contracts, and patterns before writing new code; fix root causes, not one caller.
-6. **Execution mode:Hermes 直接执行全部开发,不再 spawn 外部 coding agent(如 Copilot CLI)。** 需求→spec→按领域切 lane(Hermes 自己串行/并行执行)→单测+harness+浏览器验收→memory/skill 回流→commit。通用开发体系见 `AI_DEV_INSTRUCTION.md`。
+6. **Execution mode: Hermes performs all development directly and does not spawn external coding agents (such as Copilot CLI).** Requirements → spec → domain lanes (Hermes executes serially or in parallel) → unit tests + harness + browser acceptance → memory/skill feedback → commit. See `AI_DEV_INSTRUCTION.md` for the general development system.
 7. Keep the workspace SPA conventions intact: shared layout, stable navigation, and documented response shapes.
 8. Use `npmmirror` for npm and `gitclone` for GitHub taps; fall back to `quay.io` when Docker Hub is unavailable.
 9. Do not touch unrelated app code for document-only or structure-only work.
@@ -76,12 +76,12 @@ This repository runs as an AI Native, local-first workspace: specs define the co
 
 ## Change Log
 
-- 2026-08-01 Phase 11 Lane B: refactored chat shell scrolling isolation, removed the chat right panel, switched Chats to one-click `对话 N` creation, added AI hover actions/thinking/loading states with `@ant-design/x`, added Memory isolated scrolling, and inserted the Dashboard nav entry.
+- 2026-08-01 Phase 11 Lane B: refactored chat shell scrolling isolation, removed the chat right panel, switched Chats to one-click `Chat N` creation, added AI hover actions/thinking/loading states with `@ant-design/x`, added Memory isolated scrolling, and inserted the Dashboard nav entry.
 - 2026-08-01 Phase 11 Lane A: added Message.feedback persistence/toggle API, organization/feedback stats endpoints with resilient `.ai`+git fallbacks, and backend unit coverage for feedback/stats behavior.
 - 2026-08-01 Phase 10 Lane A: added backend Workspace icon support in Prisma/schema, seed backfill/default demo data, workspace create/update DTO handling, and API tests for icon persistence/validation.
-- 2026-08-01 Phase 11:聊天体验重构 + 双 Dashboard。滚动隔离(100vh shell + 内容区独立滚动,chat/memory)、移除右侧 AI Context 面板、ChatGPT 式一键新建对话、AI 消息 thinking/操作条(like/dislike/regenerate/copy + feedback API)、Sender loading + 状态条(antdx 组件;修复 suffix 覆盖 submit 按钮 bug)、AI Organization Dashboard + Feedback Dashboard(stats API:assets/lanes/pipeline/improvements/feedback 聚合)。
-- 2026-08-01 Phase 10 自我进化(全角色):PM/Architect 落地运行机制(planner/lane-states/confidence/dependency-graph/backlog/review-workflow/memory-to-skill + ADR-006);UX/UI/FE 响应式/a11y/空状态统一/微交互/视觉一致;BE/QA e2e 迁入 `.ai/harness/regression/`(phase6 30 + phase9 19 + phase10 13 全绿)+ 3 高价值单测;修复折叠态 icon 参差(统一 40×40)。
-- 2026-08-01 Phase 10:UX/UI 重构 + AIOS 增强(zustand/动画/dayjs/workspace icon/mermaid/登录页 Apple 化 + registry/pipeline/topology)。
+- 2026-08-01 Phase 11: rebuilt the chat experience and added dual dashboards. It isolates scrolling (a 100vh shell with independently scrolling chat/memory content), removes the right AI Context panel, adds ChatGPT-style one-click chat creation, AI message thinking/actions (like/dislike/regenerate/copy plus feedback API), Sender loading and status states (AntD X; fixes the suffix-overlapping-submit bug), and AI Organization/Feedback dashboards (stats API aggregation for assets, lanes, pipeline, improvements, and feedback).
+- 2026-08-01 Phase 10 self-evolution (all roles): PM/Architect established the operating system (planner/lane-states/confidence/dependency-graph/backlog/review-workflow/memory-to-skill + ADR-006); UX/UI/FE added responsive design, a11y, consistent empty states, micro-interactions, and visual consistency; BE/QA moved e2e checks to `.ai/harness/regression/` (phase6 30 + phase9 19 + phase10 13 passing) and added three high-value unit tests; normalized collapsed-state icons to 40×40.
+- 2026-08-01 Phase 10: UX/UI refactor and AIOS improvements (Zustand, animations, dayjs, workspace icons, Mermaid, Apple-style login, registry/pipeline/topology).
 - 2026-08-01 Phase 9 Lane C: added AIOS `.ai/` organization/runtime/workflow/memory/knowledge/architecture/harness structure, copied specs and skills into `.ai`, and rewrote `AGENTS.md` as the runtime entrypoint.
 - 2026-08-01 Phase 9 Lane B: added persisted JWT session restore + single-flight refresh retry, sidebar collapse persistence, Chats search/time grouping, and a header theme toggle in `apps/web/src/{stores/auth.ts,lib/api.ts,components/{auth-page.tsx,workspace-context.tsx,workspace-navigation.tsx,workspace-shell.module.css}}`.
 - 2026-08-01 Phase 8 Lane C: added Settings / Specs / Skills pages, expanded Agents presets and CRUD UI, and enabled `@All` mention highlighting.
